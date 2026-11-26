@@ -86,6 +86,8 @@ eq(JSON.stringify(text(typedNotebook)), JSON.stringify([
     "08:30", "90min", "结束：10:00", "2026-11-26", "一周后：2026-12-03", "12个", "6打", "两盒：144个"
 ]), "笔记本时间、日期与自定义单位");
 
+eq(evaluateNotebook('日期=date("2026-11-26")\n【日期】')[1].kind, "text", "全角括号标题不被变量名误判为公式");
+
 const summary = `午餐：{{35}}
 交通：{{12}}
 咖啡：{{18}}

@@ -217,6 +217,7 @@ eq(demoEditor.value.includes("【plugin-calc 学习示例】"), true, "追加学
 eq(demoEditor.value.includes("结束：{{示例开始+示例耗时}}"), true, "示例使用独立变量名");
 eq(root.querySelector(".plugin-calc-notebook__preview").textContent.includes("结束：10:00"), true, "示例时间公式即时求值");
 eq(root.querySelector(".plugin-calc-notebook__preview").textContent.includes("两盒：144示例个"), true, "示例自定义单位即时求值");
+eq(all(root, "plugin-calc-notebook__error").length, 0, "整份示例没有求值错误");
 click(demoButton);
 eq(demoEditor.value.split("【plugin-calc 学习示例】").length, 2, "重复点击不重复追加");
 eq(root.querySelector(".plugin-calc-notebook__status").textContent.includes("不会重复追加"), true, "重复点击显示定位提示");

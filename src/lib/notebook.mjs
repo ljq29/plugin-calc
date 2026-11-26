@@ -131,6 +131,9 @@ const createEvaluator = options => {
             group = [];
             return {kind: "blank", source: line};
         }
+        if (/^【[^】]+】$/.test(trimmed)) {
+            return {kind: "text", source: line};
+        }
         const unit = trimmed.match(UNIT_PATTERN);
         if (unit) {
             return Object.assign(defineUnit(unit), {source: line});
