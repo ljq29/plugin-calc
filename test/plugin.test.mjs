@@ -694,7 +694,7 @@ const cases = [
     // 一元方程
     ["x+3=5=", "x+3=5=2"],
     ["a+3=5;a=", "a+3=5;a=2"],
-    ["2x=10=", "2x=10=5"],
+    ["2*x=10=", "2*x=10=5"],
     ["x^2=4=", "x^2=4=-2 或 2"]
 ];
 for (const [input, expected] of cases) {
@@ -729,8 +729,8 @@ eq(rounded.text, "1/3=0.3333", "精度设置生效（4 位小数）");
 eq(rounded.prevented, true, "精度设置下仍拦截回车");
 
 // —— 精度设置生效：方程解也按精度显示
-const equationRounded = await runCase("3x=1=", {settings: {roundMode: "places", roundDigits: 2}});
-eq(equationRounded.text, "3x=1=0.33", "方程解同样按精度显示");
+const equationRounded = await runCase("3*x=1=", {settings: {roundMode: "places", roundDigits: 2}});
+eq(equationRounded.text, "3*x=1=0.33", "方程解同样按精度显示");
 
 // —— 换行组合键不拦截
 const shiftCase = await runCase("12*5=");
@@ -789,7 +789,7 @@ eq(typeof ioPlugin.syncTopBarState, "undefined", "没有顶栏状态同步方法
 
 // 设置面板可以正常打开
 eq(!!ioPlugin.setting, true, "插件创建了 Setting 实例");
-eq(ioPlugin.setting.items.length, 5, "设置项数量（3 个开关 + 精度 + 用法说明）");
+eq(ioPlugin.setting.items.length, 9, "设置项数量（开关、精度、汇率、节假日与用法说明）");
 const settingTitles = ioPlugin.setting.items.map((item) => item.title).join(",");
 eq(settingTitles.includes("自动计算"), true, "包含自动计算开关");
 eq(settingTitles.includes("空格"), true, "包含空格开关");

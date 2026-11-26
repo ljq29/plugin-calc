@@ -282,6 +282,16 @@ const ratMul = (a, b) => {
     return ratNorm(mulDigits(a.n, b.n), mulDigits(a.d, b.d), a.neg !== b.neg);
 };
 
+const ratDivExact = (a, b) => {
+    if (ratIsZero(b)) {
+        throw new Error("divide by zero");
+    }
+    if (ratIsZero(a)) {
+        return ratZero();
+    }
+    return ratNorm(mulDigits(a.n, b.d), mulDigits(a.d, b.n), a.neg !== b.neg);
+};
+
 /** 精确除法；除不尽时四舍五入到 SCALE_MAX 位小数 */
 const ratDiv = (a, b) => {
     if (ratIsZero(b)) {
@@ -481,8 +491,10 @@ export {
     ratNorm,
     ratAdd,
     ratSub,
+    ratNeg,
     ratMul,
     ratDiv,
+    ratDivExact,
     ratToFix,
     cZero,
     cFromFix,

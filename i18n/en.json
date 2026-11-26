@@ -14,5 +14,5 @@
   "roundPlaces": "Decimal places",
   "roundDigits": "Significant digits",
   "usageTitle": "Examples",
-  "usageTip": "Type an expression and press Enter:\n12*5=            ->  12*5=60\n测试12*5=        ->  测试12*5=60\n12×5=            ->  12×5=60\n12×5=60*3=       ->  12×5=60*3=180\n\nEquations work too:\nx+3=5=           ->  x+3=5=2\na+3=5;a=         ->  a+3=5;a=2\n2x=10=           ->  2x=10=5\nx^2=4=           ->  x^2=4=-2 或 2\n\nSupported: + - × ÷ % ^, parentheses, implicit multiplication (2x, 2(x+1)),\nthousand separators (1,000), full-width symbols, sqrt/abs/round/floor/ceil/\nmin/max/sum/avg, constants pi and e, and inline assignments such as a=3;a*2=."
+  "usageTip": "Type an expression and press Enter:\n12*5=            ->  12*5=60\n测试12*5=        ->  测试12*5=60\n12×5=            ->  12×5=60\n12×5=60*3=       ->  12×5=60*3=180\n\nEquations work too:\nx+3=5=           ->  x+3=5=2\na+3=5;a=         ->  a+3=5;a=2\n2*x=10=          ->  2*x=10=5\nx^2=4=           ->  x^2=4=-2 或 2\n\nSupported: arithmetic, parentheses, common functions and inline assignments.\nMultiplication must use *. Calc notebooks also support 08:30+90min, 5km to m,\ndateAdd(date("2026-11-26"),7,"days"), prev/total/average and currency conversion."
 }

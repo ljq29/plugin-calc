@@ -31,6 +31,10 @@
     opacity: 0.45;
 }
 
+.plugin-calc__invalid {
+    border-color: var(--b3-theme-error) !important;
+}
+
 .plugin-calc-notebook {
     border: 1px solid var(--b3-border-color);
     border-radius: 6px;

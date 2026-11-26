@@ -54,6 +54,33 @@ The selected view is stored in the block's `custom-plugin-calc-view` attribute. 
 
 In line-by-line mode, every line shows results until clicked. Only the active line exposes its source; all other results update while typing. Enter splits a line, Backspace/Delete at the edges merge lines, Arrow Up/Down changes the active line, and Escape returns to results. Focus and caret survive autosave.
 
+## Time, dates, units and currency
+
+Types are inferred from values; variables do not need declarations.
+
+```text
+start=08:30
+duration=90min
+End: {{start+duration}}
+
+day=date("2026-11-26")
+Next week: {{dateAdd(day,1,"week")}}
+Days between: {{dateBetween(day,date("2026-12-03"),"days")}}
+```
+
+- Time and duration: `08:30+90min` → `10:00`; `23:50+20min` → `00:10（次日）`
+- Dates: `date()`, `datetime()`, `dateAdd`, `dateSubtract`, `dateBetween`, `formatDate`, `today`, `now`
+- Workdays: `workdays(start,end)` and `addWorkdays(date,n)` honor the holidays and extra workdays configured in settings
+- Time zones: `zoned("2026-11-26 15:00","Asia/Shanghai")`, then `inZone(value,"Asia/Tokyo")`; IANA names and complete dates are required
+- Units: `5km to m`, `1m+20cm`, `32degF to degC`, `1GiB to MiB`
+- Compound units: `100km/2h` → `50km/h`; `50km/h*2h` → `100km`; `25USD/h*14h` → `350USD`
+- Explicit construction: `unit(2,"m")`; `2m^2` means two square metres while `(2m)^2` means four
+- Block-scoped custom units: `unit 打 = 12 个`, then `unit 盒 = 6 打`, so `2盒 to 个` → `144个`
+
+`prev` returns the nearest previous result. `total` and `average` aggregate standalone and inline results in the current blank-line-delimited group; variable definitions are excluded. Compatible units are converted automatically, while incompatible dimensions and mixed currencies report errors.
+
+Currency conversion uses explicit `to`, for example `100USD to CNY`. Manual JSON rates such as `{"USD/CNY":7.2}` take precedence. Optional online reference rates come from [Frankfurter](https://frankfurter.dev/), are cached, and display their source and date in settings. They are not live trading quotes.
+
 ## Linear equations
 
 When the same unknown appears on both sides of `=`, the expression is solved as an
@@ -63,8 +90,8 @@ equation (terms are moved to one side and solved with exact rational coefficient
 | --- | --- |
 | `x+3=5=` | `x+3=5=2` |
 | `a+3=5;a=` | `a+3=5;a=2` |
-| `2x=10=` | `2x=10=5` |
-| `2x+3=7=` | `2x+3=7=2` |
+| `2*x=10=` | `2*x=10=5` |
+| `2*x+3=7=` | `2*x+3=7=2` |
 | `x/2=3=` | `x/2=3=6` |
 | `x^2=4=` | `x^2=4=-2 或 2` |
 | `x^2+1=0=` | `x^2+1=0=1i 或 -1i` (complex roots) |
@@ -73,7 +100,7 @@ equation (terms are moved to one side and solved with exact rational coefficient
 - **Linear**: solved exactly by moving terms
 - **Quadratic**: root formula; negative discriminant yields conjugate complex roots
 - **Cubic and higher**: one real root via Newton iteration
-- **Implicit multiplication** is supported: `2x`, `2(x+1)`, `(x+1)(x-1)`
+- Multiplication must be explicit: `2*x`, `2*(x+1)`, `(x+1)*(x-1)`; implicit multiplication is not supported
 - Inline assignments combine with equations: `n=2;n*x=6=` -> `n=2;n*x=6=3`
 - Equations with no solution report it (e.g. `3=5`)
 
@@ -86,7 +113,7 @@ The settings panel controls how results are displayed:
 - **Significant digits**: round to N significant digits; `1234.5678` with 2 -> `1200`
 
 Range 0–15 (1–15 for significant digits). The setting also applies to equation
-solutions: with 2 decimal places, `3x=1=` -> `3x=1=0.33`.
+solutions: with 2 decimal places, `3*x=1=` -> `3*x=1=0.33`.
 
 Rounding is **exact in decimal**: `1.005` to 2 places gives `1.01`, not `1.00`
 as binary floating point would.
@@ -122,6 +149,8 @@ of the top bar: **plugin icon → 等号计算 (Equals Calc)**.
 - **Also trigger on Space** — off by default (Space is a common typing key)
 - **Support Ctrl/Cmd + Enter** — on by default, for forcing a calculation while auto mode is off
 - **Result precision** — exact / decimal places / significant digits
+- **Manual exchange rates**, **holidays**, and **extra workdays**
+- **Online reference rates** — refresh and inspect the source and rate date
 
 > `Setting` must be constructed with a `confirmCallback`: SiYuan's implementation
 > looks up `.b3-dialog__action .b3-button` and calls `btnsElement[0].addEventListener`.
@@ -142,11 +171,13 @@ of the top bar: **plugin icon → 等号计算 (Equals Calc)**.
 ## Development
 
 ```bash
-node build.mjs                 # build index.js from src/ (zero dependencies)
+npm ci                        # install Temporal polyfill and esbuild
+node build.mjs                 # build index.js from src/
 node test/number.probe.mjs     # arithmetic self-tests
 node test/precision.test.mjs   # result precision
 node test/polynomial.test.mjs  # polynomials and equation solving
 node test/calc.test.mjs        # expression-layer tests
+node test/typed.test.mjs       # time, dates, time zones, units and currency
 node test/notebook.test.mjs    # calc notebook, variables and mixed-content tests
 node test/view.test.mjs        # three views and line-by-line editing tests
 node test/plugin.test.mjs      # plugin integration tests (minimal DOM / SiYuan stubs)
@@ -164,8 +195,12 @@ src/lib/notebook.mjs      scoped variables, standalone formulas and inline evalu
 src/lib/number.mjs        decimal arithmetic (digit arrays, rationals, fixed point, complex)
 src/lib/precision.mjs     display precision (exact decimal rounding to places/digits)
 src/lib/polynomial.mjs    polynomial arithmetic and univariate equation solving
-src/lib/expr.mjs          tokenizer, parser, evaluator, settlement rules
-build.mjs                 bundles the ESM sources into the CommonJS plugin entry
+src/lib/expr.mjs          numeric evaluator, extended-syntax dispatch and settlement
+src/lib/typed-expr.mjs    parser for dates, times, units and money
+src/lib/value.mjs         typed arithmetic, conversion, aggregation and formatting
+src/lib/units.mjs         unit registry, dimensions and compound/custom units
+src/lib/datetime.mjs      calendar, workdays, time zones and date formatting
+build.mjs                 esbuild CommonJS bundle
 ```
 
 ## Packaging

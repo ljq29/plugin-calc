@@ -74,6 +74,103 @@ Docker 容器内的通常路径为 `/siyuan/workspace/data/plugins/plugin-calc/`
 - `↑` / `↓` 切换编辑行，`Esc` 退出当前行编辑
 - 自动保存后继续编辑时，会保留当前行、焦点和光标位置
 
+## 时间、日期与时区
+
+无需给变量声明类型，插件会根据输入自动区分数字、时刻、时长、日期、日期时间、带时区时间、单位量和金额。
+
+```text
+开始时间=08:30
+耗时=90min
+结束时间：{{开始时间+耗时}}
+
+日期=date("2026-11-26")
+一周后：{{dateAdd(日期,1,"week")}}
+相差天数：{{dateBetween(日期,date("2026-12-03"),"days")}}
+中文日期：{{formatDate(日期,"YYYY年M月D日")}}
+```
+
+支持的主要写法：
+
+- 时刻与时长：`08:30+90min` → `10:00`；`23:50+20min` → `00:10（次日）`
+- 时间差：`17:20-08:30` → `8h50min`
+- 时长组合：`1h30min to min` → `90min`
+- 日期构造：`date("2026-11-26")`、`datetime("2026-11-26 08:30")`
+- 日期函数：`dateAdd`、`dateSubtract`、`dateBetween`、`formatDate`、`today`、`now`
+- 日期加减：`date("2026-11-26")+7d` → `2026-12-03`
+- 工作日：`workdays(start,end)` 计算含起止日期的工作日；`addWorkdays(date,n)` 增加工作日
+- 部件提取：`year`、`month`、`day`、`hour`、`minute`
+
+月份和年份按日历计算：`dateAdd(date("2026-01-31"),1,"months")` 得到 `2026-02-28`。固定时长与日历月年分开，不把一个月固定当成 30 天。
+
+时区使用 IANA 名称，并且必须提供完整日期：
+
+```text
+会议=zoned("2026-11-26 15:00","Asia/Shanghai")
+东京时间：{{inZone(会议,"Asia/Tokyo")}}
+```
+
+结果为 `2026-11-26 16:00:00+09:00[Asia/Tokyo]`。夏令时导致本地时间不存在或重复时会报错，不会静默选择。
+
+## 单位、复合单位与自定义单位
+
+```text
+5km to m=              → 5000m
+1m+20cm=               → 1.2m
+2inch to cm=           → 5.08cm
+32degF to degC=        → 0degC
+1GiB to MiB=           → 1024MiB
+100km/2h=              → 50km/h
+50km/h*2h=             → 100km
+60kg/m^2=              → 60kg/m^2
+```
+
+- 支持时间、长度、重量、面积、体积、数据量、温度、角度及中文常用别名
+- 加减要求量纲一致；乘除会合并量纲并约分单位
+- 温度包含零点偏移，不能简单当作比例单位
+- `GB/MB` 按十进制，`GiB/MiB` 按二进制
+- `2m^2` 是 2 平方米，`(2m)^2` 是 4 平方米
+- 可用 `unit(2,"m")` 显式构造单位量
+
+计算块内可声明自定义单位，作用域仅限当前块：
+
+```text
+unit 打 = 12 个
+unit 盒 = 6 打
+两盒数量：{{2盒 to 个}}
+```
+
+结果为 `144个`。后面的定义可以引用前面的定义，重复定义会报错。
+
+## 上一结果与分组汇总
+
+```text
+午餐：{{35}}
+交通：{{12}}
+咖啡：{{18}}
+上一项：{{prev}}
+合计：{{total}}
+平均：{{average}}
+```
+
+- `prev` 是之前最近的计算结果，跳过普通文字和空行
+- `total`、`average` 汇总当前空行分组内、当前行之前的独立公式与行内公式
+- 变量定义行不参与汇总，避免重复计算
+- 同量纲单位可汇总，例如 `5km` 与 `500m` 合计为 `5.5km`
+- 不兼容的单位、不同币种或时间点混算会显示错误
+
+## 货币换算
+
+```text
+费用=100USD
+人民币：{{费用 to CNY}}
+```
+
+- 同币种可以直接加减；不同币种必须先用 `to` 转换
+- 支持 `25USD/h*14h` → `350USD` 这类金额复合单位
+- 设置里可填写手工汇率，例如 `{"USD/CNY":7.2}`，优先于在线汇率
+- 在线参考汇率来自 [Frankfurter](https://frankfurter.dev/)，自动缓存并在设置中显示来源与日期；它不是实时交易报价
+- 网络不可用时仍可使用缓存或手工汇率；没有任何可用汇率时会明确报错
+
 ## 一元方程
 
 等号两边出现同一个未知量时，会当作一元方程求解（移项后用多项式求解，系数为精确有理数）：
@@ -82,8 +179,8 @@ Docker 容器内的通常路径为 `/siyuan/workspace/data/plugins/plugin-calc/`
 | --- | --- |
 | `x+3=5=` | `x+3=5=2` |
 | `a+3=5;a=` | `a+3=5;a=2` |
-| `2x=10=` | `2x=10=5` |
-| `2x+3=7=` | `2x+3=7=2` |
+| `2*x=10=` | `2*x=10=5` |
+| `2*x+3=7=` | `2*x+3=7=2` |
 | `x/2=3=` | `x/2=3=6` |
 | `x^2=4=` | `x^2=4=-2 或 2` |
 | `x^2+1=0=` | `x^2+1=0=1i 或 -1i`（共轭复根） |
@@ -92,7 +189,7 @@ Docker 容器内的通常路径为 `/siyuan/workspace/data/plugins/plugin-calc/`
 - **一次方程**：移项直接得到精确解
 - **二次方程**：求根公式；判别式为负时给出共轭复根
 - **三次及以上**：牛顿迭代求一个实根
-- 支持 `2x`、`2(x+1)`、`(x+1)(x-1)` 这类**隐含乘法**
+- 乘法必须显式写 `*`：`2*x`、`2*(x+1)`、`(x+1)*(x-1)`；不再支持隐含乘法
 - 行内赋值可以与方程混用：`n=2;n*x=6=` → `n=2;n*x=6=3`
 - 方程无解时会提示（例如 `3=5`）
 
@@ -104,7 +201,7 @@ Docker 容器内的通常路径为 `/siyuan/workspace/data/plugins/plugin-calc/`
 - **保留小数位数**：按指定位数四舍五入，末尾多余的 0 会去掉
 - **保留有效数字位数**：按指定有效数字四舍五入，`1234.5678` 取 2 位 → `1200`
 
-位数范围 0–15（有效数字 1–15）。精度设置同时作用于普通算式和方程解，例如设为 2 位小数后 `3x=1=` → `3x=1=0.33`。
+位数范围 0–15（有效数字 1–15）。精度设置同时作用于普通算式和方程解，例如设为 2 位小数后 `3*x=1=` → `3*x=1=0.33`。
 
 舍入是**十进制精确舍入**：`1.005` 保留 2 位小数得到 `1.01`，不会像浮点数那样得到 `1.00`。
 
@@ -137,6 +234,9 @@ Docker 容器内的通常路径为 `/siyuan/workspace/data/plugins/plugin-calc/`
 - **空格键也触发**：默认关闭（空格是常用输入键，开启后会影响默认行为）
 - **支持 Ctrl/⌘ + 回车**：默认开启，可在关闭自动结算时手动触发一次
 - **结果精度**：精确 / 保留小数位数 / 保留有效数字位数
+- **手工汇率**：JSON 格式，优先于在线汇率
+- **节假日 / 调休工作日**：用逗号或换行分隔的 `YYYY-MM-DD` 日期
+- **在线参考汇率**：手动更新并显示数据来源与日期
 
 > 设置面板必须给 `Setting` 传 `confirmCallback`：思源内部实现里会取
 > `.b3-dialog__action .b3-button` 这两个按钮，没有 `confirmCallback` 时按钮容器被隐藏、
@@ -153,11 +253,13 @@ Docker 容器内的通常路径为 `/siyuan/workspace/data/plugins/plugin-calc/`
 ## 开发
 
 ```bash
-node build.mjs                 # 由 src/ 生成 index.js（零依赖打包）
+npm ci                       # 安装 Temporal polyfill 与 esbuild
+node build.mjs                 # 由 src/ 生成 index.js
 node test/number.probe.mjs     # 算术层自检
 node test/precision.test.mjs   # 结果精度
 node test/polynomial.test.mjs  # 多项式与方程求解
 node test/calc.test.mjs        # 表达式层测试
+node test/typed.test.mjs       # 时间、日期、时区、单位与汇率测试
 node test/notebook.test.mjs    # 计算笔记本、变量与混排测试
 node test/view.test.mjs        # 三种视图与逐行编辑测试
 node test/plugin.test.mjs      # 插件集成测试（最小 DOM / 思源 API 桩）
@@ -175,8 +277,12 @@ src/lib/notebook.mjs      块内变量、独立公式与行内混排的求值模
 src/lib/number.mjs        十进制高精度算术（数字数组、有理数、定点数、复数）
 src/lib/precision.mjs     结果显示精度（小数位 / 有效数字的十进制舍入）
 src/lib/polynomial.mjs    多项式运算与一元方程求解
-src/lib/expr.mjs          词法/语法分析、求值、结算规则
-build.mjs                 把 ESM 源码打成插件用的 CommonJS bundle
+src/lib/expr.mjs          数字与方程求值、扩展语法分派、结算规则
+src/lib/typed-expr.mjs    时间、日期、单位、金额等扩展表达式解析
+src/lib/value.mjs         带类型值的运算、换算、汇总与格式化
+src/lib/units.mjs         单位表、量纲、复合单位和自定义单位
+src/lib/datetime.mjs      日历、工作日、时区与日期格式化
+build.mjs                 用 esbuild 打成插件用的 CommonJS bundle
 ```
 
 ## 打包发布

@@ -36,7 +36,11 @@ const DEFAULT_SETTINGS = {
     /** 结果精度：exact（精确）/ places（小数位）/ digits（有效数字） */
     roundMode: "exact",
     /** places 模式是小数位数；digits 模式是有效数字位数 */
-    roundDigits: 6
+    roundDigits: 6,
+    manualExchangeRates: "{}",
+    holidays: "",
+    extraWorkdays: "",
+    onlineRates: null
 };
 
 export default class EqualsCalcPlugin extends Plugin {
@@ -51,7 +55,14 @@ export default class EqualsCalcPlugin extends Plugin {
     async onload() {
         await this.loadSettings();
         this.customBlockRenders.notebook = {
-            render: options => renderCalcNotebook(options, this.getPrecisionOptions())
+            render: options => {
+                const calcOptions = this.getCalculationOptions();
+                calcOptions.refreshRates = async () => {
+                    await this.refreshOnlineRates();
+                    calcOptions.rates = this.settings.onlineRates;
+                };
+                return renderCalcNotebook(options, this.getPrecisionOptions(), calcOptions);
+            }
         };
         this.protyleSlash.push({
             id: "calc-notebook",
@@ -169,6 +180,84 @@ export default class EqualsCalcPlugin extends Plugin {
             actionElement: precisionRow
         });
 
+        const manualRates = document.createElement("textarea");
+        manualRates.className = "b3-text-field fn__size200";
+        manualRates.rows = 3;
+        manualRates.value = this.settings.manualExchangeRates;
+        manualRates.placeholder = '{"USD/CNY":7.2,"EUR/USD":1.09}';
+        manualRates.addEventListener("change", () => {
+            try {
+                JSON.parse(manualRates.value || "{}");
+                this.settings.manualExchangeRates = manualRates.value || "{}";
+                this.saveSettings();
+                manualRates.classList.remove("plugin-calc__invalid");
+            } catch {
+                manualRates.classList.add("plugin-calc__invalid");
+            }
+        });
+        this.setting.addItem({
+            title: "手工汇率",
+            description: "JSON 格式；优先于在线汇率，例如 {\"USD/CNY\":7.2}",
+            actionElement: manualRates
+        });
+
+        const holidays = document.createElement("textarea");
+        holidays.className = "b3-text-field fn__size200";
+        holidays.rows = 3;
+        holidays.value = this.settings.holidays;
+        holidays.placeholder = "2026-01-01, 2026-10-01";
+        holidays.addEventListener("change", () => {
+            this.settings.holidays = holidays.value;
+            this.saveSettings();
+        });
+        this.setting.addItem({
+            title: "节假日",
+            description: "用逗号或换行分隔的 YYYY-MM-DD 日期；工作日计算会排除这些日期",
+            actionElement: holidays
+        });
+
+        const extraWorkdays = document.createElement("textarea");
+        extraWorkdays.className = "b3-text-field fn__size200";
+        extraWorkdays.rows = 2;
+        extraWorkdays.value = this.settings.extraWorkdays;
+        extraWorkdays.placeholder = "2026-11-29";
+        extraWorkdays.addEventListener("change", () => {
+            this.settings.extraWorkdays = extraWorkdays.value;
+            this.saveSettings();
+        });
+        this.setting.addItem({
+            title: "调休工作日",
+            description: "周末中仍需上班的日期，格式同节假日；优先于周末规则",
+            actionElement: extraWorkdays
+        });
+
+        const refreshButton = document.createElement("button");
+        refreshButton.className = "b3-button";
+        refreshButton.textContent = "更新在线汇率";
+        const rateStatus = document.createElement("span");
+        rateStatus.textContent = this.settings.onlineRates ?
+            `${this.settings.onlineRates.source} · ${this.settings.onlineRates.date}` : "尚未更新";
+        refreshButton.addEventListener("click", async () => {
+            refreshButton.disabled = true;
+            rateStatus.textContent = "正在更新…";
+            try {
+                const rates = await this.refreshOnlineRates();
+                rateStatus.textContent = `${rates.source} · ${rates.date}`;
+            } catch (error) {
+                rateStatus.textContent = "更新失败：" + error.message;
+            } finally {
+                refreshButton.disabled = false;
+            }
+        });
+        const rateRow = document.createElement("div");
+        rateRow.className = "fn__flex plugin-calc__row";
+        rateRow.append(refreshButton, rateStatus);
+        this.setting.addItem({
+            title: "在线参考汇率",
+            description: "来自 Frankfurter，非实时交易报价；转换结果以设置中显示的汇率日期为准",
+            actionElement: rateRow
+        });
+
         const hint = document.createElement("div");
         hint.className = "plugin-calc__hint";
         hint.textContent = this.i18n.usageTip;
@@ -196,6 +285,53 @@ export default class EqualsCalcPlugin extends Plugin {
             roundMode: this.settings.roundMode,
             roundDigits: this.settings.roundDigits
         };
+    }
+
+    getCalculationOptions() {
+        let exchangeRates = {};
+        try {
+            exchangeRates = JSON.parse(this.settings.manualExchangeRates || "{}");
+        } catch {
+            exchangeRates = {};
+        }
+        return {
+            exchangeRates,
+            rates: this.settings.onlineRates,
+            holidays: this.settings.holidays.split(/[\s,，]+/).filter(Boolean),
+            extraWorkdays: this.settings.extraWorkdays.split(/[\s,，]+/).filter(Boolean)
+        };
+    }
+
+    async refreshOnlineRates() {
+        if (this.ratePromise) {
+            return this.ratePromise;
+        }
+        this.ratePromise = (async () => {
+            const response = await fetch("https://api.frankfurter.dev/v2/rates");
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+            }
+            const rows = await response.json();
+            if (!Array.isArray(rows) || rows.length === 0) {
+                throw new Error("汇率服务返回了空数据");
+            }
+            const values = {EUR: 1};
+            let date = "";
+            rows.forEach(row => {
+                if (row && row.quote && Number.isFinite(row.rate)) {
+                    values[row.quote] = row.rate;
+                    date = row.date > date ? row.date : date;
+                }
+            });
+            this.settings.onlineRates = {base: "EUR", values, date, source: "Frankfurter"};
+            await this.saveSettings();
+            return this.settings.onlineRates;
+        })();
+        try {
+            return await this.ratePromise;
+        } finally {
+            this.ratePromise = null;
+        }
     }
 
     /* ---------------------------------------------------------------- *

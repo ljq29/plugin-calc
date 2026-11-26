@@ -13,7 +13,7 @@
  *   statement := name "=" expr | expr
  *   expr    := term ("=" term)*          链式结算 / 方程
  *   term    := factor (("+"|"-") factor)*
- *   factor  := unary (("*"|"/") unary | 隐含乘法)*
+ *   factor  := unary (("*"|"/") unary)*
  *   unary   := ("+"|"-") unary | power
  *   power   := postfix ("^" unary)?
  *   postfix := base ("%")*
@@ -44,6 +44,7 @@ import {
     ratToFix
 } from "./number.mjs";
 import {normalizePolicy} from "./precision.mjs";
+import {calculateTyped, isExtendedExpression} from "./typed-expr.mjs";
 import {
     complexToDisplayString,
     polyAdd,
@@ -259,13 +260,6 @@ const parse = (tokens) => {
         return node;
     };
 
-    /** 下一个 token 是不是一个操作数（用于识别隐含乘法） */    /**
-     * 隐含乘法的右操作数：
-     *   2x、2pi、2(x+1)、(x+1)(x-1) 都成立；
-     *   但 (1+2)3、2 3 这种「数字紧跟在后面」不成立，
-     *   否则 "(1+2)3=" 会被算成 9 而不是报错。
-     */
-    const startsImplicitOperand = (token) => token.type === T_NAME || token.type === T_LP;
 
     const parseFactor = () => {
         let node = parseUnary();
@@ -276,14 +270,6 @@ const parse = (tokens) => {
                 const right = parseUnary();
                 node = {kind: "binary", op: isOp(token, "%") ? "mod" : token.text, left: node, right: right,
                     start: node.start, end: endOf(right)};
-                continue;
-            }
-            // 隐含乘法：2x、2(x+1)、(x+1)(x-1)、2pi
-            // parsePrimary 已把「名字 + (」当作函数调用，所以这里不会误伤 max(1,2)。
-            if (startsImplicitOperand(token)) {
-                const right = parseUnary();
-                node = {kind: "binary", op: "*", left: node, right: right,
-                    start: node.start, end: endOf(right), implicit: true};
                 continue;
             }
             break;
@@ -898,7 +884,7 @@ const numberToRat = (value) => fixToRat(numberToFix(value));
  * @param {{roundMode?:string, roundDigits?:number|string, maxLength?:number}} [options] 结果显示精度与长度限制
  * @returns {{ok:true, text:string, assignments:Array}|{ok:false, error:string, position:number}}
  */
-export const calculate = (source, options) => {
+const calculateLegacy = (source, options) => {
     try {
         const maxLength = options && Number.isFinite(options.maxLength) ? options.maxLength : 500;
         if (typeof source !== "string" || source.length > maxLength) {
@@ -937,6 +923,7 @@ export const calculate = (source, options) => {
                 return {
                     ok: true,
                     text: complexToDisplayString(evaluated, policy),
+                    value: evaluated,
                     assignments: buildAssignments(context, statement)
                 };
             }
@@ -956,6 +943,7 @@ export const calculate = (source, options) => {
         return {
             ok: true,
             text: complexToDisplayString(value, policy),
+            value: value,
             assignments: Array.from(lastByName.values())
         };
     } catch (error) {
@@ -965,6 +953,10 @@ export const calculate = (source, options) => {
             position: error && typeof error.position === "number" ? error.position : -1
         };
     }
+};
+
+export const calculate = (source, options = {}) => {
+    return isExtendedExpression(source, options) ? calculateTyped(source, options) : calculateLegacy(source, options);
 };
 
 /**
@@ -1073,6 +1065,9 @@ export const findCalculation = (text, options) => {
             }
             // 只有「前置运算符（含左括号）」才允许另起一段；
             // 前面是普通操作符（+ - * / ^ %）说明截取点落在表达式中途，跳过。
+            if ((prefix[start] === "(" || prefix[start] === "（") && /[0-9_)）.]/.test(prev)) {
+                continue;
+            }
             const isPrefixContext = prev === "(" || prev === "（" || prev === ";" || prev === ";";
             if (!isPrefixContext && "+-*/^%".indexOf(prev) > -1) {
                 continue;

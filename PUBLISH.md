@@ -2,9 +2,10 @@
 
 ## 本地验证
 
-项目只有 Node.js 内置模块依赖，使用 Node.js 22：
+使用 Node.js 22。日期与时区使用 `@js-temporal/polyfill`，构建使用 `esbuild`：
 
 ```bash
+npm ci
 npm test
 npm run package
 ```

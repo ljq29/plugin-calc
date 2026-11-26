@@ -1,40 +1,8950 @@
 /*!
  * 等号计算 (Equals Calc) —— 思源笔记插件
- *
- * 在编辑器里输入以等号结尾的算式并回车，自动把结果补在等号后面。
  * 本文件由 build.mjs 从 src/ 生成，请直接修改 src/ 下的源码。
- *
- * 计算不使用 eval / new Function：表达式解析与十进制高精度运算都是自己实现的，
- * 因此 0.1 + 0.2 会得到 0.3，大整数也不会丢精度。
- *
+ * 计算不使用 eval / new Function；数字、单位、日期与汇率类型在本地求值。
  * MIT License
  */
-(function () {
-    "use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __commonJS = (cb, mod) => function __require() {
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e2) {
+    throw mod = 0, e2;
+  }
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to2, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to2, key) && key !== except)
+        __defProp(to2, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to2;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-    /** 模块表：首次 require 时执行工厂函数并缓存导出 */
-    const __registry = {};
-    const __cache = {};
+// node_modules/jsbi/dist/jsbi-umd.js
+var require_jsbi_umd = __commonJS({
+  "node_modules/jsbi/dist/jsbi-umd.js"(exports, module2) {
+    (function(e2, t2) {
+      "object" == typeof exports && "undefined" != typeof module2 ? module2.exports = t2() : "function" == typeof define && define.amd ? define(t2) : (e2 = e2 || self, e2.JSBI = t2());
+    })(exports, function() {
+      "use strict";
+      var e2 = Math.imul, t2 = Math.clz32;
+      function i2(t3, i3) {
+        (null == i3 || i3 > t3.length) && (i3 = t3.length);
+        for (var _3 = 0, o3 = Array(i3); _3 < i3; _3++) o3[_3] = t3[_3];
+        return o3;
+      }
+      function _2(e3) {
+        if (Array.isArray(e3)) return e3;
+      }
+      function n2(t3) {
+        if (void 0 === t3) throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+        return t3;
+      }
+      function o2(i3, t3, _3) {
+        return t3 = r2(t3), v2(i3, b2() ? Reflect.construct(t3, _3 || [], r2(i3).constructor) : t3.apply(i3, _3));
+      }
+      function l2(e3, t3) {
+        if (!(e3 instanceof t3)) throw new TypeError("Cannot call a class as a function");
+      }
+      function g2(i3, t3, e3) {
+        if (b2()) return Reflect.construct.apply(null, arguments);
+        var _3 = [null];
+        _3.push.apply(_3, t3);
+        var n3 = new (i3.bind.apply(i3, _3))();
+        return e3 && y2(n3, e3.prototype), n3;
+      }
+      function a2(i3, e3) {
+        for (var _3, n3 = 0; n3 < e3.length; n3++) _3 = e3[n3], _3.enumerable = _3.enumerable || false, _3.configurable = true, "value" in _3 && (_3.writable = true), Object.defineProperty(i3, D2(_3.key), _3);
+      }
+      function s2(i3, e3, _3) {
+        return e3 && a2(i3.prototype, e3), _3 && a2(i3, _3), Object.defineProperty(i3, "prototype", { writable: false }), i3;
+      }
+      function u2(i3, _3) {
+        var e3 = "undefined" != typeof Symbol && i3[Symbol.iterator] || i3["@@iterator"];
+        if (!e3) {
+          if (Array.isArray(i3) || (e3 = B2(i3)) || _3 && i3 && "number" == typeof i3.length) {
+            e3 && (i3 = e3);
+            var l3 = 0, g3 = function() {
+            };
+            return { s: g3, n: function() {
+              return l3 >= i3.length ? { done: true } : { done: false, value: i3[l3++] };
+            }, e: function(e4) {
+              throw e4;
+            }, f: g3 };
+          }
+          throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+        }
+        var s3, d3 = true, h3 = false;
+        return { s: function() {
+          e3 = e3.call(i3);
+        }, n: function() {
+          var t3 = e3.next();
+          return d3 = t3.done, t3;
+        }, e: function(e4) {
+          h3 = true, s3 = e4;
+        }, f: function() {
+          try {
+            d3 || null == e3.return || e3.return();
+          } finally {
+            if (h3) throw s3;
+          }
+        } };
+      }
+      function r2(e3) {
+        return r2 = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function(e4) {
+          return e4.__proto__ || Object.getPrototypeOf(e4);
+        }, r2(e3);
+      }
+      function d2(i3, t3) {
+        if ("function" != typeof t3 && null !== t3) throw new TypeError("Super expression must either be null or a function");
+        i3.prototype = Object.create(t3 && t3.prototype, { constructor: { value: i3, writable: true, configurable: true } }), Object.defineProperty(i3, "prototype", { writable: false }), t3 && y2(i3, t3);
+      }
+      function h2(e3) {
+        try {
+          return -1 !== Function.toString.call(e3).indexOf("[native code]");
+        } catch (t3) {
+          return "function" == typeof e3;
+        }
+      }
+      function b2() {
+        try {
+          var e3 = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function() {
+          }));
+        } catch (e4) {
+        }
+        return (b2 = function() {
+          return !!e3;
+        })();
+      }
+      function m2(_3, g3) {
+        var l3 = null == _3 ? null : "undefined" != typeof Symbol && _3[Symbol.iterator] || _3["@@iterator"];
+        if (null != l3) {
+          var s3, d3, r3, h3, b3 = [], a3 = true, m3 = false;
+          try {
+            if (r3 = (l3 = l3.call(_3)).next, 0 === g3) {
+              if (Object(l3) !== l3) return;
+              a3 = false;
+            } else for (; !(a3 = (s3 = r3.call(l3)).done) && (b3.push(s3.value), b3.length !== g3); a3 = true) ;
+          } catch (e3) {
+            m3 = true, d3 = e3;
+          } finally {
+            try {
+              if (!a3 && null != l3.return && (h3 = l3.return(), Object(h3) !== h3)) return;
+            } finally {
+              if (m3) throw d3;
+            }
+          }
+          return b3;
+        }
+      }
+      function c2() {
+        throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+      }
+      function v2(i3, t3) {
+        if (t3 && ("object" == typeof t3 || "function" == typeof t3)) return t3;
+        if (void 0 !== t3) throw new TypeError("Derived constructors may only return object or undefined");
+        return n2(i3);
+      }
+      function y2(i3, t3) {
+        return y2 = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function(i4, t4) {
+          return i4.__proto__ = t4, i4;
+        }, y2(i3, t3);
+      }
+      function f2(t3, i3) {
+        return _2(t3) || m2(t3, i3) || B2(t3, i3) || c2();
+      }
+      function k2(_3, t3) {
+        if ("object" != typeof _3 || !_3) return _3;
+        var n3 = _3[Symbol.toPrimitive];
+        if (void 0 !== n3) {
+          var e3 = n3.call(_3, t3 || "default");
+          if ("object" != typeof e3) return e3;
+          throw new TypeError("@@toPrimitive must return a primitive value.");
+        }
+        return ("string" === t3 ? String : Number)(_3);
+      }
+      function D2(e3) {
+        var t3 = k2(e3, "string");
+        return "symbol" == typeof t3 ? t3 : t3 + "";
+      }
+      function p2(e3) {
+        "@babel/helpers - typeof";
+        return p2 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(e4) {
+          return typeof e4;
+        } : function(e4) {
+          return e4 && "function" == typeof Symbol && e4.constructor === Symbol && e4 !== Symbol.prototype ? "symbol" : typeof e4;
+        }, p2(e3);
+      }
+      function B2(e3, _3) {
+        if (e3) {
+          if ("string" == typeof e3) return i2(e3, _3);
+          var n3 = {}.toString.call(e3).slice(8, -1);
+          return "Object" === n3 && e3.constructor && (n3 = e3.constructor.name), "Map" === n3 || "Set" === n3 ? Array.from(e3) : "Arguments" === n3 || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n3) ? i2(e3, _3) : void 0;
+        }
+      }
+      function S2(e3) {
+        var i3 = "function" == typeof Map ? /* @__PURE__ */ new Map() : void 0;
+        return S2 = function(e4) {
+          function t3() {
+            return g2(e4, arguments, r2(this).constructor);
+          }
+          if (null === e4 || !h2(e4)) return e4;
+          if ("function" != typeof e4) throw new TypeError("Super expression must either be null or a function");
+          if (void 0 !== i3) {
+            if (i3.has(e4)) return i3.get(e4);
+            i3.set(e4, t3);
+          }
+          return t3.prototype = Object.create(e4.prototype, { constructor: { value: t3, enumerable: false, writable: true, configurable: true } }), y2(t3, e4);
+        }, S2(e3);
+      }
+      var C2 = (function(e3) {
+        var t3 = Math.abs, i3 = Math.max, _3 = Math.floor;
+        function g3(e4, t4) {
+          var i4;
+          if (l2(this, g3), i4 = o2(this, g3, [e4]), i4.sign = t4, Object.setPrototypeOf(i4, g3.prototype), e4 > g3.__kMaxLength) throw new RangeError("Maximum BigInt size exceeded");
+          return i4;
+        }
+        return d2(g3, e3), s2(g3, [{ key: "toDebugString", value: function e4() {
+          var t4, i4 = ["BigInt["], _4 = u2(this);
+          try {
+            for (_4.s(); !(t4 = _4.n()).done; ) {
+              var n3 = t4.value;
+              i4.push((n3 ? (n3 >>> 0).toString(16) : n3) + ", ");
+            }
+          } catch (e5) {
+            _4.e(e5);
+          } finally {
+            _4.f();
+          }
+          return i4.push("]"), i4.join("");
+        } }, { key: "toString", value: function e4() {
+          var t4 = 0 < arguments.length && void 0 !== arguments[0] ? arguments[0] : 10;
+          if (2 > t4 || 36 < t4) throw new RangeError("toString() radix argument must be between 2 and 36");
+          return 0 === this.length ? "0" : 0 == (t4 & t4 - 1) ? g3.__toStringBasePowerOfTwo(this, t4) : g3.__toStringGeneric(this, t4, false);
+        } }, { key: "valueOf", value: function e4() {
+          throw new Error("Convert JSBI instances to native numbers using `toNumber`.");
+        } }, { key: "__copy", value: function e4() {
+          for (var t4 = new g3(this.length, this.sign), _4 = 0; _4 < this.length; _4++) t4[_4] = this[_4];
+          return t4;
+        } }, { key: "__trim", value: function e4() {
+          for (var t4 = this.length, i4 = this[t4 - 1]; 0 === i4; ) t4--, i4 = this[t4 - 1], this.pop();
+          return 0 === t4 && (this.sign = false), this;
+        } }, { key: "__initializeDigits", value: function e4() {
+          for (var t4 = 0; t4 < this.length; t4++) this[t4] = 0;
+        } }, { key: "__clzmsd", value: function e4() {
+          return g3.__clz30(this.__digit(this.length - 1));
+        } }, { key: "__inplaceMultiplyAdd", value: function n3(e4, t4, _4) {
+          _4 > this.length && (_4 = this.length);
+          for (var o3 = 32767 & e4, l3 = e4 >>> 15, a3 = 0, s3 = t4, u3 = 0; u3 < _4; u3++) {
+            var r3 = this.__digit(u3), h3 = 32767 & r3, b3 = r3 >>> 15, m3 = g3.__imul(h3, o3), c3 = g3.__imul(h3, l3), v3 = g3.__imul(b3, o3), y3 = g3.__imul(b3, l3), f3 = s3 + m3 + a3;
+            a3 = f3 >>> 30, f3 &= 1073741823, f3 += ((32767 & c3) << 15) + ((32767 & v3) << 15), a3 += f3 >>> 30, s3 = y3 + (c3 >>> 15) + (v3 >>> 15), this.__setDigit(u3, 1073741823 & f3);
+          }
+          if (0 !== a3 || 0 !== s3) throw new Error("implementation bug");
+        } }, { key: "__inplaceAdd", value: function n3(e4, t4, _4) {
+          for (var o3, l3 = 0, g4 = 0; g4 < _4; g4++) o3 = this.__halfDigit(t4 + g4) + e4.__halfDigit(g4) + l3, l3 = o3 >>> 15, this.__setHalfDigit(t4 + g4, 32767 & o3);
+          return l3;
+        } }, { key: "__inplaceSub", value: function n3(e4, t4, _4) {
+          var o3 = _4 - 1 >>> 1, l3 = 0;
+          if (1 & t4) {
+            t4 >>= 1;
+            for (var g4 = this.__digit(t4), a3 = 32767 & g4, s3 = 0; s3 < o3; s3++) {
+              var u3 = e4.__digit(s3), r3 = (g4 >>> 15) - (32767 & u3) - l3;
+              l3 = 1 & r3 >>> 15, this.__setDigit(t4 + s3, (32767 & r3) << 15 | 32767 & a3), g4 = this.__digit(t4 + s3 + 1), a3 = (32767 & g4) - (u3 >>> 15) - l3, l3 = 1 & a3 >>> 15;
+            }
+            var d3 = e4.__digit(s3), h3 = (g4 >>> 15) - (32767 & d3) - l3;
+            l3 = 1 & h3 >>> 15, this.__setDigit(t4 + s3, (32767 & h3) << 15 | 32767 & a3);
+            var b3 = d3 >>> 15;
+            if (t4 + s3 + 1 >= this.length) throw new RangeError("out of bounds");
+            0 == (1 & _4) && (g4 = this.__digit(t4 + s3 + 1), a3 = (32767 & g4) - b3 - l3, l3 = 1 & a3 >>> 15, this.__setDigit(t4 + e4.length, 1073709056 & g4 | 32767 & a3));
+          } else {
+            t4 >>= 1;
+            for (var m3 = 0; m3 < e4.length - 1; m3++) {
+              var c3 = this.__digit(t4 + m3), v3 = e4.__digit(m3), y3 = (32767 & c3) - (32767 & v3) - l3;
+              l3 = 1 & y3 >>> 15;
+              var f3 = (c3 >>> 15) - (v3 >>> 15) - l3;
+              l3 = 1 & f3 >>> 15, this.__setDigit(t4 + m3, (32767 & f3) << 15 | 32767 & y3);
+            }
+            var k3 = this.__digit(t4 + m3), D3 = e4.__digit(m3), p3 = (32767 & k3) - (32767 & D3) - l3;
+            l3 = 1 & p3 >>> 15;
+            var B3 = 0;
+            0 == (1 & _4) && (B3 = (k3 >>> 15) - (D3 >>> 15) - l3, l3 = 1 & B3 >>> 15), this.__setDigit(t4 + m3, (32767 & B3) << 15 | 32767 & p3);
+          }
+          return l3;
+        } }, { key: "__inplaceRightShift", value: function t4(e4) {
+          if (0 !== e4) {
+            for (var _4, n3 = this.__digit(0) >>> e4, o3 = this.length - 1, l3 = 0; l3 < o3; l3++) _4 = this.__digit(l3 + 1), this.__setDigit(l3, 1073741823 & _4 << 30 - e4 | n3), n3 = _4 >>> e4;
+            this.__setDigit(o3, n3);
+          }
+        } }, { key: "__digit", value: function t4(e4) {
+          return this[e4];
+        } }, { key: "__unsignedDigit", value: function t4(e4) {
+          return this[e4] >>> 0;
+        } }, { key: "__setDigit", value: function i4(e4, t4) {
+          this[e4] = 0 | t4;
+        } }, { key: "__setDigitGrow", value: function i4(e4, t4) {
+          this[e4] = 0 | t4;
+        } }, { key: "__halfDigitLength", value: function e4() {
+          var t4 = this.length;
+          return 32767 >= this.__unsignedDigit(t4 - 1) ? 2 * t4 - 1 : 2 * t4;
+        } }, { key: "__halfDigit", value: function t4(e4) {
+          return 32767 & this[e4 >>> 1] >>> 15 * (1 & e4);
+        } }, { key: "__setHalfDigit", value: function i4(e4, t4) {
+          var _4 = e4 >>> 1, n3 = this.__digit(_4), o3 = 1 & e4 ? 32767 & n3 | t4 << 15 : 1073709056 & n3 | 32767 & t4;
+          this.__setDigit(_4, o3);
+        } }], [{ key: "BigInt", value: function t4(e4) {
+          var i4 = Number.isFinite;
+          if ("number" == typeof e4) {
+            if (0 === e4) return g3.__zero();
+            if (g3.__isOneDigitInt(e4)) return 0 > e4 ? g3.__oneDigit(-e4, true) : g3.__oneDigit(e4, false);
+            if (!i4(e4) || _3(e4) !== e4) throw new RangeError("The number " + e4 + " cannot be converted to BigInt because it is not an integer");
+            return g3.__fromDouble(e4);
+          }
+          if ("string" == typeof e4) {
+            var n3 = g3.__fromString(e4);
+            if (null === n3) throw new SyntaxError("Cannot convert " + e4 + " to a BigInt");
+            return n3;
+          }
+          if ("boolean" == typeof e4) return true === e4 ? g3.__oneDigit(1, false) : g3.__zero();
+          if ("object" === p2(e4)) {
+            if (e4.constructor === g3) return e4;
+            var o3 = g3.__toPrimitive(e4);
+            return g3.BigInt(o3);
+          }
+          throw new TypeError("Cannot convert " + e4 + " to a BigInt");
+        } }, { key: "toNumber", value: function t4(e4) {
+          var i4 = e4.length;
+          if (0 === i4) return 0;
+          if (1 === i4) {
+            var _4 = e4.__unsignedDigit(0);
+            return e4.sign ? -_4 : _4;
+          }
+          var n3 = e4.__digit(i4 - 1), o3 = g3.__clz30(n3), l3 = 30 * i4 - o3;
+          if (1024 < l3) return e4.sign ? -Infinity : 1 / 0;
+          var a3 = l3 - 1, s3 = n3, u3 = i4 - 1, r3 = o3 + 3, d3 = 32 === r3 ? 0 : s3 << r3;
+          d3 >>>= 12;
+          var h3 = r3 - 12, b3 = 12 <= r3 ? 0 : s3 << 20 + r3, m3 = 20 + r3;
+          for (0 < h3 && 0 < u3 && (u3--, s3 = e4.__digit(u3), d3 |= s3 >>> 30 - h3, b3 = s3 << h3 + 2, m3 = h3 + 2); 0 < m3 && 0 < u3; ) u3--, s3 = e4.__digit(u3), b3 |= 30 <= m3 ? s3 << m3 - 30 : s3 >>> 30 - m3, m3 -= 30;
+          var c3 = g3.__decideRounding(e4, m3, u3, s3);
+          if ((1 === c3 || 0 === c3 && 1 == (1 & b3)) && (b3 = b3 + 1 >>> 0, 0 === b3 && (d3++, 0 != d3 >>> 20 && (d3 = 0, a3++, 1023 < a3)))) return e4.sign ? -Infinity : 1 / 0;
+          var v3 = e4.sign ? -2147483648 : 0;
+          return a3 = a3 + 1023 << 20, g3.__kBitConversionInts[g3.__kBitConversionIntHigh] = v3 | a3 | d3, g3.__kBitConversionInts[g3.__kBitConversionIntLow] = b3, g3.__kBitConversionDouble[0];
+        } }, { key: "unaryMinus", value: function t4(e4) {
+          if (0 === e4.length) return e4;
+          var i4 = e4.__copy();
+          return i4.sign = !e4.sign, i4;
+        } }, { key: "bitwiseNot", value: function t4(e4) {
+          return e4.sign ? g3.__absoluteSubOne(e4).__trim() : g3.__absoluteAddOne(e4, true);
+        } }, { key: "exponentiate", value: function i4(e4, t4) {
+          if (t4.sign) throw new RangeError("Exponent must be positive");
+          if (0 === t4.length) return g3.__oneDigit(1, false);
+          if (0 === e4.length) return e4;
+          if (1 === e4.length && 1 === e4.__digit(0)) return e4.sign && 0 == (1 & t4.__digit(0)) ? g3.unaryMinus(e4) : e4;
+          if (1 < t4.length) throw new RangeError("BigInt too big");
+          var _4 = t4.__unsignedDigit(0);
+          if (1 === _4) return e4;
+          if (_4 >= g3.__kMaxLengthBits) throw new RangeError("BigInt too big");
+          if (1 === e4.length && 2 === e4.__digit(0)) {
+            var n3 = 1 + (0 | _4 / 30), o3 = e4.sign && 0 != (1 & _4), l3 = new g3(n3, o3);
+            l3.__initializeDigits();
+            var a3 = 1 << _4 % 30;
+            return l3.__setDigit(n3 - 1, a3), l3;
+          }
+          var s3 = null, u3 = e4;
+          for (0 != (1 & _4) && (s3 = e4), _4 >>= 1; 0 !== _4; _4 >>= 1) u3 = g3.multiply(u3, u3), 0 != (1 & _4) && (null === s3 ? s3 = u3 : s3 = g3.multiply(s3, u3));
+          return s3;
+        } }, { key: "multiply", value: function _4(e4, t4) {
+          if (0 === e4.length) return e4;
+          if (0 === t4.length) return t4;
+          var n3 = e4.length + t4.length;
+          30 <= e4.__clzmsd() + t4.__clzmsd() && n3--;
+          var o3 = new g3(n3, e4.sign !== t4.sign);
+          o3.__initializeDigits();
+          for (var l3 = 0; l3 < e4.length; l3++) g3.__multiplyAccumulate(t4, e4.__digit(l3), o3, l3);
+          return o3.__trim();
+        } }, { key: "divide", value: function i4(e4, t4) {
+          if (0 === t4.length) throw new RangeError("Division by zero");
+          if (0 > g3.__absoluteCompare(e4, t4)) return g3.__zero();
+          var _4, n3 = e4.sign !== t4.sign, o3 = t4.__unsignedDigit(0);
+          if (1 === t4.length && 32767 >= o3) {
+            if (1 === o3) return n3 === e4.sign ? e4 : g3.unaryMinus(e4);
+            _4 = g3.__absoluteDivSmall(e4, o3, null);
+          } else _4 = g3.__absoluteDivLarge(e4, t4, true, false);
+          return _4.sign = n3, _4.__trim();
+        } }, { key: "remainder", value: function i4(e4, t4) {
+          if (0 === t4.length) throw new RangeError("Division by zero");
+          if (0 > g3.__absoluteCompare(e4, t4)) return e4;
+          var _4 = t4.__unsignedDigit(0);
+          if (1 === t4.length && 32767 >= _4) {
+            if (1 === _4) return g3.__zero();
+            var n3 = g3.__absoluteModSmall(e4, _4);
+            return 0 === n3 ? g3.__zero() : g3.__oneDigit(n3, e4.sign);
+          }
+          var i5 = g3.__absoluteDivLarge(e4, t4, false, true);
+          return i5.sign = e4.sign, i5.__trim();
+        } }, { key: "add", value: function i4(e4, t4) {
+          var _4 = e4.sign;
+          return _4 === t4.sign ? g3.__absoluteAdd(e4, t4, _4) : 0 <= g3.__absoluteCompare(e4, t4) ? g3.__absoluteSub(e4, t4, _4) : g3.__absoluteSub(t4, e4, !_4);
+        } }, { key: "subtract", value: function i4(e4, t4) {
+          var _4 = e4.sign;
+          return _4 === t4.sign ? 0 <= g3.__absoluteCompare(e4, t4) ? g3.__absoluteSub(e4, t4, _4) : g3.__absoluteSub(t4, e4, !_4) : g3.__absoluteAdd(e4, t4, _4);
+        } }, { key: "leftShift", value: function i4(e4, t4) {
+          return 0 === t4.length || 0 === e4.length ? e4 : t4.sign ? g3.__rightShiftByAbsolute(e4, t4) : g3.__leftShiftByAbsolute(e4, t4);
+        } }, { key: "signedRightShift", value: function i4(e4, t4) {
+          return 0 === t4.length || 0 === e4.length ? e4 : t4.sign ? g3.__leftShiftByAbsolute(e4, t4) : g3.__rightShiftByAbsolute(e4, t4);
+        } }, { key: "unsignedRightShift", value: function e4() {
+          throw new TypeError("BigInts have no unsigned right shift; use >> instead");
+        } }, { key: "lessThan", value: function i4(e4, t4) {
+          return 0 > g3.__compareToBigInt(e4, t4);
+        } }, { key: "lessThanOrEqual", value: function i4(e4, t4) {
+          return 0 >= g3.__compareToBigInt(e4, t4);
+        } }, { key: "greaterThan", value: function i4(e4, t4) {
+          return 0 < g3.__compareToBigInt(e4, t4);
+        } }, { key: "greaterThanOrEqual", value: function i4(e4, t4) {
+          return 0 <= g3.__compareToBigInt(e4, t4);
+        } }, { key: "equal", value: function _4(e4, t4) {
+          if (e4.sign !== t4.sign) return false;
+          if (e4.length !== t4.length) return false;
+          for (var n3 = 0; n3 < e4.length; n3++) if (e4.__digit(n3) !== t4.__digit(n3)) return false;
+          return true;
+        } }, { key: "notEqual", value: function i4(e4, t4) {
+          return !g3.equal(e4, t4);
+        } }, { key: "bitwiseAnd", value: function _4(e4, t4) {
+          if (!e4.sign && !t4.sign) return g3.__absoluteAnd(e4, t4).__trim();
+          if (e4.sign && t4.sign) {
+            var n3 = i3(e4.length, t4.length) + 1, o3 = g3.__absoluteSubOne(e4, n3), l3 = g3.__absoluteSubOne(t4);
+            return o3 = g3.__absoluteOr(o3, l3, o3), g3.__absoluteAddOne(o3, true, o3).__trim();
+          }
+          if (e4.sign) {
+            var a3 = [t4, e4];
+            e4 = a3[0], t4 = a3[1];
+          }
+          return g3.__absoluteAndNot(e4, g3.__absoluteSubOne(t4)).__trim();
+        } }, { key: "bitwiseXor", value: function _4(e4, t4) {
+          if (!e4.sign && !t4.sign) return g3.__absoluteXor(e4, t4).__trim();
+          if (e4.sign && t4.sign) {
+            var n3 = i3(e4.length, t4.length), o3 = g3.__absoluteSubOne(e4, n3), l3 = g3.__absoluteSubOne(t4);
+            return g3.__absoluteXor(o3, l3, o3).__trim();
+          }
+          var a3 = i3(e4.length, t4.length) + 1;
+          if (e4.sign) {
+            var s3 = [t4, e4];
+            e4 = s3[0], t4 = s3[1];
+          }
+          var u3 = g3.__absoluteSubOne(t4, a3);
+          return u3 = g3.__absoluteXor(u3, e4, u3), g3.__absoluteAddOne(u3, true, u3).__trim();
+        } }, { key: "bitwiseOr", value: function _4(e4, t4) {
+          var n3 = i3(e4.length, t4.length);
+          if (!e4.sign && !t4.sign) return g3.__absoluteOr(e4, t4).__trim();
+          if (e4.sign && t4.sign) {
+            var o3 = g3.__absoluteSubOne(e4, n3), l3 = g3.__absoluteSubOne(t4);
+            return o3 = g3.__absoluteAnd(o3, l3, o3), g3.__absoluteAddOne(o3, true, o3).__trim();
+          }
+          if (e4.sign) {
+            var a3 = [t4, e4];
+            e4 = a3[0], t4 = a3[1];
+          }
+          var s3 = g3.__absoluteSubOne(t4, n3);
+          return s3 = g3.__absoluteAndNot(s3, e4, s3), g3.__absoluteAddOne(s3, true, s3).__trim();
+        } }, { key: "asIntN", value: function o3(e4, t4) {
+          if (0 === t4.length) return t4;
+          if (e4 = _3(e4), 0 > e4) throw new RangeError("Invalid value: not (convertible to) a safe integer");
+          if (0 === e4) return g3.__zero();
+          if (e4 >= g3.__kMaxLengthBits) return t4;
+          var l3 = 0 | (e4 + 29) / 30;
+          if (t4.length < l3) return t4;
+          var a3 = t4.__unsignedDigit(l3 - 1), s3 = 1 << (e4 - 1) % 30;
+          if (t4.length === l3 && a3 < s3) return t4;
+          var u3 = (a3 & s3) === s3;
+          if (!u3) return g3.__truncateToNBits(e4, t4);
+          if (!t4.sign) return g3.__truncateAndSubFromPowerOfTwo(e4, t4, true);
+          if (0 == (a3 & s3 - 1)) {
+            for (var r3 = l3 - 2; 0 <= r3; r3--) if (0 !== t4.__digit(r3)) return g3.__truncateAndSubFromPowerOfTwo(e4, t4, false);
+            return t4.length === l3 && a3 === s3 ? t4 : g3.__truncateToNBits(e4, t4);
+          }
+          return g3.__truncateAndSubFromPowerOfTwo(e4, t4, false);
+        } }, { key: "asUintN", value: function i4(e4, t4) {
+          if (0 === t4.length) return t4;
+          if (e4 = _3(e4), 0 > e4) throw new RangeError("Invalid value: not (convertible to) a safe integer");
+          if (0 === e4) return g3.__zero();
+          if (t4.sign) {
+            if (e4 > g3.__kMaxLengthBits) throw new RangeError("BigInt too big");
+            return g3.__truncateAndSubFromPowerOfTwo(e4, t4, false);
+          }
+          if (e4 >= g3.__kMaxLengthBits) return t4;
+          var o3 = 0 | (e4 + 29) / 30;
+          if (t4.length < o3) return t4;
+          var l3 = e4 % 30;
+          if (t4.length == o3) {
+            if (0 === l3) return t4;
+            var a3 = t4.__digit(o3 - 1);
+            if (0 == a3 >>> l3) return t4;
+          }
+          return g3.__truncateToNBits(e4, t4);
+        } }, { key: "ADD", value: function i4(e4, t4) {
+          if (e4 = g3.__toPrimitive(e4), t4 = g3.__toPrimitive(t4), "string" == typeof e4) return "string" != typeof t4 && (t4 = t4.toString()), e4 + t4;
+          if ("string" == typeof t4) return e4.toString() + t4;
+          if (e4 = g3.__toNumeric(e4), t4 = g3.__toNumeric(t4), g3.__isBigInt(e4) && g3.__isBigInt(t4)) return g3.add(e4, t4);
+          if ("number" == typeof e4 && "number" == typeof t4) return e4 + t4;
+          throw new TypeError("Cannot mix BigInt and other types, use explicit conversions");
+        } }, { key: "LT", value: function i4(e4, t4) {
+          return g3.__compare(e4, t4, 0);
+        } }, { key: "LE", value: function i4(e4, t4) {
+          return g3.__compare(e4, t4, 1);
+        } }, { key: "GT", value: function i4(e4, t4) {
+          return g3.__compare(e4, t4, 2);
+        } }, { key: "GE", value: function i4(e4, t4) {
+          return g3.__compare(e4, t4, 3);
+        } }, { key: "EQ", value: function i4(e4, t4) {
+          for (; true; ) {
+            if (g3.__isBigInt(e4)) return g3.__isBigInt(t4) ? g3.equal(e4, t4) : g3.EQ(t4, e4);
+            if ("number" == typeof e4) {
+              if (g3.__isBigInt(t4)) return g3.__equalToNumber(t4, e4);
+              if ("object" !== p2(t4)) return e4 == t4;
+              t4 = g3.__toPrimitive(t4);
+            } else if ("string" == typeof e4) {
+              if (g3.__isBigInt(t4)) return e4 = g3.__fromString(e4), null !== e4 && g3.equal(e4, t4);
+              if ("object" !== p2(t4)) return e4 == t4;
+              t4 = g3.__toPrimitive(t4);
+            } else if ("boolean" == typeof e4) {
+              if (g3.__isBigInt(t4)) return g3.__equalToNumber(t4, +e4);
+              if ("object" !== p2(t4)) return e4 == t4;
+              t4 = g3.__toPrimitive(t4);
+            } else if ("symbol" === p2(e4)) {
+              if (g3.__isBigInt(t4)) return false;
+              if ("object" !== p2(t4)) return e4 == t4;
+              t4 = g3.__toPrimitive(t4);
+            } else if ("object" === p2(e4)) {
+              if ("object" === p2(t4) && t4.constructor !== g3) return e4 == t4;
+              e4 = g3.__toPrimitive(e4);
+            } else return e4 == t4;
+          }
+        } }, { key: "NE", value: function i4(e4, t4) {
+          return !g3.EQ(e4, t4);
+        } }, { key: "DataViewGetBigInt64", value: function i4(e4, t4) {
+          var _4 = !!(2 < arguments.length && void 0 !== arguments[2]) && arguments[2];
+          return g3.asIntN(64, g3.DataViewGetBigUint64(e4, t4, _4));
+        } }, { key: "DataViewGetBigUint64", value: function i4(e4, t4) {
+          var _4 = !!(2 < arguments.length && void 0 !== arguments[2]) && arguments[2], n3 = _4 ? [4, 0] : [0, 4], o3 = f2(n3, 2), a3 = o3[0], s3 = o3[1], l3 = e4.getUint32(t4 + a3, _4), u3 = e4.getUint32(t4 + s3, _4), r3 = new g3(3, false);
+          return r3.__setDigit(0, 1073741823 & u3), r3.__setDigit(1, (268435455 & l3) << 2 | u3 >>> 30), r3.__setDigit(2, l3 >>> 28), r3.__trim();
+        } }, { key: "DataViewSetBigInt64", value: function _4(e4, t4, i4) {
+          var n3 = !!(3 < arguments.length && void 0 !== arguments[3]) && arguments[3];
+          g3.DataViewSetBigUint64(e4, t4, i4, n3);
+        } }, { key: "DataViewSetBigUint64", value: function _4(e4, t4, i4) {
+          var n3 = !!(3 < arguments.length && void 0 !== arguments[3]) && arguments[3];
+          i4 = g3.asUintN(64, i4);
+          var o3 = 0, a3 = 0;
+          if (0 < i4.length && (a3 = i4.__digit(0), 1 < i4.length)) {
+            var s3 = i4.__digit(1);
+            a3 |= s3 << 30, o3 = s3 >>> 2, 2 < i4.length && (o3 |= i4.__digit(2) << 28);
+          }
+          var u3 = n3 ? [4, 0] : [0, 4], r3 = f2(u3, 2), d3 = r3[0], h3 = r3[1];
+          e4.setUint32(t4 + d3, o3, n3), e4.setUint32(t4 + h3, a3, n3);
+        } }, { key: "__zero", value: function e4() {
+          return new g3(0, false);
+        } }, { key: "__oneDigit", value: function i4(e4, t4) {
+          var _4 = new g3(1, t4);
+          return _4.__setDigit(0, e4), _4;
+        } }, { key: "__decideRounding", value: function n3(e4, t4, i4, _4) {
+          if (0 < t4) return -1;
+          var o3;
+          if (0 > t4) o3 = -t4 - 1;
+          else {
+            if (0 === i4) return -1;
+            i4--, _4 = e4.__digit(i4), o3 = 29;
+          }
+          var l3 = 1 << o3;
+          if (0 == (_4 & l3)) return -1;
+          if (l3 -= 1, 0 != (_4 & l3)) return 1;
+          for (; 0 < i4; ) if (i4--, 0 !== e4.__digit(i4)) return 1;
+          return 0;
+        } }, { key: "__fromDouble", value: function t4(e4) {
+          var i4 = 0 > e4;
+          g3.__kBitConversionDouble[0] = e4;
+          var _4, n3 = 2047 & g3.__kBitConversionInts[g3.__kBitConversionIntHigh] >>> 20, o3 = n3 - 1023, l3 = (0 | o3 / 30) + 1, a3 = new g3(l3, i4), s3 = 1048576, u3 = 1048575 & g3.__kBitConversionInts[g3.__kBitConversionIntHigh] | s3, r3 = g3.__kBitConversionInts[g3.__kBitConversionIntLow], d3 = 20, h3 = o3 % 30, b3 = 0;
+          if (h3 < d3) {
+            var m3 = d3 - h3;
+            b3 = m3 + 32, _4 = u3 >>> m3, u3 = u3 << 32 - m3 | r3 >>> m3, r3 <<= 32 - m3;
+          } else if (h3 === d3) b3 = 32, _4 = u3, u3 = r3, r3 = 0;
+          else {
+            var c3 = h3 - d3;
+            b3 = 32 - c3, _4 = u3 << c3 | r3 >>> 32 - c3, u3 = r3 << c3, r3 = 0;
+          }
+          a3.__setDigit(l3 - 1, _4);
+          for (var v3 = l3 - 2; 0 <= v3; v3--) 0 < b3 ? (b3 -= 30, _4 = u3 >>> 2, u3 = u3 << 30 | r3 >>> 2, r3 <<= 30) : _4 = 0, a3.__setDigit(v3, _4);
+          return a3.__trim();
+        } }, { key: "__isWhitespace", value: function t4(e4) {
+          return !!(13 >= e4 && 9 <= e4) || (159 >= e4 ? 32 == e4 : 131071 >= e4 ? 160 == e4 || 5760 == e4 : 196607 >= e4 ? (e4 &= 131071, 10 >= e4 || 40 == e4 || 41 == e4 || 47 == e4 || 95 == e4 || 4096 == e4) : 65279 == e4);
+        } }, { key: "__fromString", value: function t4(e4) {
+          var i4 = 1 < arguments.length && void 0 !== arguments[1] ? arguments[1] : 0, _4 = 0, n3 = e4.length, o3 = 0;
+          if (o3 === n3) return g3.__zero();
+          for (var l3 = e4.charCodeAt(o3); g3.__isWhitespace(l3); ) {
+            if (++o3 === n3) return g3.__zero();
+            l3 = e4.charCodeAt(o3);
+          }
+          if (43 === l3) {
+            if (++o3 === n3) return null;
+            l3 = e4.charCodeAt(o3), _4 = 1;
+          } else if (45 === l3) {
+            if (++o3 === n3) return null;
+            l3 = e4.charCodeAt(o3), _4 = -1;
+          }
+          if (0 === i4) {
+            if (i4 = 10, 48 === l3) {
+              if (++o3 === n3) return g3.__zero();
+              if (l3 = e4.charCodeAt(o3), 88 === l3 || 120 === l3) {
+                if (i4 = 16, ++o3 === n3) return null;
+                l3 = e4.charCodeAt(o3);
+              } else if (79 === l3 || 111 === l3) {
+                if (i4 = 8, ++o3 === n3) return null;
+                l3 = e4.charCodeAt(o3);
+              } else if (66 === l3 || 98 === l3) {
+                if (i4 = 2, ++o3 === n3) return null;
+                l3 = e4.charCodeAt(o3);
+              }
+            }
+          } else if (16 === i4 && 48 === l3) {
+            if (++o3 === n3) return g3.__zero();
+            if (l3 = e4.charCodeAt(o3), 88 === l3 || 120 === l3) {
+              if (++o3 === n3) return null;
+              l3 = e4.charCodeAt(o3);
+            }
+          }
+          if (0 !== _4 && 10 !== i4) return null;
+          for (; 48 === l3; ) {
+            if (++o3 === n3) return g3.__zero();
+            l3 = e4.charCodeAt(o3);
+          }
+          var a3 = n3 - o3, s3 = g3.__kMaxBitsPerChar[i4], u3 = g3.__kBitsPerCharTableMultiplier - 1;
+          if (a3 > 1073741824 / s3) return null;
+          var r3 = s3 * a3 + u3 >>> g3.__kBitsPerCharTableShift, h3 = 0 | (r3 + 29) / 30, b3 = new g3(h3, false), c3 = 10 > i4 ? i4 : 10, v3 = 10 < i4 ? i4 - 10 : 0;
+          if (0 == (i4 & i4 - 1)) {
+            s3 >>= g3.__kBitsPerCharTableShift;
+            var y3 = [], f3 = [], k3 = false;
+            do {
+              for (var D3, p3 = 0, B3 = 0; true; ) {
+                if (D3 = void 0, l3 - 48 >>> 0 < c3) D3 = l3 - 48;
+                else if ((32 | l3) - 97 >>> 0 < v3) D3 = (32 | l3) - 87;
+                else {
+                  k3 = true;
+                  break;
+                }
+                if (B3 += s3, p3 = p3 << s3 | D3, ++o3 === n3) {
+                  k3 = true;
+                  break;
+                }
+                if (l3 = e4.charCodeAt(o3), 30 < B3 + s3) break;
+              }
+              y3.push(p3), f3.push(B3);
+            } while (!k3);
+            g3.__fillFromParts(b3, y3, f3);
+          } else {
+            b3.__initializeDigits();
+            var S3 = false, C3 = 0;
+            do {
+              for (var I2, A2 = 0, T2 = 1; true; ) {
+                if (I2 = void 0, l3 - 48 >>> 0 < c3) I2 = l3 - 48;
+                else if ((32 | l3) - 97 >>> 0 < v3) I2 = (32 | l3) - 87;
+                else {
+                  S3 = true;
+                  break;
+                }
+                var P2 = T2 * i4;
+                if (1073741823 < P2) break;
+                if (T2 = P2, A2 = A2 * i4 + I2, C3++, ++o3 === n3) {
+                  S3 = true;
+                  break;
+                }
+                l3 = e4.charCodeAt(o3);
+              }
+              u3 = 30 * g3.__kBitsPerCharTableMultiplier - 1;
+              var O2 = 0 | (s3 * C3 + u3 >>> g3.__kBitsPerCharTableShift) / 30;
+              b3.__inplaceMultiplyAdd(T2, A2, O2);
+            } while (!S3);
+          }
+          if (o3 !== n3) {
+            if (!g3.__isWhitespace(l3)) return null;
+            for (o3++; o3 < n3; o3++) if (l3 = e4.charCodeAt(o3), !g3.__isWhitespace(l3)) return null;
+          }
+          return b3.sign = -1 === _4, b3.__trim();
+        } }, { key: "__fillFromParts", value: function n3(e4, t4, _4) {
+          for (var o3 = 0, l3 = 0, g4 = 0, a3 = t4.length - 1; 0 <= a3; a3--) {
+            var s3 = t4[a3], u3 = _4[a3];
+            l3 |= s3 << g4, g4 += u3, 30 === g4 ? (e4.__setDigit(o3++, l3), g4 = 0, l3 = 0) : 30 < g4 && (e4.__setDigit(o3++, 1073741823 & l3), g4 -= 30, l3 = s3 >>> u3 - g4);
+          }
+          if (0 !== l3) {
+            if (o3 >= e4.length) throw new Error("implementation bug");
+            e4.__setDigit(o3++, l3);
+          }
+          for (; o3 < e4.length; o3++) e4.__setDigit(o3, 0);
+        } }, { key: "__toStringBasePowerOfTwo", value: function _4(e4, t4) {
+          var n3 = e4.length, o3 = t4 - 1;
+          o3 = (85 & o3 >>> 1) + (85 & o3), o3 = (51 & o3 >>> 2) + (51 & o3), o3 = (15 & o3 >>> 4) + (15 & o3);
+          var l3 = o3, a3 = t4 - 1, s3 = e4.__digit(n3 - 1), u3 = g3.__clz30(s3), r3 = 30 * n3 - u3, d3 = 0 | (r3 + l3 - 1) / l3;
+          if (e4.sign && d3++, 268435456 < d3) throw new Error("string too long");
+          for (var h3 = Array(d3), b3 = d3 - 1, m3 = 0, c3 = 0, v3 = 0; v3 < n3 - 1; v3++) {
+            var y3 = e4.__digit(v3), f3 = (m3 | y3 << c3) & a3;
+            h3[b3--] = g3.__kConversionChars[f3];
+            var k3 = l3 - c3;
+            for (m3 = y3 >>> k3, c3 = 30 - k3; c3 >= l3; ) h3[b3--] = g3.__kConversionChars[m3 & a3], m3 >>>= l3, c3 -= l3;
+          }
+          var D3 = (m3 | s3 << c3) & a3;
+          for (h3[b3--] = g3.__kConversionChars[D3], m3 = s3 >>> l3 - c3; 0 !== m3; ) h3[b3--] = g3.__kConversionChars[m3 & a3], m3 >>>= l3;
+          if (e4.sign && (h3[b3--] = "-"), -1 !== b3) throw new Error("implementation bug");
+          return h3.join("");
+        } }, { key: "__toStringGeneric", value: function n3(e4, t4, _4) {
+          var o3 = e4.length;
+          if (0 === o3) return "";
+          if (1 === o3) {
+            var l3 = e4.__unsignedDigit(0).toString(t4);
+            return false === _4 && e4.sign && (l3 = "-" + l3), l3;
+          }
+          var a3 = 30 * o3 - g3.__clz30(e4.__digit(o3 - 1)), s3 = g3.__kMaxBitsPerChar[t4], u3 = s3 - 1, r3 = a3 * g3.__kBitsPerCharTableMultiplier;
+          r3 += u3 - 1, r3 = 0 | r3 / u3;
+          var d3, h3, b3 = r3 + 1 >> 1, m3 = g3.exponentiate(g3.__oneDigit(t4, false), g3.__oneDigit(b3, false)), c3 = m3.__unsignedDigit(0);
+          if (1 === m3.length && 32767 >= c3) {
+            d3 = new g3(e4.length, false), d3.__initializeDigits();
+            for (var v3, y3 = 0, f3 = 2 * e4.length - 1; 0 <= f3; f3--) v3 = y3 << 15 | e4.__halfDigit(f3), d3.__setHalfDigit(f3, 0 | v3 / c3), y3 = 0 | v3 % c3;
+            h3 = y3.toString(t4);
+          } else {
+            var k3 = g3.__absoluteDivLarge(e4, m3, true, true);
+            d3 = k3.quotient;
+            var D3 = k3.remainder.__trim();
+            h3 = g3.__toStringGeneric(D3, t4, true);
+          }
+          d3.__trim();
+          for (var p3 = g3.__toStringGeneric(d3, t4, true); h3.length < b3; ) h3 = "0" + h3;
+          return false === _4 && e4.sign && (p3 = "-" + p3), p3 + h3;
+        } }, { key: "__unequalSign", value: function t4(e4) {
+          return e4 ? -1 : 1;
+        } }, { key: "__absoluteGreater", value: function t4(e4) {
+          return e4 ? -1 : 1;
+        } }, { key: "__absoluteLess", value: function t4(e4) {
+          return e4 ? 1 : -1;
+        } }, { key: "__compareToBigInt", value: function i4(e4, t4) {
+          var _4 = e4.sign;
+          if (_4 !== t4.sign) return g3.__unequalSign(_4);
+          var n3 = g3.__absoluteCompare(e4, t4);
+          return 0 < n3 ? g3.__absoluteGreater(_4) : 0 > n3 ? g3.__absoluteLess(_4) : 0;
+        } }, { key: "__compareToNumber", value: function _4(e4, i4) {
+          if (g3.__isOneDigitInt(i4)) {
+            var n3 = e4.sign, o3 = 0 > i4;
+            if (n3 !== o3) return g3.__unequalSign(n3);
+            if (0 === e4.length) {
+              if (o3) throw new Error("implementation bug");
+              return 0 === i4 ? 0 : -1;
+            }
+            if (1 < e4.length) return g3.__absoluteGreater(n3);
+            var l3 = t3(i4), a3 = e4.__unsignedDigit(0);
+            return a3 > l3 ? g3.__absoluteGreater(n3) : a3 < l3 ? g3.__absoluteLess(n3) : 0;
+          }
+          return g3.__compareToDouble(e4, i4);
+        } }, { key: "__compareToDouble", value: function i4(e4, t4) {
+          if (t4 !== t4) return t4;
+          if (t4 === 1 / 0) return -1;
+          if (t4 === -Infinity) return 1;
+          var _4 = e4.sign, n3 = 0 > t4;
+          if (_4 !== n3) return g3.__unequalSign(_4);
+          if (0 === t4) throw new Error("implementation bug: should be handled elsewhere");
+          if (0 === e4.length) return -1;
+          g3.__kBitConversionDouble[0] = t4;
+          var o3 = 2047 & g3.__kBitConversionInts[g3.__kBitConversionIntHigh] >>> 20;
+          if (2047 == o3) throw new Error("implementation bug: handled elsewhere");
+          var l3 = o3 - 1023;
+          if (0 > l3) return g3.__absoluteGreater(_4);
+          var a3 = e4.length, s3 = e4.__digit(a3 - 1), u3 = g3.__clz30(s3), r3 = 30 * a3 - u3, d3 = l3 + 1;
+          if (r3 < d3) return g3.__absoluteLess(_4);
+          if (r3 > d3) return g3.__absoluteGreater(_4);
+          var h3 = 1048576, b3 = 1048576 | 1048575 & g3.__kBitConversionInts[g3.__kBitConversionIntHigh], m3 = g3.__kBitConversionInts[g3.__kBitConversionIntLow], c3 = 20, v3 = 29 - u3;
+          if (v3 !== (0 | (r3 - 1) % 30)) throw new Error("implementation bug");
+          var y3, f3 = 0;
+          if (v3 < c3) {
+            var k3 = c3 - v3;
+            f3 = k3 + 32, y3 = b3 >>> k3, b3 = b3 << 32 - k3 | m3 >>> k3, m3 <<= 32 - k3;
+          } else if (v3 === c3) f3 = 32, y3 = b3, b3 = m3, m3 = 0;
+          else {
+            var D3 = v3 - c3;
+            f3 = 32 - D3, y3 = b3 << D3 | m3 >>> 32 - D3, b3 = m3 << D3, m3 = 0;
+          }
+          if (s3 >>>= 0, y3 >>>= 0, s3 > y3) return g3.__absoluteGreater(_4);
+          if (s3 < y3) return g3.__absoluteLess(_4);
+          for (var p3 = a3 - 2; 0 <= p3; p3--) {
+            0 < f3 ? (f3 -= 30, y3 = b3 >>> 2, b3 = b3 << 30 | m3 >>> 2, m3 <<= 30) : y3 = 0;
+            var B3 = e4.__unsignedDigit(p3);
+            if (B3 > y3) return g3.__absoluteGreater(_4);
+            if (B3 < y3) return g3.__absoluteLess(_4);
+          }
+          if (0 !== b3 || 0 !== m3) {
+            if (0 === f3) throw new Error("implementation bug");
+            return g3.__absoluteLess(_4);
+          }
+          return 0;
+        } }, { key: "__equalToNumber", value: function _4(e4, i4) {
+          return g3.__isOneDigitInt(i4) ? 0 === i4 ? 0 === e4.length : 1 === e4.length && e4.sign === 0 > i4 && e4.__unsignedDigit(0) === t3(i4) : 0 === g3.__compareToDouble(e4, i4);
+        } }, { key: "__comparisonResultToBool", value: function i4(e4, t4) {
+          return 0 === t4 ? 0 > e4 : 1 === t4 ? 0 >= e4 : 2 === t4 ? 0 < e4 : 3 === t4 ? 0 <= e4 : void 0;
+        } }, { key: "__compare", value: function _4(e4, t4, i4) {
+          if (e4 = g3.__toPrimitive(e4), t4 = g3.__toPrimitive(t4), "string" == typeof e4 && "string" == typeof t4) switch (i4) {
+            case 0:
+              return e4 < t4;
+            case 1:
+              return e4 <= t4;
+            case 2:
+              return e4 > t4;
+            case 3:
+              return e4 >= t4;
+          }
+          if (g3.__isBigInt(e4) && "string" == typeof t4) return t4 = g3.__fromString(t4), null !== t4 && g3.__comparisonResultToBool(g3.__compareToBigInt(e4, t4), i4);
+          if ("string" == typeof e4 && g3.__isBigInt(t4)) return e4 = g3.__fromString(e4), null !== e4 && g3.__comparisonResultToBool(g3.__compareToBigInt(e4, t4), i4);
+          if (e4 = g3.__toNumeric(e4), t4 = g3.__toNumeric(t4), g3.__isBigInt(e4)) {
+            if (g3.__isBigInt(t4)) return g3.__comparisonResultToBool(g3.__compareToBigInt(e4, t4), i4);
+            if ("number" != typeof t4) throw new Error("implementation bug");
+            return g3.__comparisonResultToBool(g3.__compareToNumber(e4, t4), i4);
+          }
+          if ("number" != typeof e4) throw new Error("implementation bug");
+          if (g3.__isBigInt(t4)) return g3.__comparisonResultToBool(g3.__compareToNumber(t4, e4), 2 ^ i4);
+          if ("number" != typeof t4) throw new Error("implementation bug");
+          return 0 === i4 ? e4 < t4 : 1 === i4 ? e4 <= t4 : 2 === i4 ? e4 > t4 : 3 === i4 ? e4 >= t4 : void 0;
+        } }, { key: "__absoluteAdd", value: function n3(e4, t4, _4) {
+          if (e4.length < t4.length) return g3.__absoluteAdd(t4, e4, _4);
+          if (0 === e4.length) return e4;
+          if (0 === t4.length) return e4.sign === _4 ? e4 : g3.unaryMinus(e4);
+          var o3 = e4.length;
+          (0 === e4.__clzmsd() || t4.length === e4.length && 0 === t4.__clzmsd()) && o3++;
+          for (var l3, a3 = new g3(o3, _4), s3 = 0, u3 = 0; u3 < t4.length; u3++) l3 = e4.__digit(u3) + t4.__digit(u3) + s3, s3 = l3 >>> 30, a3.__setDigit(u3, 1073741823 & l3);
+          for (; u3 < e4.length; u3++) {
+            var d3 = e4.__digit(u3) + s3;
+            s3 = d3 >>> 30, a3.__setDigit(u3, 1073741823 & d3);
+          }
+          return u3 < a3.length && a3.__setDigit(u3, s3), a3.__trim();
+        } }, { key: "__absoluteSub", value: function n3(e4, t4, _4) {
+          if (0 === e4.length) return e4;
+          if (0 === t4.length) return e4.sign === _4 ? e4 : g3.unaryMinus(e4);
+          for (var o3, l3 = new g3(e4.length, _4), a3 = 0, s3 = 0; s3 < t4.length; s3++) o3 = e4.__digit(s3) - t4.__digit(s3) - a3, a3 = 1 & o3 >>> 30, l3.__setDigit(s3, 1073741823 & o3);
+          for (; s3 < e4.length; s3++) {
+            var u3 = e4.__digit(s3) - a3;
+            a3 = 1 & u3 >>> 30, l3.__setDigit(s3, 1073741823 & u3);
+          }
+          return l3.__trim();
+        } }, { key: "__absoluteAddOne", value: function _4(e4, t4) {
+          var n3 = 2 < arguments.length && void 0 !== arguments[2] ? arguments[2] : null, o3 = e4.length;
+          null === n3 ? n3 = new g3(o3, t4) : n3.sign = t4;
+          for (var l3, a3 = 1, s3 = 0; s3 < o3; s3++) l3 = e4.__digit(s3) + a3, a3 = l3 >>> 30, n3.__setDigit(s3, 1073741823 & l3);
+          return 0 !== a3 && n3.__setDigitGrow(o3, 1), n3;
+        } }, { key: "__absoluteSubOne", value: function _4(e4, t4) {
+          var n3 = e4.length;
+          t4 = t4 || n3;
+          for (var o3, l3 = new g3(t4, false), a3 = 1, s3 = 0; s3 < n3; s3++) o3 = e4.__digit(s3) - a3, a3 = 1 & o3 >>> 30, l3.__setDigit(s3, 1073741823 & o3);
+          if (0 !== a3) throw new Error("implementation bug");
+          for (var u3 = n3; u3 < t4; u3++) l3.__setDigit(u3, 0);
+          return l3;
+        } }, { key: "__absoluteAnd", value: function _4(e4, t4) {
+          var n3 = 2 < arguments.length && void 0 !== arguments[2] ? arguments[2] : null, o3 = e4.length, l3 = t4.length, a3 = l3;
+          if (o3 < l3) {
+            a3 = o3;
+            var s3 = e4, u3 = o3;
+            e4 = t4, o3 = l3, t4 = s3, l3 = u3;
+          }
+          var r3 = a3;
+          null === n3 ? n3 = new g3(r3, false) : r3 = n3.length;
+          for (var d3 = 0; d3 < a3; d3++) n3.__setDigit(d3, e4.__digit(d3) & t4.__digit(d3));
+          for (; d3 < r3; d3++) n3.__setDigit(d3, 0);
+          return n3;
+        } }, { key: "__absoluteAndNot", value: function _4(e4, t4) {
+          var n3 = 2 < arguments.length && void 0 !== arguments[2] ? arguments[2] : null, o3 = e4.length, l3 = t4.length, a3 = l3;
+          o3 < l3 && (a3 = o3);
+          var s3 = o3;
+          null === n3 ? n3 = new g3(s3, false) : s3 = n3.length;
+          for (var u3 = 0; u3 < a3; u3++) n3.__setDigit(u3, e4.__digit(u3) & ~t4.__digit(u3));
+          for (; u3 < o3; u3++) n3.__setDigit(u3, e4.__digit(u3));
+          for (; u3 < s3; u3++) n3.__setDigit(u3, 0);
+          return n3;
+        } }, { key: "__absoluteOr", value: function _4(e4, t4) {
+          var n3 = 2 < arguments.length && void 0 !== arguments[2] ? arguments[2] : null, o3 = e4.length, l3 = t4.length, a3 = l3;
+          if (o3 < l3) {
+            a3 = o3;
+            var s3 = e4, u3 = o3;
+            e4 = t4, o3 = l3, t4 = s3, l3 = u3;
+          }
+          var r3 = o3;
+          null === n3 ? n3 = new g3(r3, false) : r3 = n3.length;
+          for (var d3 = 0; d3 < a3; d3++) n3.__setDigit(d3, e4.__digit(d3) | t4.__digit(d3));
+          for (; d3 < o3; d3++) n3.__setDigit(d3, e4.__digit(d3));
+          for (; d3 < r3; d3++) n3.__setDigit(d3, 0);
+          return n3;
+        } }, { key: "__absoluteXor", value: function _4(e4, t4) {
+          var n3 = 2 < arguments.length && void 0 !== arguments[2] ? arguments[2] : null, o3 = e4.length, l3 = t4.length, a3 = l3;
+          if (o3 < l3) {
+            a3 = o3;
+            var s3 = e4, u3 = o3;
+            e4 = t4, o3 = l3, t4 = s3, l3 = u3;
+          }
+          var r3 = o3;
+          null === n3 ? n3 = new g3(r3, false) : r3 = n3.length;
+          for (var d3 = 0; d3 < a3; d3++) n3.__setDigit(d3, e4.__digit(d3) ^ t4.__digit(d3));
+          for (; d3 < o3; d3++) n3.__setDigit(d3, e4.__digit(d3));
+          for (; d3 < r3; d3++) n3.__setDigit(d3, 0);
+          return n3;
+        } }, { key: "__absoluteCompare", value: function _4(e4, t4) {
+          var n3 = e4.length - t4.length;
+          if (0 != n3) return n3;
+          for (var o3 = e4.length - 1; 0 <= o3 && e4.__digit(o3) === t4.__digit(o3); ) o3--;
+          return 0 > o3 ? 0 : e4.__unsignedDigit(o3) > t4.__unsignedDigit(o3) ? 1 : -1;
+        } }, { key: "__multiplyAccumulate", value: function o3(e4, t4, _4, n3) {
+          if (0 !== t4) {
+            for (var l3 = 32767 & t4, a3 = t4 >>> 15, s3 = 0, u3 = 0, r3 = 0; r3 < e4.length; r3++, n3++) {
+              var d3 = _4.__digit(n3), h3 = e4.__digit(r3), b3 = 32767 & h3, m3 = h3 >>> 15, c3 = g3.__imul(b3, l3), v3 = g3.__imul(b3, a3), y3 = g3.__imul(m3, l3), f3 = g3.__imul(m3, a3);
+              d3 += u3 + c3 + s3, s3 = d3 >>> 30, d3 &= 1073741823, d3 += ((32767 & v3) << 15) + ((32767 & y3) << 15), s3 += d3 >>> 30, u3 = f3 + (v3 >>> 15) + (y3 >>> 15), _4.__setDigit(n3, 1073741823 & d3);
+            }
+            for (; 0 !== s3 || 0 !== u3; n3++) {
+              var k3 = _4.__digit(n3);
+              k3 += s3 + u3, u3 = 0, s3 = k3 >>> 30, _4.__setDigit(n3, 1073741823 & k3);
+            }
+          }
+        } }, { key: "__internalMultiplyAdd", value: function a3(e4, t4, _4, o3, l3) {
+          for (var s3 = _4, u3 = 0, d3 = 0; d3 < o3; d3++) {
+            var h3 = e4.__digit(d3), b3 = g3.__imul(32767 & h3, t4), m3 = g3.__imul(h3 >>> 15, t4), c3 = b3 + ((32767 & m3) << 15) + u3 + s3;
+            s3 = c3 >>> 30, u3 = m3 >>> 15, l3.__setDigit(d3, 1073741823 & c3);
+          }
+          if (l3.length > o3) for (l3.__setDigit(o3++, s3 + u3); o3 < l3.length; ) l3.__setDigit(o3++, 0);
+          else if (0 !== s3 + u3) throw new Error("implementation bug");
+        } }, { key: "__absoluteDivSmall", value: function _4(e4, t4) {
+          var n3 = 2 < arguments.length && void 0 !== arguments[2] ? arguments[2] : null;
+          null === n3 && (n3 = new g3(e4.length, false));
+          for (var o3 = 0, l3 = 2 * e4.length - 1; 0 <= l3; l3 -= 2) {
+            var a3 = (o3 << 15 | e4.__halfDigit(l3)) >>> 0, s3 = 0 | a3 / t4;
+            o3 = 0 | a3 % t4, a3 = (o3 << 15 | e4.__halfDigit(l3 - 1)) >>> 0;
+            var u3 = 0 | a3 / t4;
+            o3 = 0 | a3 % t4, n3.__setDigit(l3 >>> 1, s3 << 15 | u3);
+          }
+          return n3;
+        } }, { key: "__absoluteModSmall", value: function _4(e4, t4) {
+          for (var n3, o3 = 0, l3 = 2 * e4.length - 1; 0 <= l3; l3--) n3 = (o3 << 15 | e4.__halfDigit(l3)) >>> 0, o3 = 0 | n3 % t4;
+          return o3;
+        } }, { key: "__absoluteDivLarge", value: function o3(e4, t4, i4, _4) {
+          var l3 = t4.__halfDigitLength(), n3 = t4.length, a3 = e4.__halfDigitLength() - l3, s3 = null;
+          i4 && (s3 = new g3(a3 + 2 >>> 1, false), s3.__initializeDigits());
+          var r3 = new g3(l3 + 2 >>> 1, false);
+          r3.__initializeDigits();
+          var d3 = g3.__clz15(t4.__halfDigit(l3 - 1));
+          0 < d3 && (t4 = g3.__specialLeftShift(t4, d3, 0));
+          for (var h3 = g3.__specialLeftShift(e4, d3, 1), u3 = t4.__halfDigit(l3 - 1), b3 = 0, m3 = a3; 0 <= m3; m3--) {
+            var v3 = 32767, y3 = h3.__halfDigit(m3 + l3);
+            if (y3 !== u3) {
+              var f3 = (y3 << 15 | h3.__halfDigit(m3 + l3 - 1)) >>> 0;
+              v3 = 0 | f3 / u3;
+              for (var k3 = 0 | f3 % u3, D3 = t4.__halfDigit(l3 - 2), p3 = h3.__halfDigit(m3 + l3 - 2); g3.__imul(v3, D3) >>> 0 > (k3 << 16 | p3) >>> 0 && (v3--, k3 += u3, !(32767 < k3)); ) ;
+            }
+            g3.__internalMultiplyAdd(t4, v3, 0, n3, r3);
+            var B3 = h3.__inplaceSub(r3, m3, l3 + 1);
+            0 !== B3 && (B3 = h3.__inplaceAdd(t4, m3, l3), h3.__setHalfDigit(m3 + l3, 32767 & h3.__halfDigit(m3 + l3) + B3), v3--), i4 && (1 & m3 ? b3 = v3 << 15 : s3.__setDigit(m3 >>> 1, b3 | v3));
+          }
+          if (_4) return h3.__inplaceRightShift(d3), i4 ? { quotient: s3, remainder: h3 } : h3;
+          if (i4) return s3;
+          throw new Error("unreachable");
+        } }, { key: "__clz15", value: function t4(e4) {
+          return g3.__clz30(e4) - 15;
+        } }, { key: "__specialLeftShift", value: function o3(e4, t4, _4) {
+          var l3 = e4.length, n3 = l3 + _4, a3 = new g3(n3, false);
+          if (0 === t4) {
+            for (var s3 = 0; s3 < l3; s3++) a3.__setDigit(s3, e4.__digit(s3));
+            return 0 < _4 && a3.__setDigit(l3, 0), a3;
+          }
+          for (var u3, r3 = 0, h3 = 0; h3 < l3; h3++) u3 = e4.__digit(h3), a3.__setDigit(h3, 1073741823 & u3 << t4 | r3), r3 = u3 >>> 30 - t4;
+          return 0 < _4 && a3.__setDigit(l3, r3), a3;
+        } }, { key: "__leftShiftByAbsolute", value: function _4(e4, t4) {
+          var n3 = g3.__toShiftAmount(t4);
+          if (0 > n3) throw new RangeError("BigInt too big");
+          var o3 = 0 | n3 / 30, l3 = n3 % 30, a3 = e4.length, s3 = 0 !== l3 && 0 != e4.__digit(a3 - 1) >>> 30 - l3, u3 = a3 + o3 + (s3 ? 1 : 0), r3 = new g3(u3, e4.sign);
+          if (0 === l3) {
+            for (var h3 = 0; h3 < o3; h3++) r3.__setDigit(h3, 0);
+            for (; h3 < u3; h3++) r3.__setDigit(h3, e4.__digit(h3 - o3));
+          } else {
+            for (var b3 = 0, m3 = 0; m3 < o3; m3++) r3.__setDigit(m3, 0);
+            for (var c3, v3 = 0; v3 < a3; v3++) c3 = e4.__digit(v3), r3.__setDigit(v3 + o3, 1073741823 & c3 << l3 | b3), b3 = c3 >>> 30 - l3;
+            if (s3) r3.__setDigit(a3 + o3, b3);
+            else if (0 !== b3) throw new Error("implementation bug");
+          }
+          return r3.__trim();
+        } }, { key: "__rightShiftByAbsolute", value: function _4(e4, t4) {
+          var n3 = e4.length, o3 = e4.sign, l3 = g3.__toShiftAmount(t4);
+          if (0 > l3) return g3.__rightShiftByMaximum(o3);
+          var a3 = 0 | l3 / 30, s3 = l3 % 30, u3 = n3 - a3;
+          if (0 >= u3) return g3.__rightShiftByMaximum(o3);
+          var r3 = false;
+          if (o3) {
+            var h3 = (1 << s3) - 1;
+            if (0 != (e4.__digit(a3) & h3)) r3 = true;
+            else for (var b3 = 0; b3 < a3; b3++) if (0 !== e4.__digit(b3)) {
+              r3 = true;
+              break;
+            }
+          }
+          if (r3 && 0 === s3) {
+            var m3 = e4.__digit(n3 - 1), c3 = 0 == ~m3;
+            c3 && u3++;
+          }
+          var v3 = new g3(u3, o3);
+          if (0 === s3) {
+            v3.__setDigit(u3 - 1, 0);
+            for (var y3 = a3; y3 < n3; y3++) v3.__setDigit(y3 - a3, e4.__digit(y3));
+          } else {
+            for (var f3, k3 = e4.__digit(a3) >>> s3, D3 = n3 - a3 - 1, p3 = 0; p3 < D3; p3++) f3 = e4.__digit(p3 + a3 + 1), v3.__setDigit(p3, 1073741823 & f3 << 30 - s3 | k3), k3 = f3 >>> s3;
+            v3.__setDigit(D3, k3);
+          }
+          return r3 && (v3 = g3.__absoluteAddOne(v3, true, v3)), v3.__trim();
+        } }, { key: "__rightShiftByMaximum", value: function t4(e4) {
+          return e4 ? g3.__oneDigit(1, true) : g3.__zero();
+        } }, { key: "__toShiftAmount", value: function t4(e4) {
+          if (1 < e4.length) return -1;
+          var i4 = e4.__unsignedDigit(0);
+          return i4 > g3.__kMaxLengthBits ? -1 : i4;
+        } }, { key: "__toPrimitive", value: function t4(e4) {
+          var i4 = 1 < arguments.length && void 0 !== arguments[1] ? arguments[1] : "default";
+          if ("object" !== p2(e4)) return e4;
+          if (e4.constructor === g3) return e4;
+          if ("undefined" != typeof Symbol && "symbol" === p2(Symbol.toPrimitive) && e4[Symbol.toPrimitive]) {
+            var _4 = e4[Symbol.toPrimitive](i4);
+            if ("object" !== p2(_4)) return _4;
+            throw new TypeError("Cannot convert object to primitive value");
+          }
+          var n3 = e4.valueOf;
+          if (n3) {
+            var o3 = n3.call(e4);
+            if ("object" !== p2(o3)) return o3;
+          }
+          var l3 = e4.toString;
+          if (l3) {
+            var a3 = l3.call(e4);
+            if ("object" !== p2(a3)) return a3;
+          }
+          throw new TypeError("Cannot convert object to primitive value");
+        } }, { key: "__toNumeric", value: function t4(e4) {
+          return g3.__isBigInt(e4) ? e4 : +e4;
+        } }, { key: "__isBigInt", value: function t4(e4) {
+          return "object" === p2(e4) && null !== e4 && e4.constructor === g3;
+        } }, { key: "__truncateToNBits", value: function _4(e4, t4) {
+          for (var n3 = 0 | (e4 + 29) / 30, o3 = new g3(n3, t4.sign), l3 = n3 - 1, a3 = 0; a3 < l3; a3++) o3.__setDigit(a3, t4.__digit(a3));
+          var s3 = t4.__digit(l3);
+          if (0 != e4 % 30) {
+            var u3 = 32 - e4 % 30;
+            s3 = s3 << u3 >>> u3;
+          }
+          return o3.__setDigit(l3, s3), o3.__trim();
+        } }, { key: "__truncateAndSubFromPowerOfTwo", value: function n3(e4, t4, _4) {
+          for (var o3 = Math.min, l3, a3 = 0 | (e4 + 29) / 30, s3 = new g3(a3, _4), u3 = 0, d3 = a3 - 1, h3 = 0, b3 = o3(d3, t4.length); u3 < b3; u3++) l3 = 0 - t4.__digit(u3) - h3, h3 = 1 & l3 >>> 30, s3.__setDigit(u3, 1073741823 & l3);
+          for (; u3 < d3; u3++) s3.__setDigit(u3, 0 | 1073741823 & -h3);
+          var m3, c3 = d3 < t4.length ? t4.__digit(d3) : 0, v3 = e4 % 30;
+          if (0 === v3) m3 = 0 - c3 - h3, m3 &= 1073741823;
+          else {
+            var y3 = 32 - v3;
+            c3 = c3 << y3 >>> y3;
+            var f3 = 1 << 32 - y3;
+            m3 = f3 - c3 - h3, m3 &= f3 - 1;
+          }
+          return s3.__setDigit(d3, m3), s3.__trim();
+        } }, { key: "__digitPow", value: function i4(e4, t4) {
+          for (var _4 = 1; 0 < t4; ) 1 & t4 && (_4 *= e4), t4 >>>= 1, e4 *= e4;
+          return _4;
+        } }, { key: "__detectBigEndian", value: function e4() {
+          return g3.__kBitConversionDouble[0] = -0, 0 !== g3.__kBitConversionInts[0];
+        } }, { key: "__isOneDigitInt", value: function t4(e4) {
+          return (1073741823 & e4) === e4;
+        } }]);
+      })(S2(Array));
+      return C2.__kMaxLength = 33554432, C2.__kMaxLengthBits = C2.__kMaxLength << 5, C2.__kMaxBitsPerChar = [0, 0, 32, 51, 64, 75, 83, 90, 96, 102, 107, 111, 115, 119, 122, 126, 128, 131, 134, 136, 139, 141, 143, 145, 147, 149, 151, 153, 154, 156, 158, 159, 160, 162, 163, 165, 166], C2.__kBitsPerCharTableShift = 5, C2.__kBitsPerCharTableMultiplier = 1 << C2.__kBitsPerCharTableShift, C2.__kConversionChars = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"], C2.__kBitConversionBuffer = new ArrayBuffer(8), C2.__kBitConversionDouble = new Float64Array(C2.__kBitConversionBuffer), C2.__kBitConversionInts = new Int32Array(C2.__kBitConversionBuffer), C2.__kBitConversionIntHigh = C2.__detectBigEndian() ? 0 : 1, C2.__kBitConversionIntLow = C2.__detectBigEndian() ? 1 : 0, C2.__clz30 = t2 ? function(e3) {
+        return t2(e3) - 2;
+      } : function(e3) {
+        var t3 = Math.LN2, i3 = Math.log;
+        return 0 === e3 ? 30 : 0 | 29 - (0 | i3(e3 >>> 0) / t3);
+      }, C2.__imul = e2 || function(e3, t3) {
+        return 0 | e3 * t3;
+      }, C2;
+    });
+  }
+});
 
-    function __require(id) {
-        if (id === "siyuan") {
-            return require("siyuan");
-        }
-        if (Object.prototype.hasOwnProperty.call(__cache, id)) {
-            return __cache[id].exports;
-        }
-        const factory = __registry[id];
-        if (!factory) {
-            throw new Error("[plugin-calc] 未注册的模块: " + id);
-        }
-        const module = {exports: {}};
-        __cache[id] = module;
-        factory(module, module.exports, __require);
-        return module.exports;
+// src/index.js
+var index_exports = {};
+__export(index_exports, {
+  default: () => EqualsCalcPlugin
+});
+module.exports = __toCommonJS(index_exports);
+var import_siyuan = require("siyuan");
+
+// src/lib/number.mjs
+var DIGIT_CHARS = "0123456789";
+var SCALE_MAX = 40;
+var digitsToString = (digits) => {
+  if (digits.length === 0) {
+    return "0";
+  }
+  let text = "";
+  for (let i2 = 0; i2 < digits.length; i2++) {
+    text += DIGIT_CHARS[digits[i2]];
+  }
+  return text;
+};
+var trimLeading = (digits) => {
+  let start = 0;
+  while (start < digits.length - 1 && digits[start] === 0) {
+    start++;
+  }
+  return digits.slice(start);
+};
+var padLeft = (digits, length) => {
+  const out = digits.slice();
+  while (out.length < length) {
+    out.unshift(0);
+  }
+  return out;
+};
+var compareDigits = (a2, b2) => {
+  const left = trimLeading(a2);
+  const right = trimLeading(b2);
+  if (left.length !== right.length) {
+    return left.length > right.length ? 1 : -1;
+  }
+  for (let i2 = 0; i2 < left.length; i2++) {
+    if (left[i2] !== right[i2]) {
+      return left[i2] > right[i2] ? 1 : -1;
     }
+  }
+  return 0;
+};
+var addDigits = (a2, b2) => {
+  const length = Math.max(a2.length, b2.length);
+  const left = padLeft(a2, length);
+  const right = padLeft(b2, length);
+  const out = new Array(length).fill(0);
+  let carry = 0;
+  for (let i2 = length - 1; i2 >= 0; i2--) {
+    const sum = left[i2] + right[i2] + carry;
+    out[i2] = sum % 10;
+    carry = sum >= 10 ? 1 : 0;
+  }
+  if (carry > 0) {
+    out.unshift(carry);
+  }
+  return trimLeading(out);
+};
+var subDigits = (a2, b2) => {
+  const length = Math.max(a2.length, b2.length);
+  const left = padLeft(a2, length);
+  const right = padLeft(b2, length);
+  const out = new Array(length).fill(0);
+  let borrow = 0;
+  for (let i2 = length - 1; i2 >= 0; i2--) {
+    let diff = left[i2] - right[i2] - borrow;
+    if (diff < 0) {
+      diff += 10;
+      borrow = 1;
+    } else {
+      borrow = 0;
+    }
+    out[i2] = diff;
+  }
+  return trimLeading(out);
+};
+var mulDigits = (a2, b2) => {
+  const left = trimLeading(a2);
+  const right = trimLeading(b2);
+  if (digitsToString(left) === "0" || digitsToString(right) === "0") {
+    return [0];
+  }
+  const out = new Array(left.length + right.length).fill(0);
+  for (let i2 = left.length - 1; i2 >= 0; i2--) {
+    for (let j2 = right.length - 1; j2 >= 0; j2--) {
+      const position = i2 + j2 + 1;
+      out[position] += left[i2] * right[j2];
+    }
+  }
+  for (let k2 = out.length - 1; k2 > 0; k2--) {
+    const carry = Math.floor(out[k2] / 10);
+    out[k2] %= 10;
+    out[k2 - 1] += carry;
+  }
+  return trimLeading(out);
+};
+var shiftLeft = (digits, k2) => {
+  const base = trimLeading(digits);
+  if (digitsToString(base) === "0" || k2 <= 0) {
+    return base;
+  }
+  return base.concat(new Array(k2).fill(0));
+};
+var pow10 = (k2) => k2 <= 0 ? [1] : [1].concat(new Array(k2).fill(0));
+var units = (digits) => digits.length === 0 ? 0 : digits[digits.length - 1];
+var digitsOfString = (text) => {
+  const out = [];
+  for (let i2 = 0; i2 < text.length; i2++) {
+    out.push(text.charCodeAt(i2) - 48);
+  }
+  return trimLeading(out);
+};
+var isZeroDigits = (digits) => digitsToString(trimLeading(digits)) === "0";
+var divMod = (a2, b2) => {
+  const divisor = trimLeading(b2);
+  if (isZeroDigits(divisor)) {
+    throw new Error("divide by zero");
+  }
+  const dividend = trimLeading(a2);
+  const quotient = [];
+  let remainder = [0];
+  for (let i2 = 0; i2 < dividend.length; i2++) {
+    const shifted = shiftLeft(remainder, 1);
+    shifted[shifted.length - 1] = dividend[i2];
+    remainder = trimLeading(shifted);
+    let digit = 0;
+    const cmp = compareDigits(remainder, divisor);
+    if (cmp > 0) {
+      const remainderText = digitsToString(remainder);
+      const divisorText = digitsToString(divisor);
+      const approx = Math.floor(
+        parseInt(remainderText.slice(0, 16), 10) / parseInt(divisorText.slice(0, 16), 10)
+      );
+      digit = isFinite(approx) && approx > 0 ? approx : 1;
+      if (digit > 9) {
+        digit = 9;
+      }
+      let product = mulDigits(divisor, [digit]);
+      if (compareDigits(product, remainder) > 0) {
+        digit--;
+        product = mulDigits(divisor, [digit]);
+      }
+      remainder = subDigits(padLeft(remainder, product.length), product);
+    } else if (cmp === 0) {
+      digit = 1;
+      remainder = [0];
+    }
+    quotient.push(digit);
+  }
+  return { quotient: trimLeading(quotient), remainder: trimLeading(remainder) };
+};
+var fixZero = () => ({ int: [0], scale: 0, neg: false });
+var fixIsZero = (f2) => isZeroDigits(f2.int);
+var fixNorm = (int, scale, neg) => {
+  const trimmed = trimLeading(int);
+  if (isZeroDigits(trimmed)) {
+    return fixZero();
+  }
+  return { int: trimmed, scale, neg };
+};
+var fixNeg = (f2) => fixIsZero(f2) ? fixZero() : fixNorm(f2.int, f2.scale, !f2.neg);
+var fixToString = (f2) => {
+  if (fixIsZero(f2)) {
+    return "0";
+  }
+  const padded = padLeft(f2.int, f2.scale + 1);
+  const split = padded.length - f2.scale;
+  const intPart = digitsToString(padded.slice(0, split));
+  const fracPart = digitsToString(padded.slice(split)).replace(/0+$/, "");
+  return (f2.neg ? "-" : "") + (fracPart === "" ? intPart : intPart + "." + fracPart);
+};
+var fixToNumber = (f2) => {
+  const value = parseFloat(digitsToString(f2.int)) / Math.pow(10, f2.scale);
+  return f2.neg ? -value : value;
+};
+var fixToRat = (f2) => ({ n: trimLeading(f2.int), d: pow10(f2.scale), neg: f2.neg });
+var ratZero = () => ({ n: [0], d: [1], neg: false });
+var ratIsZero = (r2) => isZeroDigits(r2.n);
+var ratNorm = (n2, d2, neg) => {
+  if (isZeroDigits(n2)) {
+    return ratZero();
+  }
+  return { n: trimLeading(n2), d: trimLeading(d2), neg };
+};
+var ratAdd = (a2, b2) => {
+  if (ratIsZero(a2)) {
+    return b2;
+  }
+  if (ratIsZero(b2)) {
+    return a2;
+  }
+  const na = mulDigits(a2.n, b2.d);
+  const nb = mulDigits(b2.n, a2.d);
+  const d2 = mulDigits(a2.d, b2.d);
+  if (a2.neg === b2.neg) {
+    return ratNorm(addDigits(na, nb), d2, a2.neg);
+  }
+  const cmp = compareDigits(na, nb);
+  if (cmp === 0) {
+    return ratZero();
+  }
+  return cmp > 0 ? ratNorm(subDigits(na, nb), d2, a2.neg) : ratNorm(subDigits(nb, na), d2, b2.neg);
+};
+var ratNeg = (r2) => ratIsZero(r2) ? ratZero() : { n: r2.n, d: r2.d, neg: !r2.neg };
+var ratSub = (a2, b2) => ratAdd(a2, ratNeg(b2));
+var ratMul = (a2, b2) => {
+  if (ratIsZero(a2) || ratIsZero(b2)) {
+    return ratZero();
+  }
+  return ratNorm(mulDigits(a2.n, b2.n), mulDigits(a2.d, b2.d), a2.neg !== b2.neg);
+};
+var ratDivExact = (a2, b2) => {
+  if (ratIsZero(b2)) {
+    throw new Error("divide by zero");
+  }
+  if (ratIsZero(a2)) {
+    return ratZero();
+  }
+  return ratNorm(mulDigits(a2.n, b2.d), mulDigits(a2.d, b2.n), a2.neg !== b2.neg);
+};
+var ratDiv = (a2, b2) => {
+  if (ratIsZero(b2)) {
+    throw new Error("divide by zero");
+  }
+  if (ratIsZero(a2)) {
+    return ratZero();
+  }
+  const neg = a2.neg !== b2.neg;
+  const numerator = mulDigits(a2.n, b2.d);
+  const denominator = mulDigits(a2.d, b2.n);
+  const direct = divMod(numerator, denominator);
+  if (isZeroDigits(direct.remainder)) {
+    return ratNorm(direct.quotient, [1], neg);
+  }
+  const fracDigits = [];
+  let remainder = direct.remainder;
+  for (let i2 = 0; i2 < SCALE_MAX; i2++) {
+    const step = divMod(shiftLeft(remainder, 1), denominator);
+    fracDigits.push(units(step.quotient));
+    remainder = step.remainder;
+    if (isZeroDigits(remainder)) {
+      break;
+    }
+  }
+  if (!isZeroDigits(remainder)) {
+    const step = divMod(shiftLeft(remainder, 1), denominator);
+    if (units(step.quotient) >= 5) {
+      let carry = 1;
+      for (let i2 = fracDigits.length - 1; i2 >= 0 && carry > 0; i2--) {
+        if (fracDigits[i2] + carry >= 10) {
+          fracDigits[i2] = 0;
+        } else {
+          fracDigits[i2] += carry;
+          carry = 0;
+        }
+      }
+      if (carry > 0) {
+        return ratNorm(addDigits(direct.quotient, [1]), [1], neg);
+      }
+    }
+  }
+  const scale = fracDigits.length;
+  const combined = addDigits(shiftLeft(direct.quotient, scale), fracDigits);
+  return ratNorm(combined, pow10(scale), neg);
+};
+var ratToFix = (r2) => {
+  if (ratIsZero(r2)) {
+    return fixZero();
+  }
+  const direct = divMod(r2.n, r2.d);
+  if (isZeroDigits(direct.remainder)) {
+    return fixNorm(direct.quotient, 0, r2.neg);
+  }
+  const fracDigits = [];
+  let remainder = direct.remainder;
+  for (let i2 = 0; i2 < SCALE_MAX; i2++) {
+    const step = divMod(shiftLeft(remainder, 1), r2.d);
+    fracDigits.push(units(step.quotient));
+    remainder = step.remainder;
+    if (isZeroDigits(remainder)) {
+      break;
+    }
+  }
+  if (!isZeroDigits(remainder)) {
+    const step = divMod(shiftLeft(remainder, 1), r2.d);
+    if (units(step.quotient) >= 5) {
+      let carry = 1;
+      for (let i2 = fracDigits.length - 1; i2 >= 0 && carry > 0; i2--) {
+        if (fracDigits[i2] + carry >= 10) {
+          fracDigits[i2] = 0;
+        } else {
+          fracDigits[i2] += carry;
+          carry = 0;
+        }
+      }
+      if (carry > 0) {
+        return fixNorm(addDigits(direct.quotient, [1]), 0, r2.neg);
+      }
+    }
+  }
+  const scale = fracDigits.length;
+  const combined = addDigits(shiftLeft(direct.quotient, scale), fracDigits);
+  return fixNorm(combined, scale, r2.neg);
+};
+var fixFromString = (text) => {
+  const negative = text.charAt(0) === "-";
+  const body = negative ? text.slice(1) : text;
+  const dot = body.indexOf(".");
+  const intText = dot === -1 ? body : body.slice(0, dot);
+  const fracText = dot === -1 ? "" : body.slice(dot + 1);
+  const combined = digitsOfString((intText === "" ? "0" : intText) + fracText);
+  return fixNorm(combined, fracText.length, negative);
+};
+var numberToFix = (value) => {
+  if (!isFinite(value) || isNaN(value)) {
+    throw new Error("not a finite number");
+  }
+  return fixFromString(value.toFixed(12).replace(/0+$/, "").replace(/\.$/, ""));
+};
+var cZero = () => ({ re: fixZero(), im: fixZero() });
+var cFromFix = (f2) => ({ re: f2, im: fixZero() });
+var cFromNumber = (value) => ({ re: numberToFix(value), im: fixZero() });
+var cIsReal = (c2) => fixIsZero(c2.im);
+var cNeg = (c2) => ({
+  re: ratToFix(ratNeg(fixToRat(c2.re))),
+  im: ratToFix(ratNeg(fixToRat(c2.im)))
+});
+var cAdd = (a2, b2) => ({
+  re: ratToFix(ratAdd(fixToRat(a2.re), fixToRat(b2.re))),
+  im: ratToFix(ratAdd(fixToRat(a2.im), fixToRat(b2.im)))
+});
+var cSub = (a2, b2) => ({
+  re: ratToFix(ratSub(fixToRat(a2.re), fixToRat(b2.re))),
+  im: ratToFix(ratSub(fixToRat(a2.im), fixToRat(b2.im)))
+});
+var cMul = (a2, b2) => ({
+  re: ratToFix(ratSub(ratMul(fixToRat(a2.re), fixToRat(b2.re)), ratMul(fixToRat(a2.im), fixToRat(b2.im)))),
+  im: ratToFix(ratAdd(ratMul(fixToRat(a2.re), fixToRat(b2.im)), ratMul(fixToRat(a2.im), fixToRat(b2.re))))
+});
+var cDiv = (a2, b2) => {
+  const denominator = ratAdd(ratMul(fixToRat(b2.re), fixToRat(b2.re)), ratMul(fixToRat(b2.im), fixToRat(b2.im)));
+  if (ratIsZero(denominator)) {
+    throw new Error("divide by zero");
+  }
+  const ac = ratMul(fixToRat(a2.re), fixToRat(b2.re));
+  const bd = ratMul(fixToRat(a2.im), fixToRat(b2.im));
+  const bc = ratMul(fixToRat(a2.im), fixToRat(b2.re));
+  const ad = ratMul(fixToRat(a2.re), fixToRat(b2.im));
+  return {
+    re: ratToFix(ratDiv(ratAdd(ac, bd), denominator)),
+    im: ratToFix(ratDiv(ratSub(bc, ad), denominator))
+  };
+};
 
-    /* ---------------- src/lib/number.mjs ---------------- */
-    __registry["lib/number"] = function (module, exports, __require) {
+// src/lib/precision.mjs
+var ROUND_MODES = ["exact", "places", "digits"];
+var normalizePolicy = (options) => {
+  const raw = options || {};
+  const mode = ROUND_MODES.includes(raw.roundMode) ? raw.roundMode : "exact";
+  let digits = Number.parseInt(raw.roundDigits, 10);
+  if (!Number.isFinite(digits)) {
+    digits = 6;
+  }
+  digits = Math.max(mode === "digits" ? 1 : 0, Math.min(15, digits));
+  return { mode, digits };
+};
+var policyIsExact = (policy) => !policy || policy.mode === "exact";
+var ratFromArray = (digits) => ratNorm(trimLeading(digits), [1], false);
+var ratPow10 = (k2) => k2 >= 0 ? ratFromArray([1].concat(new Array(k2).fill(0))) : ratNorm([1], [1].concat(new Array(-k2).fill(0)), false);
+var magnitude = (rational) => {
+  const n2 = trimLeading(rational.n);
+  const d2 = trimLeading(rational.d);
+  if (isZeroDigits(n2)) {
+    return 0;
+  }
+  let exponent = n2.length - d2.length;
+  if (exponent >= 0) {
+    if (compareDigits(n2, shiftLeft(d2, exponent)) < 0) {
+      exponent -= 1;
+    }
+  } else if (compareDigits(shiftLeft(n2, -exponent), d2) < 0) {
+    exponent -= 1;
+  }
+  return exponent;
+};
+var quantize = (value, k2) => {
+  let scaledN = trimLeading(value.n);
+  let scaledD = trimLeading(value.d);
+  if (k2 >= 0) {
+    scaledD = shiftLeft(scaledD, k2);
+  } else {
+    scaledN = shiftLeft(scaledN, -k2);
+  }
+  const direct = divMod(scaledN, scaledD);
+  let quotient = direct.quotient;
+  if (!isZeroDigits(direct.remainder)) {
+    const half = divMod(scaledD, [2]).quotient;
+    if (compareDigits(direct.remainder, half) >= 0) {
+      quotient = addDigits(quotient, [1]);
+    }
+  }
+  return ratMul(ratFromArray(quotient), ratPow10(k2));
+};
+var roundRational = (rational, policy) => {
+  const value = { n: trimLeading(rational.n), d: trimLeading(rational.d), neg: rational.neg };
+  if (policyIsExact(policy) || isZeroDigits(value.n)) {
+    return value;
+  }
+  if (policy.mode === "places") {
+    const rounded3 = quantize(value, -policy.digits);
+    return { n: rounded3.n, d: rounded3.d, neg: value.neg };
+  }
+  const exponent = magnitude(value);
+  let step = exponent - policy.digits + 1;
+  let rounded2 = quantize(value, step);
+  while (magnitude(rounded2) > exponent) {
+    const nextStep = magnitude(rounded2) - policy.digits + 1;
+    if (nextStep <= step) {
+      break;
+    }
+    step = nextStep;
+    rounded2 = quantize(value, step);
+  }
+  return { n: rounded2.n, d: rounded2.d, neg: value.neg };
+};
+var applyPrecision = (rational, policy) => {
+  const rounded2 = roundRational(rational, policy);
+  return ratNorm(rounded2.n, rounded2.d, rounded2.neg);
+};
+
+// node_modules/@js-temporal/polyfill/dist/index.esm.js
+var import_jsbi = __toESM(require_jsbi_umd(), 1);
+var t = import_jsbi.default.BigInt(0);
+var n = import_jsbi.default.BigInt(1);
+var r = import_jsbi.default.BigInt(2);
+var o = import_jsbi.default.BigInt(10);
+var i = import_jsbi.default.BigInt(24);
+var a = import_jsbi.default.BigInt(60);
+var s = import_jsbi.default.BigInt(1e3);
+var c = import_jsbi.default.BigInt(1e6);
+var d = import_jsbi.default.BigInt(1e9);
+var h = import_jsbi.default.multiply(import_jsbi.default.BigInt(3600), d);
+var u = import_jsbi.default.multiply(a, d);
+var l = import_jsbi.default.multiply(h, i);
+function m(t2) {
+  return "bigint" == typeof t2 ? import_jsbi.default.BigInt(t2.toString(10)) : t2;
+}
+function f(n2) {
+  return import_jsbi.default.equal(import_jsbi.default.remainder(n2, r), t);
+}
+function y(n2) {
+  return import_jsbi.default.lessThan(n2, t) ? import_jsbi.default.unaryMinus(n2) : n2;
+}
+function p(t2, n2) {
+  return import_jsbi.default.lessThan(t2, n2) ? -1 : import_jsbi.default.greaterThan(t2, n2) ? 1 : 0;
+}
+function g(t2, n2) {
+  return { quotient: import_jsbi.default.divide(t2, n2), remainder: import_jsbi.default.remainder(t2, n2) };
+}
+var w;
+var v;
+var b = "slot-epochNanoSeconds";
+var D = "slot-iso-date";
+var T = "slot-iso-date-time";
+var M = "slot-time";
+var E = "slot-calendar";
+var I = "slot-date-brand";
+var C = "slot-year-month-brand";
+var O = "slot-month-day-brand";
+var $ = "slot-time-zone";
+var Y = "slot-years";
+var R = "slot-months";
+var S = "slot-weeks";
+var j = "slot-days";
+var k = "slot-hours";
+var N = "slot-minutes";
+var x = "slot-seconds";
+var L = "slot-milliseconds";
+var P = "slot-microseconds";
+var U = "slot-nanoseconds";
+var B = "date";
+var Z = "ym";
+var F = "md";
+var H = "time";
+var z = "datetime";
+var A = "instant";
+var q = "original";
+var W = "timezone-canonical";
+var _ = "timezone-original";
+var J = "calendar-id";
+var G = "locale";
+var K = "options";
+var V = /* @__PURE__ */ new WeakMap();
+var X = /* @__PURE__ */ Symbol.for("@@Temporal__GetSlots");
+(w = globalThis)[X] || (w[X] = function(e2) {
+  return V.get(e2);
+});
+var Q = globalThis[X];
+var ee = /* @__PURE__ */ Symbol.for("@@Temporal__CreateSlots");
+(v = globalThis)[ee] || (v[ee] = function(e2) {
+  V.set(e2, /* @__PURE__ */ Object.create(null));
+});
+var te = globalThis[ee];
+function ne(e2, ...t2) {
+  if (!e2 || "object" != typeof e2) return false;
+  const n2 = Q(e2);
+  return !!n2 && t2.every(((e3) => e3 in n2));
+}
+function re(e2, t2) {
+  var _a3;
+  const n2 = (_a3 = Q(e2)) == null ? void 0 : _a3[t2];
+  if (void 0 === n2) throw new TypeError(`Missing internal slot ${t2}`);
+  return n2;
+}
+function oe(e2, t2, n2) {
+  const r2 = Q(e2);
+  if (void 0 === r2) throw new TypeError("Missing slots for the given container");
+  if (r2[t2]) throw new TypeError(`${t2} already has set`);
+  r2[t2] = n2;
+}
+var ie = {};
+function ae(e2, t2) {
+  Object.defineProperty(e2.prototype, Symbol.toStringTag, { value: t2, writable: false, enumerable: false, configurable: true });
+  const n2 = Object.getOwnPropertyNames(e2);
+  for (let t3 = 0; t3 < n2.length; t3++) {
+    const r3 = n2[t3], o2 = Object.getOwnPropertyDescriptor(e2, r3);
+    o2.configurable && o2.enumerable && (o2.enumerable = false, Object.defineProperty(e2, r3, o2));
+  }
+  const r2 = Object.getOwnPropertyNames(e2.prototype);
+  for (let t3 = 0; t3 < r2.length; t3++) {
+    const n3 = r2[t3], o2 = Object.getOwnPropertyDescriptor(e2.prototype, n3);
+    o2.configurable && o2.enumerable && (o2.enumerable = false, Object.defineProperty(e2.prototype, n3, o2));
+  }
+  se(t2, e2), se(`${t2}.prototype`, e2.prototype);
+}
+function se(e2, t2) {
+  const n2 = `%${e2}%`;
+  if (void 0 !== ie[n2]) throw new Error(`intrinsic ${e2} already exists`);
+  ie[n2] = t2;
+}
+function ce(e2) {
+  return ie[e2];
+}
+function de(e2, t2) {
+  let n2 = e2;
+  if (0 === n2) return { div: n2, mod: n2 };
+  const r2 = Math.sign(n2);
+  n2 = Math.abs(n2);
+  const o2 = Math.trunc(1 + Math.log10(n2));
+  if (t2 >= o2) return { div: 0 * r2, mod: r2 * n2 };
+  if (0 === t2) return { div: r2 * n2, mod: 0 * r2 };
+  const i2 = n2.toPrecision(o2);
+  return { div: r2 * Number.parseInt(i2.slice(0, o2 - t2), 10), mod: r2 * Number.parseInt(i2.slice(o2 - t2), 10) };
+}
+function he(e2, t2, n2) {
+  let r2 = e2, o2 = n2;
+  if (0 === r2) return o2;
+  const i2 = Math.sign(r2) || Math.sign(o2);
+  r2 = Math.abs(r2), o2 = Math.abs(o2);
+  const a2 = r2.toPrecision(Math.trunc(1 + Math.log10(r2)));
+  if (0 === o2) return i2 * Number.parseInt(a2 + "0".repeat(t2), 10);
+  const s2 = a2 + o2.toPrecision(Math.trunc(1 + Math.log10(o2))).padStart(t2, "0");
+  return i2 * Number.parseInt(s2, 10);
+}
+function ue(e2, t2) {
+  const n2 = "negative" === t2;
+  switch (e2) {
+    case "ceil":
+      return n2 ? "zero" : "infinity";
+    case "floor":
+      return n2 ? "infinity" : "zero";
+    case "expand":
+      return "infinity";
+    case "trunc":
+      return "zero";
+    case "halfCeil":
+      return n2 ? "half-zero" : "half-infinity";
+    case "halfFloor":
+      return n2 ? "half-infinity" : "half-zero";
+    case "halfExpand":
+      return "half-infinity";
+    case "halfTrunc":
+      return "half-zero";
+    case "halfEven":
+      return "half-even";
+  }
+}
+function le(e2, t2, n2, r2, o2) {
+  return "zero" === o2 ? e2 : "infinity" === o2 ? t2 : n2 < 0 ? e2 : n2 > 0 ? t2 : "half-zero" === o2 ? e2 : "half-infinity" === o2 ? t2 : r2 ? e2 : t2;
+}
+var TimeDuration = class _TimeDuration {
+  constructor(t2) {
+    this.totalNs = m(t2), this.sec = import_jsbi.default.toNumber(import_jsbi.default.divide(this.totalNs, d)), this.subsec = import_jsbi.default.toNumber(import_jsbi.default.remainder(this.totalNs, d));
+  }
+  static validateNew(t2, n2) {
+    if (import_jsbi.default.greaterThan(y(t2), _TimeDuration.MAX)) throw new RangeError(`${n2} of duration time units cannot exceed ${_TimeDuration.MAX} s`);
+    return new _TimeDuration(t2);
+  }
+  static fromEpochNsDiff(t2, n2) {
+    const r2 = import_jsbi.default.subtract(m(t2), m(n2));
+    return new _TimeDuration(r2);
+  }
+  static fromComponents(t2, n2, r2, o2, i2, a2) {
+    const l2 = import_jsbi.default.add(import_jsbi.default.add(import_jsbi.default.add(import_jsbi.default.add(import_jsbi.default.add(import_jsbi.default.BigInt(a2), import_jsbi.default.multiply(import_jsbi.default.BigInt(i2), s)), import_jsbi.default.multiply(import_jsbi.default.BigInt(o2), c)), import_jsbi.default.multiply(import_jsbi.default.BigInt(r2), d)), import_jsbi.default.multiply(import_jsbi.default.BigInt(n2), u)), import_jsbi.default.multiply(import_jsbi.default.BigInt(t2), h));
+    return _TimeDuration.validateNew(l2, "total");
+  }
+  abs() {
+    return new _TimeDuration(y(this.totalNs));
+  }
+  add(t2) {
+    return _TimeDuration.validateNew(import_jsbi.default.add(this.totalNs, t2.totalNs), "sum");
+  }
+  add24HourDays(t2) {
+    return _TimeDuration.validateNew(import_jsbi.default.add(this.totalNs, import_jsbi.default.multiply(import_jsbi.default.BigInt(t2), l)), "sum");
+  }
+  addToEpochNs(t2) {
+    return import_jsbi.default.add(m(t2), this.totalNs);
+  }
+  cmp(e2) {
+    return p(this.totalNs, e2.totalNs);
+  }
+  divmod(t2) {
+    const { quotient: n2, remainder: r2 } = g(this.totalNs, import_jsbi.default.BigInt(t2));
+    return { quotient: import_jsbi.default.toNumber(n2), remainder: new _TimeDuration(r2) };
+  }
+  fdiv(n2) {
+    const r2 = m(n2), i2 = import_jsbi.default.BigInt(r2);
+    let { quotient: a2, remainder: s2 } = g(this.totalNs, i2);
+    const c2 = [];
+    let d2;
+    const h2 = (import_jsbi.default.lessThan(this.totalNs, t) ? -1 : 1) * Math.sign(import_jsbi.default.toNumber(r2));
+    for (; !import_jsbi.default.equal(s2, t) && c2.length < 50; ) s2 = import_jsbi.default.multiply(s2, o), { quotient: d2, remainder: s2 } = g(s2, i2), c2.push(Math.abs(import_jsbi.default.toNumber(d2)));
+    return h2 * Number(y(a2).toString() + "." + c2.join(""));
+  }
+  isZero() {
+    return import_jsbi.default.equal(this.totalNs, t);
+  }
+  round(o2, i2) {
+    const a2 = m(o2);
+    if (import_jsbi.default.equal(a2, n)) return this;
+    const { quotient: s2, remainder: c2 } = g(this.totalNs, a2), d2 = import_jsbi.default.lessThan(this.totalNs, t) ? "negative" : "positive", h2 = import_jsbi.default.multiply(y(s2), a2), u2 = import_jsbi.default.add(h2, a2), l2 = p(y(import_jsbi.default.multiply(c2, r)), a2), w2 = ue(i2, d2), v2 = import_jsbi.default.equal(y(this.totalNs), h2) ? h2 : le(h2, u2, l2, f(s2), w2), b2 = "positive" === d2 ? v2 : import_jsbi.default.unaryMinus(v2);
+    return _TimeDuration.validateNew(b2, "rounding");
+  }
+  sign() {
+    return this.cmp(new _TimeDuration(t));
+  }
+  subtract(t2) {
+    return _TimeDuration.validateNew(import_jsbi.default.subtract(this.totalNs, t2.totalNs), "difference");
+  }
+};
+TimeDuration.MAX = import_jsbi.default.BigInt("9007199254740991999999999"), TimeDuration.ZERO = new TimeDuration(t);
+var me = /[A-Za-z._][A-Za-z._0-9+-]*/;
+var fe = new RegExp(`(?:${/(?:[+-](?:[01][0-9]|2[0-3])(?::?[0-5][0-9])?)/.source}|(?:${me.source})(?:\\/(?:${me.source}))*)`);
+var ye = /(?:[+-]\d{6}|\d{4})/;
+var pe = /(?:0[1-9]|1[0-2])/;
+var ge = /(?:0[1-9]|[12]\d|3[01])/;
+var we = new RegExp(`(${ye.source})(?:-(${pe.source})-(${ge.source})|(${pe.source})(${ge.source}))`);
+var ve = /(\d{2})(?::(\d{2})(?::(\d{2})(?:[.,](\d{1,9}))?)?|(\d{2})(?:(\d{2})(?:[.,](\d{1,9}))?)?)?/;
+var be = /((?:[+-])(?:[01][0-9]|2[0-3])(?::?(?:[0-5][0-9])(?::?(?:[0-5][0-9])(?:[.,](?:\d{1,9}))?)?)?)/;
+var De = new RegExp(`([zZ])|${be.source}?`);
+var Te = /\[(!)?([a-z_][a-z0-9_-]*)=([A-Za-z0-9]+(?:-[A-Za-z0-9]+)*)\]/g;
+var Me = new RegExp([`^${we.source}`, `(?:(?:[tT]|\\s+)${ve.source}(?:${De.source})?)?`, `(?:\\[!?(${fe.source})\\])?`, `((?:${Te.source})*)$`].join(""));
+var Ee = new RegExp([`^[tT]?${ve.source}`, `(?:${De.source})?`, `(?:\\[!?${fe.source}\\])?`, `((?:${Te.source})*)$`].join(""));
+var Ie = new RegExp(`^(${ye.source})-?(${pe.source})(?:\\[!?${fe.source}\\])?((?:${Te.source})*)$`);
+var Ce = new RegExp(`^(?:--)?(${pe.source})-?(${ge.source})(?:\\[!?${fe.source}\\])?((?:${Te.source})*)$`);
+var Oe = /(\d+)(?:[.,](\d{1,9}))?/;
+var $e = new RegExp(`(?:${Oe.source}H)?(?:${Oe.source}M)?(?:${Oe.source}S)?`);
+var Ye = new RegExp(`^([+-])?P${/(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?/.source}(?:T(?!$)${$e.source})?$`, "i");
+var Re = 864e5;
+var Se = 1e6 * Re;
+var je = 6e10;
+var ke = 1e8 * Re;
+var Ne = xo(ke);
+var xe = import_jsbi.default.unaryMinus(Ne);
+var Le = import_jsbi.default.add(import_jsbi.default.subtract(xe, l), n);
+var Pe = import_jsbi.default.subtract(import_jsbi.default.add(Ne, l), n);
+var Ue = 146097 * Re;
+var Be = -271821;
+var Ze = 275760;
+var Fe = Date.UTC(1847, 0, 1);
+var He = ["iso8601", "hebrew", "islamic", "islamic-umalqura", "islamic-tbla", "islamic-civil", "islamic-rgsa", "islamicc", "persian", "ethiopic", "ethioaa", "ethiopic-amete-alem", "coptic", "chinese", "dangi", "roc", "indian", "buddhist", "japanese", "gregory"];
+var ze = /* @__PURE__ */ new Set(["ACT", "AET", "AGT", "ART", "AST", "BET", "BST", "CAT", "CNT", "CST", "CTT", "EAT", "ECT", "IET", "IST", "JST", "MIT", "NET", "NST", "PLT", "PNT", "PRT", "PST", "SST", "VST"]);
+function Ae(e2) {
+  return "object" == typeof e2 && null !== e2 || "function" == typeof e2;
+}
+function qe(e2) {
+  if ("bigint" == typeof e2) throw new TypeError("Cannot convert BigInt to number");
+  return Number(e2);
+}
+function We(e2) {
+  if ("symbol" == typeof e2) throw new TypeError("Cannot convert a Symbol value to a String");
+  return String(e2);
+}
+function _e(e2) {
+  const t2 = qe(e2);
+  if (0 === t2) return 0;
+  if (Number.isNaN(t2) || t2 === 1 / 0 || t2 === -1 / 0) throw new RangeError("invalid number value");
+  const n2 = Math.trunc(t2);
+  return 0 === n2 ? 0 : n2;
+}
+function Je(e2, t2) {
+  const n2 = _e(e2);
+  if (n2 <= 0) {
+    if (void 0 !== t2) throw new RangeError(`property '${t2}' cannot be a a number less than one`);
+    throw new RangeError("Cannot convert a number less than one to a positive integer");
+  }
+  return n2;
+}
+function Ge(e2) {
+  const t2 = qe(e2);
+  if (Number.isNaN(t2)) throw new RangeError("not a number");
+  if (t2 === 1 / 0 || t2 === -1 / 0) throw new RangeError("infinity is out of range");
+  if (!(function(e3) {
+    if ("number" != typeof e3 || Number.isNaN(e3) || e3 === 1 / 0 || e3 === -1 / 0) return false;
+    const t3 = Math.abs(e3);
+    return Math.floor(t3) === t3;
+  })(t2)) throw new RangeError(`unsupported fractional value ${e2}`);
+  return 0 === t2 ? 0 : t2;
+}
+function Ke(e2, t2) {
+  return String(e2).padStart(t2, "0");
+}
+function Ve(e2) {
+  if ("string" != typeof e2) throw new TypeError(`expected a string, not ${String(e2)}`);
+  return e2;
+}
+function Xe(e2, t2) {
+  if (Ae(e2)) {
+    const t3 = e2 == null ? void 0 : e2.toString();
+    if ("string" == typeof t3 || "number" == typeof t3) return t3;
+    throw new TypeError("Cannot convert object to primitive value");
+  }
+  return e2;
+}
+var Qe = ["era", "eraYear", "year", "month", "monthCode", "day", "hour", "minute", "second", "millisecond", "microsecond", "nanosecond", "offset", "timeZone"];
+var et = { era: We, eraYear: _e, year: _e, month: Je, monthCode: function(e2) {
+  const t2 = Ve(Xe(e2));
+  if (t2.length < 3 || t2.length > 4 || "M" !== t2[0] || -1 === "0123456789".indexOf(t2[1]) || -1 === "0123456789".indexOf(t2[2]) || t2[1] + t2[2] === "00" && "L" !== t2[3] || "L" !== t2[3] && void 0 !== t2[3]) throw new RangeError(`bad month code ${t2}; must match M01-M99 or M00L-M99L`);
+  return t2;
+}, day: Je, hour: _e, minute: _e, second: _e, millisecond: _e, microsecond: _e, nanosecond: _e, offset: function(e2) {
+  const t2 = Ve(Xe(e2));
+  return sr(t2), t2;
+}, timeZone: Bn };
+var tt = { hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
+var nt = [["years", "year", "date"], ["months", "month", "date"], ["weeks", "week", "date"], ["days", "day", "date"], ["hours", "hour", "time"], ["minutes", "minute", "time"], ["seconds", "second", "time"], ["milliseconds", "millisecond", "time"], ["microseconds", "microsecond", "time"], ["nanoseconds", "nanosecond", "time"]];
+var rt = Object.fromEntries(nt.map(((e2) => [e2[0], e2[1]])));
+var ot = Object.fromEntries(nt.map((([e2, t2]) => [t2, e2])));
+var it = nt.map((([, e2]) => e2));
+var at = { day: Se, hour: 36e11, minute: 6e10, second: 1e9, millisecond: 1e6, microsecond: 1e3, nanosecond: 1 };
+var st = ["days", "hours", "microseconds", "milliseconds", "minutes", "months", "nanoseconds", "seconds", "weeks", "years"];
+var ct = Intl.DateTimeFormat;
+var dt = /* @__PURE__ */ new Map();
+function ht(e2) {
+  const t2 = Ao(e2);
+  let n2 = dt.get(t2);
+  return void 0 === n2 && (n2 = new ct("en-us", { timeZone: t2, hour12: false, era: "short", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" }), dt.set(t2, n2)), n2;
+}
+function ut(e2) {
+  return ne(e2, b) && !ne(e2, $, E);
+}
+function lt(e2) {
+  return ne(e2, Y, R, j, k, N, x, L, P, U);
+}
+function mt(e2) {
+  return ne(e2, I);
+}
+function ft(e2) {
+  return ne(e2, M);
+}
+function yt(e2) {
+  return ne(e2, T);
+}
+function pt(e2) {
+  return ne(e2, C);
+}
+function gt(e2) {
+  return ne(e2, O);
+}
+function wt(e2) {
+  return ne(e2, b, $, E);
+}
+function vt(e2, t2) {
+  if (!t2(e2)) throw new TypeError("invalid receiver: method called with the wrong type of this-object");
+}
+function bt(e2) {
+  if (ne(e2, E) || ne(e2, $)) throw new TypeError("with() does not support a calendar or timeZone property");
+  if (ft(e2)) throw new TypeError("with() does not accept Temporal.PlainTime, use withPlainTime() instead");
+  if (void 0 !== e2.calendar) throw new TypeError("with() does not support a calendar property");
+  if (void 0 !== e2.timeZone) throw new TypeError("with() does not support a timeZone property");
+}
+function Dt(e2, t2) {
+  return "never" === t2 || "auto" === t2 && "iso8601" === e2 ? "" : `[${"critical" === t2 ? "!" : ""}u-ca=${e2}]`;
+}
+function Tt(e2) {
+  let t2, n2, r2 = false;
+  for (Te.lastIndex = 0; n2 = Te.exec(e2); ) {
+    const { 1: o2, 2: i2, 3: a2 } = n2;
+    if ("u-ca" === i2) {
+      if (void 0 === t2) t2 = a2, r2 = "!" === o2;
+      else if ("!" === o2 || r2) throw new RangeError(`Invalid annotations in ${e2}: more than one u-ca present with critical flag`);
+    } else if ("!" === o2) throw new RangeError(`Unrecognized annotation: !${i2}=${a2}`);
+  }
+  return t2;
+}
+function Mt(e2) {
+  const t2 = Me.exec(e2);
+  if (!t2) throw new RangeError(`invalid RFC 9557 string: ${e2}`);
+  const n2 = Tt(t2[16]);
+  let r2 = t2[1];
+  if ("-000000" === r2) throw new RangeError(`invalid RFC 9557 string: ${e2}`);
+  const o2 = +r2, i2 = +(t2[2] ?? t2[4] ?? 1), a2 = +(t2[3] ?? t2[5] ?? 1), s2 = void 0 !== t2[6], c2 = +(t2[6] ?? 0), d2 = +(t2[7] ?? t2[10] ?? 0);
+  let h2 = +(t2[8] ?? t2[11] ?? 0);
+  60 === h2 && (h2 = 59);
+  const u2 = (t2[9] ?? t2[12] ?? "") + "000000000", l2 = +u2.slice(0, 3), m2 = +u2.slice(3, 6), f2 = +u2.slice(6, 9);
+  let y2, p2 = false;
+  t2[13] ? (y2 = void 0, p2 = true) : t2[14] && (y2 = t2[14]);
+  const g2 = t2[15];
+  return Ur(o2, i2, a2, c2, d2, h2, l2, m2, f2), { year: o2, month: i2, day: a2, time: s2 ? { hour: c2, minute: d2, second: h2, millisecond: l2, microsecond: m2, nanosecond: f2 } : "start-of-day", tzAnnotation: g2, offset: y2, z: p2, calendar: n2 };
+}
+function Et(e2) {
+  const t2 = Ee.exec(e2);
+  let n2, r2, o2, i2, a2, s2, c2;
+  if (t2) {
+    c2 = Tt(t2[10]), n2 = +(t2[1] ?? 0), r2 = +(t2[2] ?? t2[5] ?? 0), o2 = +(t2[3] ?? t2[6] ?? 0), 60 === o2 && (o2 = 59);
+    const e3 = (t2[4] ?? t2[7] ?? "") + "000000000";
+    if (i2 = +e3.slice(0, 3), a2 = +e3.slice(3, 6), s2 = +e3.slice(6, 9), t2[8]) throw new RangeError("Z designator not supported for PlainTime");
+  } else {
+    let t3, d2;
+    if ({ time: t3, z: d2, calendar: c2 } = Mt(e2), "start-of-day" === t3) throw new RangeError(`time is missing in string: ${e2}`);
+    if (d2) throw new RangeError("Z designator not supported for PlainTime");
+    ({ hour: n2, minute: r2, second: o2, millisecond: i2, microsecond: a2, nanosecond: s2 } = t3);
+  }
+  if (Pr(n2, r2, o2, i2, a2, s2), /[tT ][0-9][0-9]/.test(e2)) return { hour: n2, minute: r2, second: o2, millisecond: i2, microsecond: a2, nanosecond: s2, calendar: c2 };
+  try {
+    const { month: t3, day: n3 } = Ct(e2);
+    xr(1972, t3, n3);
+  } catch {
+    try {
+      const { year: t3, month: n3 } = It(e2);
+      xr(t3, n3, 1);
+    } catch {
+      return { hour: n2, minute: r2, second: o2, millisecond: i2, microsecond: a2, nanosecond: s2, calendar: c2 };
+    }
+  }
+  throw new RangeError(`invalid RFC 9557 time-only string ${e2}; may need a T prefix`);
+}
+function It(e2) {
+  const t2 = Ie.exec(e2);
+  let n2, r2, o2, i2;
+  if (t2) {
+    o2 = Tt(t2[3]);
+    let a2 = t2[1];
+    if ("-000000" === a2) throw new RangeError(`invalid RFC 9557 string: ${e2}`);
+    if (n2 = +a2, r2 = +t2[2], i2 = 1, void 0 !== o2 && "iso8601" !== o2) throw new RangeError("YYYY-MM format is only valid with iso8601 calendar");
+  } else {
+    let t3;
+    if ({ year: n2, month: r2, calendar: o2, day: i2, z: t3 } = Mt(e2), t3) throw new RangeError("Z designator not supported for PlainYearMonth");
+  }
+  return { year: n2, month: r2, calendar: o2, referenceISODay: i2 };
+}
+function Ct(e2) {
+  const t2 = Ce.exec(e2);
+  let n2, r2, o2, i2;
+  if (t2) {
+    if (o2 = Tt(t2[3]), n2 = +t2[1], r2 = +t2[2], void 0 !== o2 && "iso8601" !== o2) throw new RangeError("MM-DD format is only valid with iso8601 calendar");
+  } else {
+    let t3;
+    if ({ month: n2, day: r2, calendar: o2, year: i2, z: t3 } = Mt(e2), t3) throw new RangeError("Z designator not supported for PlainMonthDay");
+  }
+  return { month: n2, day: r2, calendar: o2, referenceISOYear: i2 };
+}
+var Ot = new RegExp(`^${fe.source}$`, "i");
+var $t = new RegExp(`^${/([+-])([01][0-9]|2[0-3])(?::?([0-5][0-9])?)?/.source}$`);
+function Yt(e2) {
+  const t2 = Wo.test(e2) ? "Seconds not allowed in offset time zone" : "Invalid time zone";
+  throw new RangeError(`${t2}: ${e2}`);
+}
+function Rt(e2) {
+  return Ot.test(e2) || Yt(e2), $t.test(e2) ? { offsetMinutes: sr(e2) / 6e10 } : { tzName: e2 };
+}
+function St(e2, t2, n2, r2) {
+  let o2 = e2, i2 = t2, a2 = n2;
+  switch (r2) {
+    case "reject":
+      xr(o2, i2, a2);
+      break;
+    case "constrain":
+      ({ year: o2, month: i2, day: a2 } = kr(o2, i2, a2));
+  }
+  return { year: o2, month: i2, day: a2 };
+}
+function jt(e2, t2, n2, r2, o2, i2, a2) {
+  let s2 = e2, c2 = t2, d2 = n2, h2 = r2, u2 = o2, l2 = i2;
+  switch (a2) {
+    case "reject":
+      Pr(s2, c2, d2, h2, u2, l2);
+      break;
+    case "constrain":
+      s2 = jr(s2, 0, 23), c2 = jr(c2, 0, 59), d2 = jr(d2, 0, 59), h2 = jr(h2, 0, 999), u2 = jr(u2, 0, 999), l2 = jr(l2, 0, 999);
+  }
+  return { hour: s2, minute: c2, second: d2, millisecond: h2, microsecond: u2, nanosecond: l2 };
+}
+function kt(e2) {
+  if (!Ae(e2)) throw new TypeError("invalid duration-like");
+  const t2 = { years: void 0, months: void 0, weeks: void 0, days: void 0, hours: void 0, minutes: void 0, seconds: void 0, milliseconds: void 0, microseconds: void 0, nanoseconds: void 0 };
+  let n2 = false;
+  for (let r2 = 0; r2 < st.length; r2++) {
+    const o2 = st[r2], i2 = e2[o2];
+    void 0 !== i2 && (n2 = true, t2[o2] = Ge(i2));
+  }
+  if (!n2) throw new TypeError("invalid duration-like");
+  return t2;
+}
+function Nt({ years: e2, months: t2, weeks: n2, days: r2 }, o2, i2, a2) {
+  return { years: e2, months: a2 ?? t2, weeks: i2 ?? n2, days: o2 ?? r2 };
+}
+function xt(e2, t2) {
+  return { isoDate: e2, time: t2 };
+}
+function Lt(e2) {
+  return Ho(e2, "overflow", ["constrain", "reject"], "constrain");
+}
+function Pt(e2) {
+  return Ho(e2, "disambiguation", ["compatible", "earlier", "later", "reject"], "compatible");
+}
+function Ut(e2, t2) {
+  return Ho(e2, "roundingMode", ["ceil", "floor", "expand", "trunc", "halfCeil", "halfFloor", "halfExpand", "halfTrunc", "halfEven"], t2);
+}
+function Bt(e2, t2) {
+  return Ho(e2, "offset", ["prefer", "use", "ignore", "reject"], t2);
+}
+function Zt(e2) {
+  return Ho(e2, "calendarName", ["auto", "always", "never", "critical"], "auto");
+}
+function Ft(e2) {
+  let t2 = e2.roundingIncrement;
+  if (void 0 === t2) return 1;
+  const n2 = _e(t2);
+  if (n2 < 1 || n2 > 1e9) throw new RangeError(`roundingIncrement must be at least 1 and at most 1e9, not ${t2}`);
+  return n2;
+}
+function Ht(e2, t2, n2) {
+  const r2 = n2 ? t2 : t2 - 1;
+  if (e2 > r2) throw new RangeError(`roundingIncrement must be at least 1 and less than ${r2}, not ${e2}`);
+  if (t2 % e2 != 0) throw new RangeError(`Rounding increment must divide evenly into ${t2}`);
+}
+function zt(e2) {
+  const t2 = e2.fractionalSecondDigits;
+  if (void 0 === t2) return "auto";
+  if ("number" != typeof t2) {
+    if ("auto" !== We(t2)) throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${t2}`);
+    return "auto";
+  }
+  const n2 = Math.floor(t2);
+  if (!Number.isFinite(n2) || n2 < 0 || n2 > 9) throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${t2}`);
+  return n2;
+}
+function At(e2, t2) {
+  switch (e2) {
+    case "minute":
+      return { precision: "minute", unit: "minute", increment: 1 };
+    case "second":
+      return { precision: 0, unit: "second", increment: 1 };
+    case "millisecond":
+      return { precision: 3, unit: "millisecond", increment: 1 };
+    case "microsecond":
+      return { precision: 6, unit: "microsecond", increment: 1 };
+    case "nanosecond":
+      return { precision: 9, unit: "nanosecond", increment: 1 };
+  }
+  switch (t2) {
+    case "auto":
+      return { precision: t2, unit: "nanosecond", increment: 1 };
+    case 0:
+      return { precision: t2, unit: "second", increment: 1 };
+    case 1:
+    case 2:
+    case 3:
+      return { precision: t2, unit: "millisecond", increment: 10 ** (3 - t2) };
+    case 4:
+    case 5:
+    case 6:
+      return { precision: t2, unit: "microsecond", increment: 10 ** (6 - t2) };
+    case 7:
+    case 8:
+    case 9:
+      return { precision: t2, unit: "nanosecond", increment: 10 ** (9 - t2) };
+    default:
+      throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${t2}`);
+  }
+}
+var qt = /* @__PURE__ */ Symbol("~required~");
+function Wt(e2, t2, n2, r2, o2 = []) {
+  let i2 = [];
+  for (let e3 = 0; e3 < nt.length; e3++) {
+    const t3 = nt[e3], r3 = t3[1], o3 = t3[2];
+    "datetime" !== n2 && n2 !== o3 || i2.push(r3);
+  }
+  i2 = i2.concat(o2);
+  let a2 = r2;
+  a2 === qt ? a2 = void 0 : void 0 !== a2 && i2.push(a2);
+  let s2 = [];
+  s2 = s2.concat(i2);
+  for (let e3 = 0; e3 < i2.length; e3++) {
+    const t3 = i2[e3], n3 = ot[t3];
+    void 0 !== n3 && s2.push(n3);
+  }
+  let c2 = Ho(e2, t2, s2, a2);
+  if (void 0 === c2 && r2 === qt) throw new RangeError(`${t2} is required`);
+  return c2 && c2 in rt ? rt[c2] : c2;
+}
+function _t(e2) {
+  const t2 = e2.relativeTo;
+  if (void 0 === t2) return {};
+  let n2, r2, o2, i2, a2, s2 = "option", c2 = false;
+  if (Ae(t2)) {
+    if (wt(t2)) return { zonedRelativeTo: t2 };
+    if (mt(t2)) return { plainRelativeTo: t2 };
+    if (yt(t2)) return { plainRelativeTo: pn(re(t2, T).isoDate, re(t2, E)) };
+    o2 = Nn(t2);
+    const e3 = tn(o2, t2, ["year", "month", "monthCode", "day"], ["hour", "minute", "second", "millisecond", "microsecond", "nanosecond", "offset", "timeZone"], []);
+    ({ isoDate: n2, time: r2 } = on(o2, e3, "constrain")), { offset: a2, timeZone: i2 } = e3, void 0 === a2 && (s2 = "wall");
+  } else {
+    let e3, d2, h2, u2, l2;
+    if ({ year: h2, month: u2, day: l2, time: r2, calendar: o2, tzAnnotation: e3, offset: a2, z: d2 } = Mt(Ve(t2)), e3) i2 = Bn(e3), d2 ? s2 = "exact" : a2 || (s2 = "wall"), c2 = true;
+    else if (d2) throw new RangeError("Z designator not supported for PlainDate relativeTo; either remove the Z or add a bracketed time zone");
+    o2 || (o2 = "iso8601"), o2 = zo(o2), n2 = { year: h2, month: u2, day: l2 };
+  }
+  return void 0 === i2 ? { plainRelativeTo: pn(n2, o2) } : { zonedRelativeTo: $n(mn(n2, r2, s2, "option" === s2 ? sr(a2) : 0, i2, "compatible", "reject", c2), i2, o2) };
+}
+function Jt(e2) {
+  return 0 !== re(e2, Y) ? "year" : 0 !== re(e2, R) ? "month" : 0 !== re(e2, S) ? "week" : 0 !== re(e2, j) ? "day" : 0 !== re(e2, k) ? "hour" : 0 !== re(e2, N) ? "minute" : 0 !== re(e2, x) ? "second" : 0 !== re(e2, L) ? "millisecond" : 0 !== re(e2, P) ? "microsecond" : "nanosecond";
+}
+function Gt(e2, t2) {
+  return it.indexOf(e2) > it.indexOf(t2) ? t2 : e2;
+}
+function Kt(e2) {
+  return "year" === e2 || "month" === e2 || "week" === e2;
+}
+function Vt(e2) {
+  return Kt(e2) || "day" === e2 ? "date" : "time";
+}
+function Xt(e2) {
+  return ce("%calendarImpl%")(e2);
+}
+function Qt(e2) {
+  return ce("%calendarImpl%")(re(e2, E));
+}
+function en(e2, t2, n2 = "date") {
+  const r2 = /* @__PURE__ */ Object.create(null), o2 = Xt(e2).isoToDate(t2, { year: true, monthCode: true, day: true });
+  return r2.monthCode = o2.monthCode, "month-day" !== n2 && "date" !== n2 || (r2.day = o2.day), "year-month" !== n2 && "date" !== n2 || (r2.year = o2.year), r2;
+}
+function tn(e2, t2, n2, r2, o2) {
+  const i2 = Xt(e2).extraFields(n2), a2 = n2.concat(r2, i2), s2 = /* @__PURE__ */ Object.create(null);
+  let c2 = false;
+  a2.sort();
+  for (let e3 = 0; e3 < a2.length; e3++) {
+    const n3 = a2[e3], r3 = t2[n3];
+    if (void 0 !== r3) c2 = true, s2[n3] = (0, et[n3])(r3);
+    else if ("partial" !== o2) {
+      if (o2.includes(n3)) throw new TypeError(`required property '${n3}' missing or undefined`);
+      s2[n3] = tt[n3];
+    }
+  }
+  if ("partial" === o2 && !c2) throw new TypeError("no supported properties found");
+  return s2;
+}
+function nn(e2, t2 = "complete") {
+  const n2 = ["hour", "microsecond", "millisecond", "minute", "nanosecond", "second"];
+  let r2 = false;
+  const o2 = /* @__PURE__ */ Object.create(null);
+  for (let i2 = 0; i2 < n2.length; i2++) {
+    const a2 = n2[i2], s2 = e2[a2];
+    void 0 !== s2 ? (o2[a2] = _e(s2), r2 = true) : "complete" === t2 && (o2[a2] = 0);
+  }
+  if (!r2) throw new TypeError("invalid time-like");
+  return o2;
+}
+function rn(e2, t2) {
+  if (Ae(e2)) {
+    if (mt(e2)) return Lt(Zo(t2)), pn(re(e2, D), re(e2, E));
+    if (wt(e2)) {
+      const n4 = zn(re(e2, $), re(e2, b));
+      return Lt(Zo(t2)), pn(n4.isoDate, re(e2, E));
+    }
+    if (yt(e2)) return Lt(Zo(t2)), pn(re(e2, T).isoDate, re(e2, E));
+    const n3 = Nn(e2);
+    return pn(Ln(n3, tn(n3, e2, ["year", "month", "monthCode", "day"], [], []), Lt(Zo(t2))), n3);
+  }
+  let { year: n2, month: r2, day: o2, calendar: i2, z: a2 } = Mt(Ve(e2));
+  if (a2) throw new RangeError("Z designator not supported for PlainDate");
+  return i2 || (i2 = "iso8601"), i2 = zo(i2), Lt(Zo(t2)), pn({ year: n2, month: r2, day: o2 }, i2);
+}
+function on(e2, t2, n2) {
+  return xt(Ln(e2, t2, n2), jt(t2.hour, t2.minute, t2.second, t2.millisecond, t2.microsecond, t2.nanosecond, n2));
+}
+function an(e2, t2) {
+  let n2, r2, o2;
+  if (Ae(e2)) {
+    if (yt(e2)) return Lt(Zo(t2)), wn(re(e2, T), re(e2, E));
+    if (wt(e2)) {
+      const n3 = zn(re(e2, $), re(e2, b));
+      return Lt(Zo(t2)), wn(n3, re(e2, E));
+    }
+    if (mt(e2)) return Lt(Zo(t2)), wn(xt(re(e2, D), { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 }), re(e2, E));
+    o2 = Nn(e2);
+    const i2 = tn(o2, e2, ["year", "month", "monthCode", "day"], ["hour", "minute", "second", "millisecond", "microsecond", "nanosecond"], []), a2 = Lt(Zo(t2));
+    ({ isoDate: n2, time: r2 } = on(o2, i2, a2));
+  } else {
+    let i2, a2, s2, c2;
+    if ({ year: a2, month: s2, day: c2, time: r2, calendar: o2, z: i2 } = Mt(Ve(e2)), i2) throw new RangeError("Z designator not supported for PlainDateTime");
+    "start-of-day" === r2 && (r2 = { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 }), Ur(a2, s2, c2, r2.hour, r2.minute, r2.second, r2.millisecond, r2.microsecond, r2.nanosecond), o2 || (o2 = "iso8601"), o2 = zo(o2), Lt(Zo(t2)), n2 = { year: a2, month: s2, day: c2 };
+  }
+  return wn(xt(n2, r2), o2);
+}
+function sn(e2) {
+  const t2 = ce("%Temporal.Duration%");
+  if (lt(e2)) return new t2(re(e2, Y), re(e2, R), re(e2, S), re(e2, j), re(e2, k), re(e2, N), re(e2, x), re(e2, L), re(e2, P), re(e2, U));
+  if (!Ae(e2)) return (function(e3) {
+    const { years: t3, months: n3, weeks: r3, days: o2, hours: i2, minutes: a2, seconds: s2, milliseconds: c2, microseconds: d2, nanoseconds: h2 } = (function(e4) {
+      const t4 = Ye.exec(e4);
+      if (!t4) throw new RangeError(`invalid duration: ${e4}`);
+      if (t4.every(((e5, t5) => t5 < 2 || void 0 === e5))) throw new RangeError(`invalid duration: ${e4}`);
+      const n4 = "-" === t4[1] ? -1 : 1, r4 = void 0 === t4[2] ? 0 : _e(t4[2]) * n4, o3 = void 0 === t4[3] ? 0 : _e(t4[3]) * n4, i3 = void 0 === t4[4] ? 0 : _e(t4[4]) * n4, a3 = void 0 === t4[5] ? 0 : _e(t4[5]) * n4, s3 = void 0 === t4[6] ? 0 : _e(t4[6]) * n4, c3 = t4[7], d3 = t4[8], h3 = t4[9], u2 = t4[10], l2 = t4[11];
+      let m2 = 0, f2 = 0, y2 = 0;
+      if (void 0 !== c3) {
+        if (d3 ?? h3 ?? u2 ?? l2) throw new RangeError("only the smallest unit can be fractional");
+        y2 = 3600 * _e((c3 + "000000000").slice(0, 9)) * n4;
+      } else if (m2 = void 0 === d3 ? 0 : _e(d3) * n4, void 0 !== h3) {
+        if (u2 ?? l2) throw new RangeError("only the smallest unit can be fractional");
+        y2 = 60 * _e((h3 + "000000000").slice(0, 9)) * n4;
+      } else f2 = void 0 === u2 ? 0 : _e(u2) * n4, void 0 !== l2 && (y2 = _e((l2 + "000000000").slice(0, 9)) * n4);
+      const p2 = y2 % 1e3, g2 = Math.trunc(y2 / 1e3) % 1e3, w2 = Math.trunc(y2 / 1e6) % 1e3;
+      return f2 += Math.trunc(y2 / 1e9) % 60, m2 += Math.trunc(y2 / 6e10), zr(r4, o3, i3, a3, s3, m2, f2, w2, g2, p2), { years: r4, months: o3, weeks: i3, days: a3, hours: s3, minutes: m2, seconds: f2, milliseconds: w2, microseconds: g2, nanoseconds: p2 };
+    })(e3);
+    return new (ce("%Temporal.Duration%"))(t3, n3, r3, o2, i2, a2, s2, c2, d2, h2);
+  })(Ve(e2));
+  const n2 = { years: 0, months: 0, weeks: 0, days: 0, hours: 0, minutes: 0, seconds: 0, milliseconds: 0, microseconds: 0, nanoseconds: 0 };
+  let r2 = kt(e2);
+  for (let e3 = 0; e3 < st.length; e3++) {
+    const t3 = st[e3], o2 = r2[t3];
+    void 0 !== o2 && (n2[t3] = o2);
+  }
+  return new t2(n2.years, n2.months, n2.weeks, n2.days, n2.hours, n2.minutes, n2.seconds, n2.milliseconds, n2.microseconds, n2.nanoseconds);
+}
+function cn(e2) {
+  let t2;
+  if (Ae(e2)) {
+    if (ut(e2) || wt(e2)) return Cn(re(e2, b));
+    t2 = Xe(e2);
+  } else t2 = e2;
+  const { year: n2, month: r2, day: o2, time: i2, offset: a2, z: s2 } = (function(e3) {
+    const t3 = Mt(e3);
+    if (!t3.z && !t3.offset) throw new RangeError("Temporal.Instant requires a time zone offset");
+    return t3;
+  })(Ve(t2)), { hour: c2 = 0, minute: d2 = 0, second: h2 = 0, millisecond: u2 = 0, microsecond: l2 = 0, nanosecond: m2 = 0 } = "start-of-day" === i2 ? {} : i2, f2 = $r(n2, r2, o2, c2, d2, h2, u2, l2, m2 - (s2 ? 0 : sr(a2)));
+  return Kr(f2.isoDate), Cn(pr(f2));
+}
+function dn(e2, t2) {
+  if (Ae(e2)) {
+    if (gt(e2)) return Lt(Zo(t2)), bn(re(e2, D), re(e2, E));
+    let n3;
+    return ne(e2, E) ? n3 = re(e2, E) : (n3 = e2.calendar, void 0 === n3 && (n3 = "iso8601"), n3 = kn(n3)), bn(Un(n3, tn(n3, e2, ["year", "month", "monthCode", "day"], [], []), Lt(Zo(t2))), n3);
+  }
+  let { month: n2, day: r2, referenceISOYear: o2, calendar: i2 } = Ct(Ve(e2));
+  if (void 0 === i2 && (i2 = "iso8601"), i2 = zo(i2), Lt(Zo(t2)), "iso8601" === i2) return bn({ year: 1972, month: n2, day: r2 }, i2);
+  let a2 = { year: o2, month: n2, day: r2 };
+  return Lr(a2), a2 = Un(i2, en(i2, a2, "month-day"), "constrain"), bn(a2, i2);
+}
+function hn(e2, t2) {
+  let n2;
+  if (Ae(e2)) {
+    if (ft(e2)) return Lt(Zo(t2)), Tn(re(e2, M));
+    if (yt(e2)) return Lt(Zo(t2)), Tn(re(e2, T).time);
+    if (wt(e2)) {
+      const n3 = zn(re(e2, $), re(e2, b));
+      return Lt(Zo(t2)), Tn(n3.time);
+    }
+    const { hour: r2, minute: o2, second: i2, millisecond: a2, microsecond: s2, nanosecond: c2 } = nn(e2);
+    n2 = jt(r2, o2, i2, a2, s2, c2, Lt(Zo(t2)));
+  } else n2 = Et(Ve(e2)), Lt(Zo(t2));
+  return Tn(n2);
+}
+function un(e2) {
+  return void 0 === e2 ? { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 } : re(hn(e2), M);
+}
+function ln(e2, t2) {
+  if (Ae(e2)) {
+    if (pt(e2)) return Lt(Zo(t2)), En(re(e2, D), re(e2, E));
+    const n3 = Nn(e2);
+    return En(Pn(n3, tn(n3, e2, ["year", "month", "monthCode"], [], []), Lt(Zo(t2))), n3);
+  }
+  let { year: n2, month: r2, referenceISODay: o2, calendar: i2 } = It(Ve(e2));
+  void 0 === i2 && (i2 = "iso8601"), i2 = zo(i2), Lt(Zo(t2));
+  let a2 = { year: n2, month: r2, day: o2 };
+  return Hr(a2), a2 = Pn(i2, en(i2, a2, "year-month"), "constrain"), En(a2, i2);
+}
+function mn(t2, n2, r2, o2, i2, a2, s2, c2) {
+  if ("start-of-day" === n2) return _n(i2, t2);
+  const d2 = xt(t2, n2);
+  if ("wall" === r2 || "ignore" === s2) return An(i2, d2, a2);
+  if ("exact" === r2 || "use" === s2) {
+    const e2 = $r(t2.year, t2.month, t2.day, n2.hour, n2.minute, n2.second, n2.millisecond, n2.microsecond, n2.nanosecond - o2);
+    Kr(e2.isoDate);
+    const r3 = pr(e2);
+    return Fr(r3), r3;
+  }
+  Kr(t2);
+  const h2 = pr(d2), u2 = Wn(i2, d2);
+  for (let t3 = 0; t3 < u2.length; t3++) {
+    const n3 = u2[t3], r3 = import_jsbi.default.toNumber(import_jsbi.default.subtract(h2, n3)), i3 = Eo(r3, 6e10, "halfExpand");
+    if (r3 === o2 || c2 && i3 === o2) return n3;
+  }
+  if ("reject" === s2) {
+    const e2 = Hn(o2), t3 = nr(d2, "iso8601", "auto");
+    throw new RangeError(`Offset ${e2} is invalid for ${t3} in ${i2}`);
+  }
+  return qn(u2, i2, d2, a2);
+}
+function fn(e2, t2) {
+  let n2, r2, o2, i2, a2, s2, c2, d2 = false, h2 = "option";
+  if (Ae(e2)) {
+    if (wt(e2)) {
+      const n3 = Zo(t2);
+      return Pt(n3), Bt(n3, "reject"), Lt(n3), $n(re(e2, b), re(e2, $), re(e2, E));
+    }
+    a2 = Nn(e2);
+    const d3 = tn(a2, e2, ["year", "month", "monthCode", "day"], ["hour", "minute", "second", "millisecond", "microsecond", "nanosecond", "offset", "timeZone"], ["timeZone"]);
+    ({ offset: i2, timeZone: o2 } = d3), void 0 === i2 && (h2 = "wall");
+    const u3 = Zo(t2);
+    s2 = Pt(u3), c2 = Bt(u3, "reject");
+    const l2 = Lt(u3);
+    ({ isoDate: n2, time: r2 } = on(a2, d3, l2));
+  } else {
+    let u3, l2, m2, f2, y2;
+    ({ year: m2, month: f2, day: y2, time: r2, tzAnnotation: u3, offset: i2, z: l2, calendar: a2 } = (function(e3) {
+      const t3 = Mt(e3);
+      if (!t3.tzAnnotation) throw new RangeError("Temporal.ZonedDateTime requires a time zone ID in brackets");
+      return t3;
+    })(Ve(e2))), o2 = Bn(u3), l2 ? h2 = "exact" : i2 || (h2 = "wall"), a2 || (a2 = "iso8601"), a2 = zo(a2), d2 = true;
+    const p2 = Zo(t2);
+    s2 = Pt(p2), c2 = Bt(p2, "reject"), Lt(p2), n2 = { year: m2, month: f2, day: y2 };
+  }
+  let u2 = 0;
+  return "option" === h2 && (u2 = sr(i2)), $n(mn(n2, r2, h2, u2, o2, s2, c2, d2), o2, a2);
+}
+function yn(e2, t2, n2) {
+  Lr(t2), te(e2), oe(e2, D, t2), oe(e2, E, n2), oe(e2, I, true);
+}
+function pn(e2, t2) {
+  const n2 = ce("%Temporal.PlainDate%"), r2 = Object.create(n2.prototype);
+  return yn(r2, e2, t2), r2;
+}
+function gn(e2, t2, n2) {
+  Br(t2), te(e2), oe(e2, T, t2), oe(e2, E, n2);
+}
+function wn(e2, t2) {
+  const n2 = ce("%Temporal.PlainDateTime%"), r2 = Object.create(n2.prototype);
+  return gn(r2, e2, t2), r2;
+}
+function vn(e2, t2, n2) {
+  Lr(t2), te(e2), oe(e2, D, t2), oe(e2, E, n2), oe(e2, O, true);
+}
+function bn(e2, t2) {
+  const n2 = ce("%Temporal.PlainMonthDay%"), r2 = Object.create(n2.prototype);
+  return vn(r2, e2, t2), r2;
+}
+function Dn(e2, t2) {
+  te(e2), oe(e2, M, t2);
+}
+function Tn(e2) {
+  const t2 = ce("%Temporal.PlainTime%"), n2 = Object.create(t2.prototype);
+  return Dn(n2, e2), n2;
+}
+function Mn(e2, t2, n2) {
+  Hr(t2), te(e2), oe(e2, D, t2), oe(e2, E, n2), oe(e2, C, true);
+}
+function En(e2, t2) {
+  const n2 = ce("%Temporal.PlainYearMonth%"), r2 = Object.create(n2.prototype);
+  return Mn(r2, e2, t2), r2;
+}
+function In(e2, t2) {
+  Fr(t2), te(e2), oe(e2, b, t2);
+}
+function Cn(e2) {
+  const t2 = ce("%Temporal.Instant%"), n2 = Object.create(t2.prototype);
+  return In(n2, e2), n2;
+}
+function On(e2, t2, n2, r2) {
+  Fr(t2), te(e2), oe(e2, b, t2), oe(e2, $, n2), oe(e2, E, r2);
+}
+function $n(e2, t2, n2 = "iso8601") {
+  const r2 = ce("%Temporal.ZonedDateTime%"), o2 = Object.create(r2.prototype);
+  return On(o2, e2, t2, n2), o2;
+}
+function Yn(e2) {
+  return Qe.filter(((t2) => void 0 !== e2[t2]));
+}
+function Rn(e2, t2, n2) {
+  const r2 = Yn(n2), o2 = Xt(e2).fieldKeysToIgnore(r2), i2 = /* @__PURE__ */ Object.create(null), a2 = Yn(t2);
+  for (let e3 = 0; e3 < Qe.length; e3++) {
+    let s2;
+    const c2 = Qe[e3];
+    a2.includes(c2) && !o2.includes(c2) && (s2 = t2[c2]), r2.includes(c2) && (s2 = n2[c2]), void 0 !== s2 && (i2[c2] = s2);
+  }
+  return i2;
+}
+function Sn(e2, t2, n2, r2) {
+  const o2 = Xt(e2).dateAdd(t2, n2, r2);
+  return Lr(o2), o2;
+}
+function jn(e2, t2, n2, r2) {
+  return Xt(e2).dateUntil(t2, n2, r2);
+}
+function kn(e2) {
+  if (Ae(e2) && ne(e2, E)) return re(e2, E);
+  const t2 = Ve(e2);
+  try {
+    return zo(t2);
+  } catch {
+  }
+  let n2;
+  try {
+    ({ calendar: n2 } = Mt(t2));
+  } catch {
+    try {
+      ({ calendar: n2 } = Et(t2));
+    } catch {
+      try {
+        ({ calendar: n2 } = It(t2));
+      } catch {
+        ({ calendar: n2 } = Ct(t2));
+      }
+    }
+  }
+  return n2 || (n2 = "iso8601"), zo(n2);
+}
+function Nn(e2) {
+  if (ne(e2, E)) return re(e2, E);
+  const { calendar: t2 } = e2;
+  return void 0 === t2 ? "iso8601" : kn(t2);
+}
+function xn(e2, t2) {
+  return zo(e2) === zo(t2);
+}
+function Ln(e2, t2, n2) {
+  const r2 = Xt(e2);
+  r2.resolveFields(t2, "date");
+  const o2 = r2.dateToISO(t2, n2);
+  return Lr(o2), o2;
+}
+function Pn(e2, t2, n2) {
+  const r2 = Xt(e2);
+  r2.resolveFields(t2, "year-month"), t2.day = 1;
+  const o2 = r2.dateToISO(t2, n2);
+  return Hr(o2), o2;
+}
+function Un(e2, t2, n2) {
+  const r2 = Xt(e2);
+  r2.resolveFields(t2, "month-day");
+  const o2 = r2.monthDayToISOReferenceDate(t2, n2);
+  return Lr(o2), o2;
+}
+function Bn(e2) {
+  if (Ae(e2) && wt(e2)) return re(e2, $);
+  const t2 = Ve(e2);
+  if ("UTC" === t2) return "UTC";
+  const { tzName: n2, offsetMinutes: r2 } = (function(e3) {
+    const { tzAnnotation: t3, offset: n3, z: r3 } = (function(e4) {
+      if (Ot.test(e4)) return { tzAnnotation: e4, offset: void 0, z: false };
+      try {
+        const { tzAnnotation: t4, offset: n4, z: r4 } = Mt(e4);
+        if (r4 || t4 || n4) return { tzAnnotation: t4, offset: n4, z: r4 };
+      } catch {
+      }
+      Yt(e4);
+    })(e3);
+    return t3 ? Rt(t3) : r3 ? Rt("UTC") : n3 ? Rt(n3) : void 0;
+  })(t2);
+  if (void 0 !== r2) return mr(r2);
+  const o2 = hr(n2);
+  if (!o2) throw new RangeError(`Unrecognized time zone ${n2}`);
+  return o2.identifier;
+}
+function Zn(e2, t2) {
+  if (e2 === t2) return true;
+  const n2 = Rt(e2).offsetMinutes, r2 = Rt(t2).offsetMinutes;
+  if (void 0 === n2 && void 0 === r2) {
+    const n3 = hr(t2);
+    if (!n3) return false;
+    const r3 = hr(e2);
+    return !!r3 && r3.primaryIdentifier === n3.primaryIdentifier;
+  }
+  return n2 === r2;
+}
+function Fn(e2, t2) {
+  const n2 = Rt(e2).offsetMinutes;
+  return void 0 !== n2 ? 6e10 * n2 : lr(e2, t2);
+}
+function Hn(e2) {
+  const t2 = e2 < 0 ? "-" : "+", n2 = Math.abs(e2), r2 = Math.floor(n2 / 36e11), o2 = Math.floor(n2 / 6e10) % 60, i2 = Math.floor(n2 / 1e9) % 60, a2 = n2 % 1e9;
+  return `${t2}${Vn(r2, o2, i2, a2, 0 === i2 && 0 === a2 ? "minute" : "auto")}`;
+}
+function zn(e2, t2) {
+  const n2 = Fn(e2, t2);
+  let { isoDate: { year: r2, month: o2, day: i2 }, time: { hour: a2, minute: s2, second: c2, millisecond: d2, microsecond: h2, nanosecond: u2 } } = gr(t2);
+  return $r(r2, o2, i2, a2, s2, c2, d2, h2, u2 + n2);
+}
+function An(e2, t2, n2) {
+  return qn(Wn(e2, t2), e2, t2, n2);
+}
+function qn(t2, n2, r2, o2) {
+  const i2 = t2.length;
+  if (1 === i2) return t2[0];
+  if (i2) switch (o2) {
+    case "compatible":
+    case "earlier":
+      return t2[0];
+    case "later":
+      return t2[i2 - 1];
+    case "reject":
+      throw new RangeError("multiple instants found");
+  }
+  if ("reject" === o2) throw new RangeError("multiple instants found");
+  const a2 = pr(r2), s2 = import_jsbi.default.subtract(a2, l);
+  Fr(s2);
+  const c2 = Fn(n2, s2), d2 = import_jsbi.default.add(a2, l);
+  Fr(d2);
+  const h2 = Fn(n2, d2) - c2;
+  switch (o2) {
+    case "earlier": {
+      const e2 = TimeDuration.fromComponents(0, 0, 0, 0, 0, -h2), t3 = fo(r2.time, e2);
+      return Wn(n2, xt(Or(r2.isoDate.year, r2.isoDate.month, r2.isoDate.day + t3.deltaDays), t3))[0];
+    }
+    case "compatible":
+    case "later": {
+      const e2 = TimeDuration.fromComponents(0, 0, 0, 0, 0, h2), t3 = fo(r2.time, e2), o3 = Wn(n2, xt(Or(r2.isoDate.year, r2.isoDate.month, r2.isoDate.day + t3.deltaDays), t3));
+      return o3[o3.length - 1];
+    }
+  }
+}
+function Wn(t2, n2) {
+  if ("UTC" === t2) return Kr(n2.isoDate), [pr(n2)];
+  const r2 = Rt(t2).offsetMinutes;
+  if (void 0 !== r2) {
+    const e2 = $r(n2.isoDate.year, n2.isoDate.month, n2.isoDate.day, n2.time.hour, n2.time.minute - r2, n2.time.second, n2.time.millisecond, n2.time.microsecond, n2.time.nanosecond);
+    Kr(e2.isoDate);
+    const t3 = pr(e2);
+    return Fr(t3), [t3];
+  }
+  return Kr(n2.isoDate), (function(t3, n3) {
+    let r3 = pr(n3), o2 = import_jsbi.default.subtract(r3, l);
+    import_jsbi.default.lessThan(o2, xe) && (o2 = r3);
+    let i2 = import_jsbi.default.add(r3, l);
+    import_jsbi.default.greaterThan(i2, Ne) && (i2 = r3);
+    const a2 = lr(t3, o2), s2 = lr(t3, i2), c2 = (a2 === s2 ? [a2] : [a2, s2]).map(((o3) => {
+      const i3 = import_jsbi.default.subtract(r3, import_jsbi.default.BigInt(o3)), a3 = (function(e2, t4) {
+        const { epochMilliseconds: n4, time: { millisecond: r4, microsecond: o4, nanosecond: i4 } } = gr(t4), { year: a4, month: s3, day: c3, hour: d2, minute: h2, second: u2 } = br(e2, n4);
+        return $r(a4, s3, c3, d2, h2, u2, r4, o4, i4);
+      })(t3, i3);
+      if (0 === jo(n3, a3)) return Fr(i3), i3;
+    }));
+    return c2.filter(((e2) => void 0 !== e2));
+  })(t2, n2);
+}
+function _n(t2, n2) {
+  const r2 = xt(n2, { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 }), o2 = Wn(t2, r2);
+  if (o2.length) return o2[0];
+  const i2 = pr(r2), a2 = import_jsbi.default.subtract(i2, l);
+  return Fr(a2), wr(t2, a2);
+}
+function Jn(e2) {
+  let t2;
+  return t2 = e2 < 0 || e2 > 9999 ? (e2 < 0 ? "-" : "+") + Ke(Math.abs(e2), 6) : Ke(e2, 4), t2;
+}
+function Gn(e2) {
+  return Ke(e2, 2);
+}
+function Kn(e2, t2) {
+  let n2;
+  if ("auto" === t2) {
+    if (0 === e2) return "";
+    n2 = Ke(e2, 9).replace(/0+$/, "");
+  } else {
+    if (0 === t2) return "";
+    n2 = Ke(e2, 9).slice(0, t2);
+  }
+  return `.${n2}`;
+}
+function Vn(e2, t2, n2, r2, o2) {
+  let i2 = `${Gn(e2)}:${Gn(t2)}`;
+  return "minute" === o2 || (i2 += `:${Gn(n2)}`, i2 += Kn(r2, o2)), i2;
+}
+function Xn(e2, t2, n2) {
+  let r2 = t2;
+  void 0 === r2 && (r2 = "UTC");
+  const o2 = re(e2, b), i2 = nr(zn(r2, o2), "iso8601", n2, "never");
+  let a2 = "Z";
+  return void 0 !== t2 && (a2 = fr(Fn(r2, o2))), `${i2}${a2}`;
+}
+function Qn(e2, t2) {
+  const n2 = re(e2, Y), r2 = re(e2, R), o2 = re(e2, S), i2 = re(e2, j), a2 = re(e2, k), s2 = re(e2, N), c2 = Mr(e2);
+  let d2 = "";
+  0 !== n2 && (d2 += `${Math.abs(n2)}Y`), 0 !== r2 && (d2 += `${Math.abs(r2)}M`), 0 !== o2 && (d2 += `${Math.abs(o2)}W`), 0 !== i2 && (d2 += `${Math.abs(i2)}D`);
+  let h2 = "";
+  0 !== a2 && (h2 += `${Math.abs(a2)}H`), 0 !== s2 && (h2 += `${Math.abs(s2)}M`);
+  const u2 = TimeDuration.fromComponents(0, 0, re(e2, x), re(e2, L), re(e2, P), re(e2, U));
+  u2.isZero() && !["second", "millisecond", "microsecond", "nanosecond"].includes(Jt(e2)) && "auto" === t2 || (h2 += `${Math.abs(u2.sec)}${Kn(Math.abs(u2.subsec), t2)}S`);
+  let l2 = `${c2 < 0 ? "-" : ""}P${d2}`;
+  return h2 && (l2 = `${l2}T${h2}`), l2;
+}
+function er(e2, t2 = "auto") {
+  const { year: n2, month: r2, day: o2 } = re(e2, D);
+  return `${Jn(n2)}-${Gn(r2)}-${Gn(o2)}${Dt(re(e2, E), t2)}`;
+}
+function tr({ hour: e2, minute: t2, second: n2, millisecond: r2, microsecond: o2, nanosecond: i2 }, a2) {
+  return Vn(e2, t2, n2, 1e6 * r2 + 1e3 * o2 + i2, a2);
+}
+function nr(e2, t2, n2, r2 = "auto") {
+  const { isoDate: { year: o2, month: i2, day: a2 }, time: { hour: s2, minute: c2, second: d2, millisecond: h2, microsecond: u2, nanosecond: l2 } } = e2;
+  return `${Jn(o2)}-${Gn(i2)}-${Gn(a2)}T${Vn(s2, c2, d2, 1e6 * h2 + 1e3 * u2 + l2, n2)}${Dt(t2, r2)}`;
+}
+function rr(e2, t2 = "auto") {
+  const { year: n2, month: r2, day: o2 } = re(e2, D);
+  let i2 = `${Gn(r2)}-${Gn(o2)}`;
+  const a2 = re(e2, E);
+  "always" !== t2 && "critical" !== t2 && "iso8601" === a2 || (i2 = `${Jn(n2)}-${i2}`);
+  const s2 = Dt(a2, t2);
+  return s2 && (i2 += s2), i2;
+}
+function or(e2, t2 = "auto") {
+  const { year: n2, month: r2, day: o2 } = re(e2, D);
+  let i2 = `${Jn(n2)}-${Gn(r2)}`;
+  const a2 = re(e2, E);
+  "always" !== t2 && "critical" !== t2 && "iso8601" === a2 || (i2 += `-${Gn(o2)}`);
+  const s2 = Dt(a2, t2);
+  return s2 && (i2 += s2), i2;
+}
+function ir(e2, t2, n2 = "auto", r2 = "auto", o2 = "auto", i2 = void 0) {
+  let a2 = re(e2, b);
+  if (i2) {
+    const { unit: e3, increment: t3, roundingMode: n3 } = i2;
+    a2 = Io(a2, t3, e3, n3);
+  }
+  const s2 = re(e2, $), c2 = Fn(s2, a2);
+  let d2 = nr(zn(s2, a2), "iso8601", t2, "never");
+  return "never" !== o2 && (d2 += fr(c2)), "never" !== r2 && (d2 += `[${"critical" === r2 ? "!" : ""}${s2}]`), d2 += Dt(re(e2, E), n2), d2;
+}
+function ar(e2) {
+  return $t.test(e2);
+}
+function sr(e2) {
+  const t2 = _o.exec(e2);
+  if (!t2) throw new RangeError(`invalid time zone offset: ${e2}; must match \xB1HH:MM[:SS.SSSSSSSSS]`);
+  return ("-" === t2[1] ? -1 : 1) * (1e9 * (60 * (60 * +t2[2] + +(t2[3] || 0)) + +(t2[4] || 0)) + +((t2[5] || 0) + "000000000").slice(0, 9));
+}
+var cr;
+var dr = Object.assign(/* @__PURE__ */ Object.create(null), { "/": true, "-": true, _: true });
+function hr(e2) {
+  var _a3;
+  if (void 0 === cr) {
+    const e3 = (_a3 = Intl.supportedValuesOf) == null ? void 0 : _a3.call(Intl, "timeZone");
+    if (e3) {
+      cr = /* @__PURE__ */ new Map();
+      for (let t3 = 0; t3 < e3.length; t3++) {
+        const n3 = e3[t3];
+        cr.set(Ao(n3), n3);
+      }
+    } else cr = null;
+  }
+  const t2 = Ao(e2);
+  let n2 = cr == null ? void 0 : cr.get(t2);
+  if (n2) return { identifier: n2, primaryIdentifier: n2 };
+  try {
+    n2 = ht(e2).resolvedOptions().timeZone;
+  } catch {
+    return;
+  }
+  if ("antarctica/south_pole" === t2 && (n2 = "Antarctica/McMurdo"), ze.has(e2)) throw new RangeError(`${e2} is a legacy time zone identifier from ICU. Use ${n2} instead`);
+  const r2 = [...t2].map(((e3, n3) => 0 === n3 || dr[t2[n3 - 1]] ? e3.toUpperCase() : e3)).join("").split("/");
+  if (1 === r2.length) return "gb-eire" === t2 ? { identifier: "GB-Eire", primaryIdentifier: n2 } : { identifier: t2.length <= 3 || /[-0-9]/.test(t2) ? t2.toUpperCase() : r2[0], primaryIdentifier: n2 };
+  if ("Etc" === r2[0]) return { identifier: `Etc/${["Zulu", "Greenwich", "Universal"].includes(r2[1]) ? r2[1] : r2[1].toUpperCase()}`, primaryIdentifier: n2 };
+  if ("Us" === r2[0]) return { identifier: `US/${r2[1]}`, primaryIdentifier: n2 };
+  const o2 = /* @__PURE__ */ new Map([["Act", "ACT"], ["Lhi", "LHI"], ["Nsw", "NSW"], ["Dar_Es_Salaam", "Dar_es_Salaam"], ["Port_Of_Spain", "Port_of_Spain"], ["Port-Au-Prince", "Port-au-Prince"], ["Isle_Of_Man", "Isle_of_Man"], ["Comodrivadavia", "ComodRivadavia"], ["Knox_In", "Knox_IN"], ["Dumontdurville", "DumontDUrville"], ["Mcmurdo", "McMurdo"], ["Denoronha", "DeNoronha"], ["Easterisland", "EasterIsland"], ["Bajanorte", "BajaNorte"], ["Bajasur", "BajaSur"]]);
+  return r2[1] = o2.get(r2[1]) ?? r2[1], r2.length > 2 && (r2[2] = o2.get(r2[2]) ?? r2[2]), { identifier: r2.join("/"), primaryIdentifier: n2 };
+}
+function ur(e2, t2) {
+  const { year: n2, month: r2, day: o2, hour: i2, minute: a2, second: s2 } = br(e2, t2);
+  let c2 = t2 % 1e3;
+  return c2 < 0 && (c2 += 1e3), 1e6 * (yr({ isoDate: { year: n2, month: r2, day: o2 }, time: { hour: i2, minute: a2, second: s2, millisecond: c2 } }) - t2);
+}
+function lr(e2, t2) {
+  return ur(e2, No(t2, "floor"));
+}
+function mr(e2) {
+  const t2 = e2 < 0 ? "-" : "+", n2 = Math.abs(e2);
+  return `${t2}${Vn(Math.floor(n2 / 60), n2 % 60, 0, 0, "minute")}`;
+}
+function fr(e2) {
+  return mr(Eo(e2, je, "halfExpand") / 6e10);
+}
+function yr({ isoDate: { year: e2, month: t2, day: n2 }, time: { hour: r2, minute: o2, second: i2, millisecond: a2 } }) {
+  const s2 = e2 % 400, c2 = (e2 - s2) / 400, d2 = /* @__PURE__ */ new Date();
+  return d2.setUTCHours(r2, o2, i2, a2), d2.setUTCFullYear(s2, t2 - 1, n2), d2.getTime() + Ue * c2;
+}
+function pr(t2) {
+  const n2 = yr(t2), r2 = 1e3 * t2.time.microsecond + t2.time.nanosecond;
+  return import_jsbi.default.add(xo(n2), import_jsbi.default.BigInt(r2));
+}
+function gr(t2) {
+  let n2 = No(t2, "trunc"), r2 = import_jsbi.default.toNumber(import_jsbi.default.remainder(t2, c));
+  r2 < 0 && (r2 += 1e6, n2 -= 1);
+  const o2 = Math.floor(r2 / 1e3) % 1e3, i2 = r2 % 1e3, a2 = new Date(n2);
+  return { epochMilliseconds: n2, isoDate: { year: a2.getUTCFullYear(), month: a2.getUTCMonth() + 1, day: a2.getUTCDate() }, time: { hour: a2.getUTCHours(), minute: a2.getUTCMinutes(), second: a2.getUTCSeconds(), millisecond: a2.getUTCMilliseconds(), microsecond: o2, nanosecond: i2 } };
+}
+function wr(e2, t2) {
+  if ("UTC" === e2) return null;
+  const n2 = No(t2, "floor");
+  if (n2 < Fe) return wr(e2, xo(Fe));
+  const r2 = Date.now(), o2 = Math.max(n2, r2) + 366 * Re * 3;
+  let i2 = n2, a2 = ur(e2, i2), s2 = i2, c2 = a2;
+  for (; a2 === c2 && i2 < o2; ) {
+    if (s2 = i2 + 2 * Re * 7, s2 > ke) return null;
+    c2 = ur(e2, s2), a2 === c2 && (i2 = s2);
+  }
+  return a2 === c2 ? null : xo(Jo(((t3) => ur(e2, t3)), i2, s2, a2, c2));
+}
+function vr(t2, n2) {
+  if ("UTC" === t2) return null;
+  const r2 = No(n2, "ceil"), o2 = Date.now(), i2 = o2 + 366 * Re * 3;
+  if (r2 > i2) {
+    const n3 = vr(t2, xo(i2));
+    if (null === n3 || import_jsbi.default.lessThan(n3, xo(o2))) return n3;
+  }
+  if ("Africa/Casablanca" === t2 || "Africa/El_Aaiun" === t2) {
+    const e2 = Date.UTC(2088, 0, 1);
+    if (e2 < r2) return vr(t2, xo(e2));
+  }
+  let a2 = r2 - 1;
+  if (a2 < Fe) return null;
+  let s2 = ur(t2, a2), c2 = a2, d2 = s2;
+  for (; s2 === d2 && a2 > Fe; ) {
+    if (c2 = a2 - 2 * Re * 7, c2 < Fe) return null;
+    d2 = ur(t2, c2), s2 === d2 && (a2 = c2);
+  }
+  return s2 === d2 ? null : xo(Jo(((e2) => ur(t2, e2)), c2, a2, d2, s2));
+}
+function br(e2, t2) {
+  return (function(e3) {
+    const t3 = e3.split(/[^\w]+/);
+    if (7 !== t3.length) throw new RangeError(`expected 7 parts in "${e3}`);
+    const n2 = +t3[0], r2 = +t3[1];
+    let o2 = +t3[2];
+    const i2 = t3[3];
+    if ("b" === i2[0] || "B" === i2[0]) o2 = 1 - o2;
+    else if ("a" !== i2[0] && "A" !== i2[0]) throw new RangeError(`Unknown era ${i2} in "${e3}`);
+    const a2 = "24" === t3[4] ? 0 : +t3[4], s2 = +t3[5], c2 = +t3[6];
+    if (!(Number.isFinite(o2) && Number.isFinite(n2) && Number.isFinite(r2) && Number.isFinite(a2) && Number.isFinite(s2) && Number.isFinite(c2))) throw new RangeError(`Invalid number in "${e3}`);
+    return { year: o2, month: n2, day: r2, hour: a2, minute: s2, second: c2 };
+  })(ht(e2).format(t2));
+}
+function Dr(e2) {
+  return void 0 !== e2 && !(e2 % 4 != 0 || e2 % 100 == 0 && e2 % 400 != 0);
+}
+function Tr(e2, t2) {
+  return { standard: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31], leapyear: [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] }[Dr(e2) ? "leapyear" : "standard"][t2 - 1];
+}
+function Mr(e2) {
+  const t2 = [re(e2, Y), re(e2, R), re(e2, S), re(e2, j), re(e2, k), re(e2, N), re(e2, x), re(e2, L), re(e2, P), re(e2, U)];
+  for (let e3 = 0; e3 < t2.length; e3++) {
+    const n2 = t2[e3];
+    if (0 !== n2) return n2 < 0 ? -1 : 1;
+  }
+  return 0;
+}
+function Er(e2) {
+  const t2 = ["years", "months", "weeks", "days"];
+  for (let n2 = 0; n2 < t2.length; n2++) {
+    const r2 = e2[t2[n2]];
+    if (0 !== r2) return r2 < 0 ? -1 : 1;
+  }
+  return 0;
+}
+function Ir(e2) {
+  const t2 = Er(e2.date);
+  return 0 !== t2 ? t2 : e2.time.sign();
+}
+function Cr(e2, t2) {
+  let n2 = e2, r2 = t2;
+  if (!Number.isFinite(n2) || !Number.isFinite(r2)) throw new RangeError("infinity is out of range");
+  return r2 -= 1, n2 += Math.floor(r2 / 12), r2 %= 12, r2 < 0 && (r2 += 12), r2 += 1, { year: n2, month: r2 };
+}
+function Or(e2, t2, n2) {
+  let r2 = e2, o2 = t2, i2 = n2;
+  if (!Number.isFinite(i2)) throw new RangeError("infinity is out of range");
+  ({ year: r2, month: o2 } = Cr(r2, o2));
+  const a2 = 146097;
+  if (Math.abs(i2) > a2) {
+    const e3 = Math.trunc(i2 / a2);
+    r2 += 400 * e3, i2 -= e3 * a2;
+  }
+  let s2 = 0, c2 = o2 > 2 ? r2 : r2 - 1;
+  for (; s2 = Dr(c2) ? 366 : 365, i2 < -s2; ) r2 -= 1, c2 -= 1, i2 += s2;
+  for (c2 += 1; s2 = Dr(c2) ? 366 : 365, i2 > s2; ) r2 += 1, c2 += 1, i2 -= s2;
+  for (; i2 < 1; ) ({ year: r2, month: o2 } = Cr(r2, o2 - 1)), i2 += Tr(r2, o2);
+  for (; i2 > Tr(r2, o2); ) i2 -= Tr(r2, o2), { year: r2, month: o2 } = Cr(r2, o2 + 1);
+  return { year: r2, month: o2, day: i2 };
+}
+function $r(e2, t2, n2, r2, o2, i2, a2, s2, c2) {
+  const d2 = Yr(r2, o2, i2, a2, s2, c2);
+  return xt(Or(e2, t2, n2 + d2.deltaDays), d2);
+}
+function Yr(e2, t2, n2, r2, o2, i2) {
+  let a2, s2 = e2, c2 = t2, d2 = n2, h2 = r2, u2 = o2, l2 = i2;
+  ({ div: a2, mod: l2 } = de(l2, 3)), u2 += a2, l2 < 0 && (u2 -= 1, l2 += 1e3), { div: a2, mod: u2 } = de(u2, 3), h2 += a2, u2 < 0 && (h2 -= 1, u2 += 1e3), d2 += Math.trunc(h2 / 1e3), h2 %= 1e3, h2 < 0 && (d2 -= 1, h2 += 1e3), c2 += Math.trunc(d2 / 60), d2 %= 60, d2 < 0 && (c2 -= 1, d2 += 60), s2 += Math.trunc(c2 / 60), c2 %= 60, c2 < 0 && (s2 -= 1, c2 += 60);
+  let m2 = Math.trunc(s2 / 24);
+  return s2 %= 24, s2 < 0 && (m2 -= 1, s2 += 24), m2 += 0, s2 += 0, c2 += 0, d2 += 0, h2 += 0, u2 += 0, l2 += 0, { deltaDays: m2, hour: s2, minute: c2, second: d2, millisecond: h2, microsecond: u2, nanosecond: l2 };
+}
+function Rr(e2, t2) {
+  const n2 = Nt(e2, 0);
+  if (0 === Er(n2)) return e2.days;
+  const r2 = re(t2, D), o2 = Sn(re(t2, E), r2, n2, "constrain"), i2 = Gr(r2.year, r2.month - 1, r2.day), a2 = Gr(o2.year, o2.month - 1, o2.day) - i2;
+  return e2.days + a2;
+}
+function Sr(e2) {
+  return new (ce("%Temporal.Duration%"))(-re(e2, Y), -re(e2, R), -re(e2, S), -re(e2, j), -re(e2, k), -re(e2, N), -re(e2, x), -re(e2, L), -re(e2, P), -re(e2, U));
+}
+function jr(e2, t2, n2) {
+  return Math.min(n2, Math.max(t2, e2));
+}
+function kr(e2, t2, n2) {
+  const r2 = jr(t2, 1, 12);
+  return { year: e2, month: r2, day: jr(n2, 1, Tr(e2, r2)) };
+}
+function Nr(e2, t2, n2) {
+  if (e2 < t2 || e2 > n2) throw new RangeError(`value out of range: ${t2} <= ${e2} <= ${n2}`);
+}
+function xr(e2, t2, n2) {
+  Nr(t2, 1, 12), Nr(n2, 1, Tr(e2, t2));
+}
+function Lr(e2) {
+  Br(xt(e2, { deltaDays: 0, hour: 12, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 }));
+}
+function Pr(e2, t2, n2, r2, o2, i2) {
+  Nr(e2, 0, 23), Nr(t2, 0, 59), Nr(n2, 0, 59), Nr(r2, 0, 999), Nr(o2, 0, 999), Nr(i2, 0, 999);
+}
+function Ur(e2, t2, n2, r2, o2, i2, a2, s2, c2) {
+  xr(e2, t2, n2), Pr(r2, o2, i2, a2, s2, c2);
+}
+function Br(t2) {
+  const n2 = pr(t2);
+  (import_jsbi.default.lessThan(n2, Le) || import_jsbi.default.greaterThan(n2, Pe)) && Fr(n2);
+}
+function Zr(e2) {
+  pr(e2);
+}
+function Fr(t2) {
+  if (import_jsbi.default.lessThan(t2, xe) || import_jsbi.default.greaterThan(t2, Ne)) throw new RangeError("date/time value is outside of supported range");
+}
+function Hr({ year: e2, month: t2 }) {
+  Nr(e2, Be, Ze), e2 === Be ? Nr(t2, 4, 12) : e2 === Ze && Nr(t2, 1, 9);
+}
+function zr(e2, t2, n2, r2, o2, i2, a2, s2, c2, d2) {
+  let h2 = 0;
+  const u2 = [e2, t2, n2, r2, o2, i2, a2, s2, c2, d2];
+  for (let e3 = 0; e3 < u2.length; e3++) {
+    const t3 = u2[e3];
+    if (t3 === 1 / 0 || t3 === -1 / 0) throw new RangeError("infinite values not allowed as duration fields");
+    if (0 !== t3) {
+      const e4 = t3 < 0 ? -1 : 1;
+      if (0 !== h2 && e4 !== h2) throw new RangeError("mixed-sign values not allowed as duration fields");
+      h2 = e4;
+    }
+  }
+  if (Math.abs(e2) >= 2 ** 32 || Math.abs(t2) >= 2 ** 32 || Math.abs(n2) >= 2 ** 32) throw new RangeError("years, months, and weeks must be < 2\xB3\xB2");
+  const l2 = de(s2, 3), m2 = de(c2, 6), f2 = de(d2, 9), y2 = de(1e6 * l2.mod + 1e3 * m2.mod + f2.mod, 9).div, p2 = 86400 * r2 + 3600 * o2 + 60 * i2 + a2 + l2.div + m2.div + f2.div + y2;
+  if (!Number.isSafeInteger(p2)) throw new RangeError("total of duration time units cannot exceed 9007199254740991.999999999 s");
+}
+function Ar(e2) {
+  return { date: { years: re(e2, Y), months: re(e2, R), weeks: re(e2, S), days: re(e2, j) }, time: TimeDuration.fromComponents(re(e2, k), re(e2, N), re(e2, x), re(e2, L), re(e2, P), re(e2, U)) };
+}
+function qr(e2) {
+  const t2 = TimeDuration.fromComponents(re(e2, k), re(e2, N), re(e2, x), re(e2, L), re(e2, P), re(e2, U)).add24HourDays(re(e2, j));
+  return { date: { years: re(e2, Y), months: re(e2, R), weeks: re(e2, S), days: 0 }, time: t2 };
+}
+function Wr(e2) {
+  const t2 = qr(e2), n2 = Math.trunc(t2.time.sec / 86400);
+  return zr(t2.date.years, t2.date.months, t2.date.weeks, n2, 0, 0, 0, 0, 0, 0), { ...t2.date, days: n2 };
+}
+function _r(e2, t2) {
+  const n2 = e2.time.sign();
+  let r2 = e2.time.abs().subsec, o2 = 0, i2 = 0, a2 = e2.time.abs().sec, s2 = 0, c2 = 0, d2 = 0;
+  switch (t2) {
+    case "year":
+    case "month":
+    case "week":
+    case "day":
+      o2 = Math.trunc(r2 / 1e3), r2 %= 1e3, i2 = Math.trunc(o2 / 1e3), o2 %= 1e3, a2 += Math.trunc(i2 / 1e3), i2 %= 1e3, s2 = Math.trunc(a2 / 60), a2 %= 60, c2 = Math.trunc(s2 / 60), s2 %= 60, d2 = Math.trunc(c2 / 24), c2 %= 24;
+      break;
+    case "hour":
+      o2 = Math.trunc(r2 / 1e3), r2 %= 1e3, i2 = Math.trunc(o2 / 1e3), o2 %= 1e3, a2 += Math.trunc(i2 / 1e3), i2 %= 1e3, s2 = Math.trunc(a2 / 60), a2 %= 60, c2 = Math.trunc(s2 / 60), s2 %= 60;
+      break;
+    case "minute":
+      o2 = Math.trunc(r2 / 1e3), r2 %= 1e3, i2 = Math.trunc(o2 / 1e3), o2 %= 1e3, a2 += Math.trunc(i2 / 1e3), i2 %= 1e3, s2 = Math.trunc(a2 / 60), a2 %= 60;
+      break;
+    case "second":
+      o2 = Math.trunc(r2 / 1e3), r2 %= 1e3, i2 = Math.trunc(o2 / 1e3), o2 %= 1e3, a2 += Math.trunc(i2 / 1e3), i2 %= 1e3;
+      break;
+    case "millisecond":
+      o2 = Math.trunc(r2 / 1e3), r2 %= 1e3, i2 = he(a2, 3, Math.trunc(o2 / 1e3)), o2 %= 1e3, a2 = 0;
+      break;
+    case "microsecond":
+      o2 = he(a2, 6, Math.trunc(r2 / 1e3)), r2 %= 1e3, a2 = 0;
+      break;
+    case "nanosecond":
+      r2 = he(a2, 9, r2), a2 = 0;
+  }
+  return new (ce("%Temporal.Duration%"))(e2.date.years, e2.date.months, e2.date.weeks, e2.date.days + n2 * d2, n2 * c2, n2 * s2, n2 * a2, n2 * i2, n2 * o2, n2 * r2);
+}
+function Jr(e2, t2) {
+  return Er(e2), t2.sign(), { date: e2, time: t2 };
+}
+function Gr(e2, t2, n2) {
+  return yr({ isoDate: { year: e2, month: t2 + 1, day: n2 }, time: { hour: 0, minute: 0, second: 0, millisecond: 0 } }) / Re;
+}
+function Kr({ year: e2, month: t2, day: n2 }) {
+  if (Math.abs(Gr(e2, t2 - 1, n2)) > 1e8) throw new RangeError("date/time value is outside the supported range");
+}
+function Vr(e2, t2) {
+  const n2 = t2.hour - e2.hour, r2 = t2.minute - e2.minute, o2 = t2.second - e2.second, i2 = t2.millisecond - e2.millisecond, a2 = t2.microsecond - e2.microsecond, s2 = t2.nanosecond - e2.nanosecond;
+  return TimeDuration.fromComponents(n2, r2, o2, i2, a2, s2);
+}
+function Xr(e2, t2, n2, r2, o2) {
+  let i2 = TimeDuration.fromEpochNsDiff(t2, e2);
+  return i2 = $o(i2, n2, r2, o2), Jr({ years: 0, months: 0, weeks: 0, days: 0 }, i2);
+}
+function Qr(e2, t2, n2, r2) {
+  Zr(e2), Zr(t2);
+  let o2 = Vr(e2.time, t2.time);
+  const i2 = o2.sign(), a2 = Ro(e2.isoDate, t2.isoDate);
+  let s2 = t2.isoDate;
+  a2 === i2 && (s2 = Or(s2.year, s2.month, s2.day + i2), o2 = o2.add24HourDays(-i2));
+  const c2 = Gt("day", r2), d2 = jn(n2, e2.isoDate, s2, c2);
+  return r2 !== c2 && (o2 = o2.add24HourDays(d2.days), d2.days = 0), Jr(d2, o2);
+}
+function eo(n2, r2, o2, i2, a2) {
+  const s2 = import_jsbi.default.subtract(r2, n2);
+  if (import_jsbi.default.equal(s2, t)) return { date: { years: 0, months: 0, weeks: 0, days: 0 }, time: TimeDuration.ZERO };
+  const c2 = import_jsbi.default.lessThan(s2, t) ? -1 : 1, d2 = zn(o2, n2), h2 = zn(o2, r2);
+  let u2, l2 = 0, m2 = 1 === c2 ? 2 : 1, f2 = Vr(d2.time, h2.time);
+  for (f2.sign() === -c2 && l2++; l2 <= m2; l2++) {
+    u2 = xt(Or(h2.isoDate.year, h2.isoDate.month, h2.isoDate.day - l2 * c2), d2.time);
+    const e2 = An(o2, u2, "compatible");
+    if (f2 = TimeDuration.fromEpochNsDiff(r2, e2), f2.sign() !== -c2) break;
+  }
+  const y2 = Gt("day", a2);
+  return Jr(jn(i2, d2.isoDate, u2.isoDate, y2), f2);
+}
+function to(t2, n2, r2, o2, i2, a2, s2, c2, d2) {
+  let h2, u2, l2, m2, f2 = n2;
+  switch (c2) {
+    case "year": {
+      const e2 = Eo(f2.date.years, s2, "trunc");
+      h2 = e2, u2 = e2 + s2 * t2, l2 = { years: h2, months: 0, weeks: 0, days: 0 }, m2 = { ...l2, years: u2 };
+      break;
+    }
+    case "month": {
+      const e2 = Eo(f2.date.months, s2, "trunc");
+      h2 = e2, u2 = e2 + s2 * t2, l2 = Nt(f2.date, 0, 0, h2), m2 = Nt(f2.date, 0, 0, u2);
+      break;
+    }
+    case "week": {
+      const e2 = Nt(f2.date, 0, 0), n3 = Sn(a2, o2.isoDate, e2, "constrain"), r3 = jn(a2, n3, Or(n3.year, n3.month, n3.day + f2.date.days), "week"), i3 = Eo(f2.date.weeks + r3.weeks, s2, "trunc");
+      h2 = i3, u2 = i3 + s2 * t2, l2 = Nt(f2.date, 0, h2), m2 = Nt(f2.date, 0, u2);
+      break;
+    }
+    case "day": {
+      const e2 = Eo(f2.date.days, s2, "trunc");
+      h2 = e2, u2 = e2 + s2 * t2, l2 = Nt(f2.date, h2), m2 = Nt(f2.date, u2);
+      break;
+    }
+  }
+  const y2 = Sn(a2, o2.isoDate, l2, "constrain"), p2 = Sn(a2, o2.isoDate, m2, "constrain");
+  let g2, w2;
+  const v2 = xt(y2, o2.time), b2 = xt(p2, o2.time);
+  i2 ? (g2 = An(i2, v2, "compatible"), w2 = An(i2, b2, "compatible")) : (g2 = pr(v2), w2 = pr(b2));
+  const D2 = TimeDuration.fromEpochNsDiff(r2, g2), T2 = TimeDuration.fromEpochNsDiff(w2, g2), M2 = ue(d2, t2 < 0 ? "negative" : "positive"), E2 = D2.add(D2).abs().subtract(T2.abs()).sign(), I2 = Math.abs(h2) / s2 % 2 == 0, C2 = D2.isZero() ? Math.abs(h2) : D2.cmp(T2) ? le(Math.abs(h2), Math.abs(u2), E2, I2, M2) : Math.abs(u2), O2 = new TimeDuration(import_jsbi.default.add(import_jsbi.default.multiply(T2.totalNs, import_jsbi.default.BigInt(h2)), import_jsbi.default.multiply(D2.totalNs, import_jsbi.default.BigInt(s2 * t2)))).fdiv(T2.totalNs), $2 = C2 === Math.abs(u2);
+  return f2 = { date: $2 ? m2 : l2, time: TimeDuration.ZERO }, { nudgeResult: { duration: f2, nudgedEpochNs: $2 ? w2 : g2, didExpandCalendarUnit: $2 }, total: O2 };
+}
+function no(t2, n2, r2, o2, i2, a2, s2, c2, d2) {
+  let h2 = t2;
+  const u2 = Kt(c2) || o2 && "day" === c2, l2 = Ir(h2) < 0 ? -1 : 1;
+  let m2;
+  return u2 ? { nudgeResult: m2 } = to(l2, h2, n2, r2, o2, i2, s2, c2, d2) : m2 = o2 ? (function(t3, n3, r3, o3, i3, a3, s3, c3) {
+    let d3 = n3;
+    const h3 = Sn(i3, r3.isoDate, d3.date, "constrain"), u3 = xt(h3, r3.time), l3 = xt(Or(h3.year, h3.month, h3.day + t3), r3.time), m3 = An(o3, u3, "compatible"), f2 = An(o3, l3, "compatible"), y2 = TimeDuration.fromEpochNsDiff(f2, m3);
+    if (y2.sign() !== t3) throw new RangeError("time zone returned inconsistent Instants");
+    const p2 = import_jsbi.default.BigInt(at[s3] * a3);
+    let g2 = d3.time.round(p2, c3);
+    const w2 = g2.subtract(y2), v2 = w2.sign() !== -t3;
+    let b2, D2;
+    return v2 ? (b2 = t3, g2 = w2.round(p2, c3), D2 = g2.addToEpochNs(f2)) : (b2 = 0, D2 = g2.addToEpochNs(m3)), { duration: Jr(Nt(d3.date, d3.date.days + b2), g2), nudgedEpochNs: D2, didExpandCalendarUnit: v2 };
+  })(l2, h2, r2, o2, i2, s2, c2, d2) : (function(t3, n3, r3, o3, i3, a3) {
+    let s3 = t3;
+    const c3 = s3.time.add24HourDays(s3.date.days), d3 = c3.round(import_jsbi.default.BigInt(o3 * at[i3]), a3), h3 = d3.subtract(c3), { quotient: u3 } = c3.divmod(Se), { quotient: l3 } = d3.divmod(Se), m3 = Math.sign(l3 - u3) === c3.sign(), f2 = h3.addToEpochNs(n3);
+    let y2 = 0, p2 = d3;
+    return "date" === Vt(r3) && (y2 = l3, p2 = d3.add(TimeDuration.fromComponents(24 * -l3, 0, 0, 0, 0, 0))), { duration: { date: Nt(s3.date, y2), time: p2 }, nudgedEpochNs: f2, didExpandCalendarUnit: m3 };
+  })(h2, n2, a2, s2, c2, d2), h2 = m2.duration, m2.didExpandCalendarUnit && "week" !== c2 && (h2 = (function(e2, t3, n3, r3, o3, i3, a3, s3) {
+    let c3 = t3;
+    if (s3 === a3) return c3;
+    const d3 = it.indexOf(a3);
+    for (let t4 = it.indexOf(s3) - 1; t4 >= d3; t4--) {
+      const s4 = it[t4];
+      if ("week" === s4 && "week" !== a3) continue;
+      let d4;
+      switch (s4) {
+        case "year":
+          d4 = { years: c3.date.years + e2, months: 0, weeks: 0, days: 0 };
+          break;
+        case "month": {
+          const t5 = c3.date.months + e2;
+          d4 = Nt(c3.date, 0, 0, t5);
+          break;
+        }
+        case "week": {
+          const t5 = c3.date.weeks + e2;
+          d4 = Nt(c3.date, 0, t5);
+          break;
+        }
+      }
+      const h3 = xt(Sn(i3, r3.isoDate, d4, "constrain"), r3.time);
+      let u3;
+      if (u3 = o3 ? An(o3, h3, "compatible") : pr(h3), p(n3, u3) === -e2) break;
+      c3 = { date: d4, time: TimeDuration.ZERO };
+    }
+    return c3;
+  })(l2, h2, m2.nudgedEpochNs, r2, o2, i2, a2, Gt(c2, "day"))), h2;
+}
+function ro(e2, t2, n2, r2, o2, i2) {
+  return Kt(i2) || r2 && "day" === i2 ? to(Ir(e2) < 0 ? -1 : 1, e2, t2, n2, r2, o2, 1, i2, "trunc").total : Yo(e2.time.add24HourDays(e2.date.days), i2);
+}
+function oo(e2, t2, n2, r2, o2, i2, a2) {
+  if (0 == jo(e2, t2)) return { date: { years: 0, months: 0, weeks: 0, days: 0 }, time: TimeDuration.ZERO };
+  Br(e2), Br(t2);
+  const s2 = Qr(e2, t2, n2, r2);
+  return "nanosecond" === i2 && 1 === o2 ? s2 : no(s2, pr(t2), e2, null, n2, r2, o2, i2, a2);
+}
+function io(e2, t2, n2, r2, o2, i2, a2, s2) {
+  if ("time" === Vt(o2)) return Xr(e2, t2, i2, a2, s2);
+  const c2 = eo(e2, t2, n2, r2, o2);
+  return "nanosecond" === a2 && 1 === i2 ? c2 : no(c2, t2, zn(n2, e2), n2, r2, o2, i2, a2, s2);
+}
+function ao(e2, t2, n2, r2, o2, i2) {
+  const a2 = nt.reduce(((e3, t3) => {
+    const o3 = t3[0], i3 = t3[1], a3 = t3[2];
+    return "datetime" !== n2 && a3 !== n2 || r2.includes(i3) || e3.push(i3, o3), e3;
+  }), []);
+  let s2 = Wt(t2, "largestUnit", n2, "auto");
+  if (r2.includes(s2)) throw new RangeError(`largestUnit must be one of ${a2.join(", ")}, not ${s2}`);
+  const c2 = Ft(t2);
+  let d2 = Ut(t2, "trunc");
+  "since" === e2 && (d2 = (function(e3) {
+    switch (e3) {
+      case "ceil":
+        return "floor";
+      case "floor":
+        return "ceil";
+      case "halfCeil":
+        return "halfFloor";
+      case "halfFloor":
+        return "halfCeil";
+      default:
+        return e3;
+    }
+  })(d2));
+  const h2 = Wt(t2, "smallestUnit", n2, o2);
+  if (r2.includes(h2)) throw new RangeError(`smallestUnit must be one of ${a2.join(", ")}, not ${h2}`);
+  const u2 = Gt(i2, h2);
+  if ("auto" === s2 && (s2 = u2), Gt(s2, h2) !== s2) throw new RangeError(`largestUnit ${s2} cannot be smaller than smallestUnit ${h2}`);
+  const l2 = { hour: 24, minute: 60, second: 60, millisecond: 1e3, microsecond: 1e3, nanosecond: 1e3 }[h2];
+  return void 0 !== l2 && Ht(c2, l2, false), { largestUnit: s2, roundingIncrement: c2, roundingMode: d2, smallestUnit: h2 };
+}
+function so(e2, t2, n2, r2) {
+  const o2 = cn(n2), i2 = ao(e2, Zo(r2), "time", [], "nanosecond", "second");
+  let a2 = _r(Xr(re(t2, b), re(o2, b), i2.roundingIncrement, i2.smallestUnit, i2.roundingMode), i2.largestUnit);
+  return "since" === e2 && (a2 = Sr(a2)), a2;
+}
+function co(e2, t2, n2, r2) {
+  const o2 = rn(n2), i2 = re(t2, E), a2 = re(o2, E);
+  if (!xn(i2, a2)) throw new RangeError(`cannot compute difference between dates of ${i2} and ${a2} calendars`);
+  const s2 = ao(e2, Zo(r2), "date", [], "day", "day"), c2 = ce("%Temporal.Duration%"), d2 = re(t2, D), h2 = re(o2, D);
+  if (0 === Ro(d2, h2)) return new c2();
+  let u2 = { date: jn(i2, d2, h2, s2.largestUnit), time: TimeDuration.ZERO };
+  if ("day" !== s2.smallestUnit || 1 !== s2.roundingIncrement) {
+    const e3 = xt(d2, { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 });
+    u2 = no(u2, pr(xt(h2, { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 })), e3, null, i2, s2.largestUnit, s2.roundingIncrement, s2.smallestUnit, s2.roundingMode);
+  }
+  let l2 = _r(u2, "day");
+  return "since" === e2 && (l2 = Sr(l2)), l2;
+}
+function ho(e2, t2, n2, r2) {
+  const o2 = an(n2), i2 = re(t2, E), a2 = re(o2, E);
+  if (!xn(i2, a2)) throw new RangeError(`cannot compute difference between dates of ${i2} and ${a2} calendars`);
+  const s2 = ao(e2, Zo(r2), "datetime", [], "nanosecond", "day"), c2 = ce("%Temporal.Duration%"), d2 = re(t2, T), h2 = re(o2, T);
+  if (0 === jo(d2, h2)) return new c2();
+  let u2 = _r(oo(d2, h2, i2, s2.largestUnit, s2.roundingIncrement, s2.smallestUnit, s2.roundingMode), s2.largestUnit);
+  return "since" === e2 && (u2 = Sr(u2)), u2;
+}
+function uo(e2, t2, n2, r2) {
+  const o2 = hn(n2), i2 = ao(e2, Zo(r2), "time", [], "nanosecond", "hour");
+  let a2 = Vr(re(t2, M), re(o2, M));
+  a2 = $o(a2, i2.roundingIncrement, i2.smallestUnit, i2.roundingMode);
+  let s2 = _r(Jr({ years: 0, months: 0, weeks: 0, days: 0 }, a2), i2.largestUnit);
+  return "since" === e2 && (s2 = Sr(s2)), s2;
+}
+function lo(e2, t2, n2, r2) {
+  const o2 = ln(n2), i2 = re(t2, E), a2 = re(o2, E);
+  if (!xn(i2, a2)) throw new RangeError(`cannot compute difference between months of ${i2} and ${a2} calendars`);
+  const s2 = ao(e2, Zo(r2), "date", ["week", "day"], "month", "year"), c2 = ce("%Temporal.Duration%");
+  if (0 == Ro(re(t2, D), re(o2, D))) return new c2();
+  const d2 = en(i2, re(t2, D), "year-month");
+  d2.day = 1;
+  const h2 = Ln(i2, d2, "constrain"), u2 = en(i2, re(o2, D), "year-month");
+  u2.day = 1;
+  const l2 = Ln(i2, u2, "constrain");
+  let m2 = { date: Nt(jn(i2, h2, l2, s2.largestUnit), 0, 0), time: TimeDuration.ZERO };
+  if ("month" !== s2.smallestUnit || 1 !== s2.roundingIncrement) {
+    const e3 = xt(h2, { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 });
+    m2 = no(m2, pr(xt(l2, { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 })), e3, null, i2, s2.largestUnit, s2.roundingIncrement, s2.smallestUnit, s2.roundingMode);
+  }
+  let f2 = _r(m2, "day");
+  return "since" === e2 && (f2 = Sr(f2)), f2;
+}
+function mo(t2, n2, r2, o2) {
+  const i2 = fn(r2), a2 = re(n2, E), s2 = re(i2, E);
+  if (!xn(a2, s2)) throw new RangeError(`cannot compute difference between dates of ${a2} and ${s2} calendars`);
+  const c2 = ao(t2, Zo(o2), "datetime", [], "nanosecond", "hour"), d2 = re(n2, b), h2 = re(i2, b), u2 = ce("%Temporal.Duration%");
+  let l2;
+  if ("date" !== Vt(c2.largestUnit)) l2 = _r(Xr(d2, h2, c2.roundingIncrement, c2.smallestUnit, c2.roundingMode), c2.largestUnit);
+  else {
+    const t3 = re(n2, $);
+    if (!Zn(t3, re(i2, $))) throw new RangeError("When calculating difference between time zones, largestUnit must be 'hours' or smaller because day lengths can vary between time zones due to DST or time zone offset changes.");
+    if (import_jsbi.default.equal(d2, h2)) return new u2();
+    l2 = _r(io(d2, h2, t3, a2, c2.largestUnit, c2.roundingIncrement, c2.smallestUnit, c2.roundingMode), "hour");
+  }
+  return "since" === t2 && (l2 = Sr(l2)), l2;
+}
+function fo({ hour: e2, minute: t2, second: n2, millisecond: r2, microsecond: o2, nanosecond: i2 }, a2) {
+  let s2 = n2, c2 = i2;
+  return s2 += a2.sec, c2 += a2.subsec, Yr(e2, t2, s2, r2, o2, c2);
+}
+function yo(e2, t2) {
+  const n2 = t2.addToEpochNs(e2);
+  return Fr(n2), n2;
+}
+function po(e2, t2, n2, r2, o2 = "constrain") {
+  if (0 === Er(r2.date)) return yo(e2, r2.time);
+  const i2 = zn(t2, e2);
+  return yo(An(t2, xt(Sn(n2, i2.isoDate, r2.date, o2), i2.time), "compatible"), r2.time);
+}
+function go(e2, t2, n2) {
+  let r2 = sn(n2);
+  "subtract" === e2 && (r2 = Sr(r2));
+  const o2 = Gt(Jt(t2), Jt(r2));
+  if (Kt(o2)) throw new RangeError("For years, months, or weeks arithmetic, use date arithmetic relative to a starting point");
+  const i2 = qr(t2), a2 = qr(r2);
+  return _r(Jr({ years: 0, months: 0, weeks: 0, days: 0 }, i2.time.add(a2.time)), o2);
+}
+function wo(e2, t2, n2) {
+  let r2 = sn(n2);
+  "subtract" === e2 && (r2 = Sr(r2));
+  const o2 = Jt(r2);
+  if ("date" === Vt(o2)) throw new RangeError(`Duration field ${o2} not supported by Temporal.Instant. Try Temporal.ZonedDateTime instead.`);
+  const i2 = qr(r2);
+  return Cn(yo(re(t2, b), i2.time));
+}
+function vo(e2, t2, n2, r2) {
+  const o2 = re(t2, E);
+  let i2 = sn(n2);
+  "subtract" === e2 && (i2 = Sr(i2));
+  const a2 = Wr(i2), s2 = Lt(Zo(r2));
+  return pn(Sn(o2, re(t2, D), a2, s2), o2);
+}
+function bo(e2, t2, n2, r2) {
+  let o2 = sn(n2);
+  "subtract" === e2 && (o2 = Sr(o2));
+  const i2 = Lt(Zo(r2)), a2 = re(t2, E), s2 = qr(o2), c2 = re(t2, T), d2 = fo(c2.time, s2.time), h2 = Nt(s2.date, d2.deltaDays);
+  return zr(h2.years, h2.months, h2.weeks, h2.days, 0, 0, 0, 0, 0, 0), wn(xt(Sn(a2, c2.isoDate, h2, i2), d2), a2);
+}
+function Do(e2, t2, n2) {
+  let r2 = sn(n2);
+  "subtract" === e2 && (r2 = Sr(r2));
+  const o2 = qr(r2), { hour: i2, minute: a2, second: s2, millisecond: c2, microsecond: d2, nanosecond: h2 } = fo(re(t2, M), o2.time);
+  return Tn(jt(i2, a2, s2, c2, d2, h2, "reject"));
+}
+function To(e2, t2, n2, r2) {
+  let o2 = sn(n2);
+  "subtract" === e2 && (o2 = Sr(o2));
+  const i2 = Lt(Zo(r2)), a2 = Mr(o2), s2 = re(t2, E), c2 = en(s2, re(t2, D), "year-month");
+  c2.day = 1;
+  let d2 = Ln(s2, c2, "constrain");
+  if (a2 < 0) {
+    const e3 = Sn(s2, d2, { months: 1 }, "constrain");
+    d2 = Or(e3.year, e3.month, e3.day - 1);
+  }
+  const h2 = Wr(o2);
+  return Lr(d2), En(Pn(s2, en(s2, Sn(s2, d2, h2, i2), "year-month"), i2), s2);
+}
+function Mo(e2, t2, n2, r2) {
+  let o2 = sn(n2);
+  "subtract" === e2 && (o2 = Sr(o2));
+  const i2 = Lt(Zo(r2)), a2 = re(t2, $), s2 = re(t2, E), c2 = Ar(o2);
+  return $n(po(re(t2, b), a2, s2, c2, i2), a2, s2);
+}
+function Eo(e2, t2, n2) {
+  const r2 = Math.trunc(e2 / t2), o2 = e2 % t2, i2 = e2 < 0 ? "negative" : "positive", a2 = Math.abs(r2), s2 = a2 + 1, c2 = Bo(Math.abs(2 * o2) - t2), d2 = a2 % 2 == 0, h2 = ue(n2, i2), u2 = 0 === o2 ? a2 : le(a2, s2, c2, d2, h2);
+  return t2 * ("positive" === i2 ? u2 : -u2);
+}
+function Io(o2, i2, a2, s2) {
+  const c2 = at[a2] * i2;
+  return (function(o3, i3, a3) {
+    const s3 = m(o3), c3 = m(i3), d2 = import_jsbi.default.divide(s3, c3), h2 = import_jsbi.default.remainder(s3, c3), u2 = ue(a3, "positive");
+    let l2, g2;
+    import_jsbi.default.lessThan(s3, t) ? (l2 = import_jsbi.default.subtract(d2, n), g2 = d2) : (l2 = d2, g2 = import_jsbi.default.add(d2, n));
+    const w2 = p(y(import_jsbi.default.multiply(h2, r)), c3) * (import_jsbi.default.lessThan(s3, t) ? -1 : 1) + 0, v2 = import_jsbi.default.equal(h2, t) ? d2 : le(l2, g2, w2, f(l2), u2);
+    return import_jsbi.default.multiply(v2, c3);
+  })(o2, import_jsbi.default.BigInt(c2), s2);
+}
+function Co(e2, t2, n2, r2) {
+  Zr(e2);
+  const { year: o2, month: i2, day: a2 } = e2.isoDate, s2 = Oo(e2.time, t2, n2, r2);
+  return xt(Or(o2, i2, a2 + s2.deltaDays), s2);
+}
+function Oo({ hour: e2, minute: t2, second: n2, millisecond: r2, microsecond: o2, nanosecond: i2 }, a2, s2, c2) {
+  let d2;
+  switch (s2) {
+    case "day":
+    case "hour":
+      d2 = 1e3 * (1e3 * (1e3 * (60 * (60 * e2 + t2) + n2) + r2) + o2) + i2;
+      break;
+    case "minute":
+      d2 = 1e3 * (1e3 * (1e3 * (60 * t2 + n2) + r2) + o2) + i2;
+      break;
+    case "second":
+      d2 = 1e3 * (1e3 * (1e3 * n2 + r2) + o2) + i2;
+      break;
+    case "millisecond":
+      d2 = 1e3 * (1e3 * r2 + o2) + i2;
+      break;
+    case "microsecond":
+      d2 = 1e3 * o2 + i2;
+      break;
+    case "nanosecond":
+      d2 = i2;
+  }
+  const h2 = at[s2], u2 = Eo(d2, h2 * a2, c2) / h2;
+  switch (s2) {
+    case "day":
+      return { deltaDays: u2, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
+    case "hour":
+      return Yr(u2, 0, 0, 0, 0, 0);
+    case "minute":
+      return Yr(e2, u2, 0, 0, 0, 0);
+    case "second":
+      return Yr(e2, t2, u2, 0, 0, 0);
+    case "millisecond":
+      return Yr(e2, t2, n2, u2, 0, 0);
+    case "microsecond":
+      return Yr(e2, t2, n2, r2, u2, 0);
+    case "nanosecond":
+      return Yr(e2, t2, n2, r2, o2, u2);
+    default:
+      throw new Error(`Invalid unit ${s2}`);
+  }
+}
+function $o(t2, n2, r2, o2) {
+  const i2 = at[r2];
+  return t2.round(import_jsbi.default.BigInt(i2 * n2), o2);
+}
+function Yo(t2, n2) {
+  const r2 = at[n2];
+  return t2.fdiv(import_jsbi.default.BigInt(r2));
+}
+function Ro(e2, t2) {
+  return e2.year !== t2.year ? Bo(e2.year - t2.year) : e2.month !== t2.month ? Bo(e2.month - t2.month) : e2.day !== t2.day ? Bo(e2.day - t2.day) : 0;
+}
+function So(e2, t2) {
+  return e2.hour !== t2.hour ? Bo(e2.hour - t2.hour) : e2.minute !== t2.minute ? Bo(e2.minute - t2.minute) : e2.second !== t2.second ? Bo(e2.second - t2.second) : e2.millisecond !== t2.millisecond ? Bo(e2.millisecond - t2.millisecond) : e2.microsecond !== t2.microsecond ? Bo(e2.microsecond - t2.microsecond) : e2.nanosecond !== t2.nanosecond ? Bo(e2.nanosecond - t2.nanosecond) : 0;
+}
+function jo(e2, t2) {
+  const n2 = Ro(e2.isoDate, t2.isoDate);
+  return 0 !== n2 ? n2 : So(e2.time, t2.time);
+}
+function ko(e2) {
+  const t2 = Lo(e2);
+  return void 0 !== globalThis.BigInt ? globalThis.BigInt(t2.toString(10)) : t2;
+}
+function No(t2, n2) {
+  const r2 = m(t2), { quotient: o2, remainder: i2 } = g(r2, c);
+  let a2 = import_jsbi.default.toNumber(o2);
+  return "floor" === n2 && import_jsbi.default.toNumber(i2) < 0 && (a2 -= 1), "ceil" === n2 && import_jsbi.default.toNumber(i2) > 0 && (a2 += 1), a2;
+}
+function xo(t2) {
+  if (!Number.isInteger(t2)) throw new RangeError("epoch milliseconds must be an integer");
+  return import_jsbi.default.multiply(import_jsbi.default.BigInt(t2), c);
+}
+function Lo(t2) {
+  let n2 = t2;
+  if ("object" == typeof t2) {
+    const e2 = t2[Symbol.toPrimitive];
+    e2 && "function" == typeof e2 && (n2 = e2.call(t2, "number"));
+  }
+  if ("number" == typeof n2) throw new TypeError("cannot convert number to bigint");
+  return "bigint" == typeof n2 ? import_jsbi.default.BigInt(n2.toString(10)) : import_jsbi.default.BigInt(n2);
+}
+var Po = (() => {
+  let t2 = import_jsbi.default.BigInt(Date.now() % 1e6);
+  return () => {
+    const n2 = Date.now(), r2 = import_jsbi.default.BigInt(n2), o2 = import_jsbi.default.add(xo(n2), t2);
+    return t2 = import_jsbi.default.remainder(r2, c), import_jsbi.default.greaterThan(o2, Ne) ? Ne : import_jsbi.default.lessThan(o2, xe) ? xe : o2;
+  };
+})();
+function Uo() {
+  return new Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+function Bo(e2) {
+  return e2 < 0 ? -1 : e2 > 0 ? 1 : e2;
+}
+function Zo(e2) {
+  if (void 0 === e2) return /* @__PURE__ */ Object.create(null);
+  if (Ae(e2) && null !== e2) return e2;
+  throw new TypeError("Options parameter must be an object, not " + (null === e2 ? "null" : typeof e2));
+}
+function Fo(e2, t2) {
+  const n2 = /* @__PURE__ */ Object.create(null);
+  return n2[e2] = t2, n2;
+}
+function Ho(e2, t2, n2, r2) {
+  let o2 = e2[t2];
+  if (void 0 !== o2) {
+    if (o2 = We(o2), !n2.includes(o2)) throw new RangeError(`${t2} must be one of ${n2.join(", ")}, not ${o2}`);
+    return o2;
+  }
+  if (r2 === qt) throw new RangeError(`${t2} option is required`);
+  return r2;
+}
+function zo(e2) {
+  const t2 = Ao(e2);
+  if (!He.includes(Ao(t2))) throw new RangeError(`invalid calendar identifier ${t2}`);
+  switch (t2) {
+    case "ethiopic-amete-alem":
+      return "ethioaa";
+    case "islamicc":
+      return "islamic-civil";
+  }
+  return t2;
+}
+function Ao(e2) {
+  let t2 = "";
+  for (let n2 = 0; n2 < e2.length; n2++) {
+    const r2 = e2.charCodeAt(n2);
+    t2 += r2 >= 65 && r2 <= 90 ? String.fromCharCode(r2 + 32) : String.fromCharCode(r2);
+  }
+  return t2;
+}
+function qo(e2) {
+  throw new TypeError(`Do not use built-in arithmetic operators with Temporal objects. When comparing, use ${"PlainMonthDay" === e2 ? "Temporal.PlainDate.compare(obj1.toPlainDate(year), obj2.toPlainDate(year))" : `Temporal.${e2}.compare(obj1, obj2)`}, not obj1 > obj2. When coercing to strings, use \`\${obj}\` or String(obj), not '' + obj. When coercing to numbers, use properties or methods of the object, not \`+obj\`. When concatenating with strings, use \`\${str}\${obj}\` or str.concat(obj), not str + obj. In React, coerce to a string before rendering a Temporal object.`);
+}
+var Wo = new RegExp(`^${be.source}$`);
+var _o = new RegExp(`^${/([+-])([01][0-9]|2[0-3])(?::?([0-5][0-9])(?::?([0-5][0-9])(?:[.,](\d{1,9}))?)?)?/.source}$`);
+function Jo(e2, t2, n2, r2 = e2(t2), o2 = e2(n2)) {
+  let i2 = t2, a2 = n2, s2 = r2, c2 = o2;
+  for (; a2 - i2 > 1; ) {
+    let t3 = Math.trunc((i2 + a2) / 2);
+    const n3 = e2(t3);
+    n3 === s2 ? (i2 = t3, s2 = n3) : n3 === c2 && (a2 = t3, c2 = n3);
+  }
+  return a2;
+}
+function Go(e2) {
+  return [...e2];
+}
+function Ko(e2, t2) {
+  if ("gregory" !== e2 && "iso8601" !== e2) return;
+  const n2 = Xo[e2];
+  let r2 = t2.year;
+  const { dayOfWeek: o2, dayOfYear: i2, daysInYear: a2 } = n2.isoToDate(t2, { dayOfWeek: true, dayOfYear: true, daysInYear: true }), s2 = n2.getFirstDayOfWeek(), c2 = n2.getMinimalDaysInFirstWeek();
+  let d2 = (o2 + 7 - s2) % 7, h2 = (o2 - i2 + 7001 - s2) % 7, u2 = Math.floor((i2 - 1 + h2) / 7);
+  if (7 - h2 >= c2 && ++u2, 0 == u2) u2 = (function(e3, t3, n3, r3) {
+    let o3 = (r3 - e3 - n3 + 1) % 7;
+    o3 < 0 && (o3 += 7);
+    let i3 = Math.floor((n3 + o3 - 1) / 7);
+    return 7 - o3 >= t3 && ++i3, i3;
+  })(s2, c2, i2 + n2.isoToDate(n2.dateAdd(t2, { years: -1 }, "constrain"), { daysInYear: true }).daysInYear, o2), r2--;
+  else if (i2 >= a2 - 5) {
+    let e3 = (d2 + a2 - i2) % 7;
+    e3 < 0 && (e3 += 7), 6 - e3 >= c2 && i2 + 7 - d2 > a2 && (u2 = 1, r2++);
+  }
+  return { week: u2, year: r2 };
+}
+function Vo(e2, t2, n2, r2, o2) {
+  if (t2 !== o2.year) {
+    if (e2 * (t2 - o2.year) > 0) return true;
+  } else if (n2 !== o2.month) {
+    if (e2 * (n2 - o2.month) > 0) return true;
+  } else if (r2 !== o2.day && e2 * (r2 - o2.day) > 0) return true;
+  return false;
+}
+var Xo = {};
+function Qo(e2) {
+  if (!e2.startsWith("M")) throw new RangeError(`Invalid month code: ${e2}.  Month codes must start with M.`);
+  const t2 = +e2.slice(1);
+  if (Number.isNaN(t2)) throw new RangeError(`Invalid month code: ${e2}`);
+  return t2;
+}
+function ei(e2, t2 = false) {
+  return `M${`${e2}`.padStart(2, "0")}${t2 ? "L" : ""}`;
+}
+function ti(e2, t2 = void 0, n2 = 12) {
+  let { month: r2, monthCode: o2 } = e2;
+  if (void 0 === o2) {
+    if (void 0 === r2) throw new TypeError("Either month or monthCode are required");
+    "reject" === t2 && Nr(r2, 1, n2), "constrain" === t2 && (r2 = jr(r2, 1, n2)), o2 = ei(r2);
+  } else {
+    const e3 = Qo(o2);
+    if (o2 !== ei(e3)) throw new RangeError(`Invalid month code: ${o2}`);
+    if (void 0 !== r2 && r2 !== e3) throw new RangeError(`monthCode ${o2} and month ${r2} must match if both are present`);
+    if (r2 = e3, r2 < 1 || r2 > n2) throw new RangeError(`Invalid monthCode: ${o2}`);
+  }
+  return { ...e2, month: r2, monthCode: o2 };
+}
+Xo.iso8601 = { resolveFields(e2, t2) {
+  if (("date" === t2 || "year-month" === t2) && void 0 === e2.year) throw new TypeError("year is required");
+  if (("date" === t2 || "month-day" === t2) && void 0 === e2.day) throw new TypeError("day is required");
+  Object.assign(e2, ti(e2));
+}, dateToISO: (e2, t2) => St(e2.year, e2.month, e2.day, t2), monthDayToISOReferenceDate(e2, t2) {
+  const { month: n2, day: r2 } = St(e2.year ?? 1972, e2.month, e2.day, t2);
+  return { month: n2, day: r2, year: 1972 };
+}, extraFields: () => [], fieldKeysToIgnore(e2) {
+  const t2 = /* @__PURE__ */ new Set();
+  for (let n2 = 0; n2 < e2.length; n2++) {
+    const r2 = e2[n2];
+    t2.add(r2), "month" === r2 ? t2.add("monthCode") : "monthCode" === r2 && t2.add("month");
+  }
+  return Go(t2);
+}, dateAdd(e2, { years: t2 = 0, months: n2 = 0, weeks: r2 = 0, days: o2 = 0 }, i2) {
+  let { year: a2, month: s2, day: c2 } = e2;
+  return a2 += t2, s2 += n2, { year: a2, month: s2 } = Cr(a2, s2), { year: a2, month: s2, day: c2 } = St(a2, s2, c2, i2), c2 += o2 + 7 * r2, Or(a2, s2, c2);
+}, dateUntil(e2, t2, n2) {
+  const r2 = -Ro(e2, t2);
+  if (0 === r2) return { years: 0, months: 0, weeks: 0, days: 0 };
+  let o2, i2 = 0, a2 = 0;
+  if ("year" === n2 || "month" === n2) {
+    let s3 = t2.year - e2.year;
+    for (0 !== s3 && (s3 -= r2); !Vo(r2, e2.year + s3, e2.month, e2.day, t2); ) i2 = s3, s3 += r2;
+    let c3 = r2;
+    for (o2 = Cr(e2.year + i2, e2.month + c3); !Vo(r2, o2.year, o2.month, e2.day, t2); ) a2 = c3, c3 += r2, o2 = Cr(o2.year, o2.month + r2);
+    "month" === n2 && (a2 += 12 * i2, i2 = 0);
+  }
+  o2 = Cr(e2.year + i2, e2.month + a2);
+  const s2 = kr(o2.year, o2.month, e2.day);
+  let c2 = 0, d2 = Gr(t2.year, t2.month - 1, t2.day) - Gr(s2.year, s2.month - 1, s2.day);
+  return "week" === n2 && (c2 = Math.trunc(d2 / 7), d2 %= 7), { years: i2, months: a2, weeks: c2, days: d2 };
+}, isoToDate({ year: e2, month: t2, day: n2 }, r2) {
+  const o2 = { era: void 0, eraYear: void 0, year: e2, month: t2, day: n2, daysInWeek: 7, monthsInYear: 12 };
+  if (r2.monthCode && (o2.monthCode = ei(t2)), r2.dayOfWeek) {
+    const r3 = t2 + (t2 < 3 ? 10 : -2), i2 = e2 - (t2 < 3 ? 1 : 0), a2 = Math.floor(i2 / 100), s2 = i2 - 100 * a2, c2 = (n2 + Math.floor(2.6 * r3 - 0.2) + (s2 + Math.floor(s2 / 4)) + (Math.floor(a2 / 4) - 2 * a2)) % 7;
+    o2.dayOfWeek = c2 + (c2 <= 0 ? 7 : 0);
+  }
+  if (r2.dayOfYear) {
+    let r3 = n2;
+    for (let n3 = t2 - 1; n3 > 0; n3--) r3 += Tr(e2, n3);
+    o2.dayOfYear = r3;
+  }
+  return r2.weekOfYear && (o2.weekOfYear = Ko("iso8601", { year: e2, month: t2, day: n2 })), r2.daysInMonth && (o2.daysInMonth = Tr(e2, t2)), (r2.daysInYear || r2.inLeapYear) && (o2.inLeapYear = Dr(e2), o2.daysInYear = o2.inLeapYear ? 366 : 365), o2;
+}, getFirstDayOfWeek: () => 1, getMinimalDaysInFirstWeek: () => 4 };
+var OneObjectCache = class _OneObjectCache {
+  constructor(e2) {
+    if (this.map = /* @__PURE__ */ new Map(), this.calls = 0, this.hits = 0, this.misses = 0, void 0 !== e2) {
+      let t2 = 0;
+      for (const n2 of e2.map.entries()) {
+        if (++t2 > _OneObjectCache.MAX_CACHE_ENTRIES) break;
+        this.map.set(...n2);
+      }
+    }
+  }
+  get(e2) {
+    const t2 = this.map.get(e2);
+    return t2 && (this.hits++, this.report()), this.calls++, t2;
+  }
+  set(e2, t2) {
+    this.map.set(e2, t2), this.misses++, this.report();
+  }
+  report() {
+  }
+  setObject(e2) {
+    if (_OneObjectCache.objectMap.get(e2)) throw new RangeError("object already cached");
+    _OneObjectCache.objectMap.set(e2, this), this.report();
+  }
+  static getCacheForObject(e2) {
+    let t2 = _OneObjectCache.objectMap.get(e2);
+    return t2 || (t2 = new _OneObjectCache(), _OneObjectCache.objectMap.set(e2, t2)), t2;
+  }
+};
+function ni({ isoYear: e2, isoMonth: t2, isoDay: n2 }) {
+  return `${Jn(e2)}-${Gn(t2)}-${Gn(n2)}T00:00Z`;
+}
+function ri(e2, t2) {
+  return { years: e2.year - t2.year, months: e2.month - t2.month, days: e2.day - t2.day };
+}
+OneObjectCache.objectMap = /* @__PURE__ */ new WeakMap(), OneObjectCache.MAX_CACHE_ENTRIES = 1e3;
+var HelperBase = class {
+  constructor() {
+    this.eras = [], this.hasEra = false, this.erasBeginMidYear = false;
+  }
+  getFormatter() {
+    return void 0 === this.formatter && (this.formatter = new Intl.DateTimeFormat(`en-US-u-ca-${this.id}`, { day: "numeric", month: "numeric", year: "numeric", era: "short", timeZone: "UTC" })), this.formatter;
+  }
+  getCalendarParts(e2) {
+    let t2 = this.getFormatter(), n2 = new Date(e2);
+    if ("-271821-04-19T00:00Z" === e2) {
+      const e3 = t2.resolvedOptions();
+      t2 = new Intl.DateTimeFormat(e3.locale, { ...e3, timeZone: "Etc/GMT+1" }), n2 = /* @__PURE__ */ new Date("-271821-04-20T00:00Z");
+    }
+    try {
+      return t2.formatToParts(n2);
+    } catch (t3) {
+      throw new RangeError(`Invalid ISO date: ${e2}`);
+    }
+  }
+  isoToCalendarDate(e2, t2) {
+    const { year: n2, month: r2, day: o2 } = e2, i2 = JSON.stringify({ func: "isoToCalendarDate", isoYear: n2, isoMonth: r2, isoDay: o2, id: this.id }), a2 = t2.get(i2);
+    if (a2) return a2;
+    const s2 = ni({ isoYear: n2, isoMonth: r2, isoDay: o2 }), c2 = this.getCalendarParts(s2), d2 = {};
+    for (let e3 = 0; e3 < c2.length; e3++) {
+      const { type: t3, value: n3 } = c2[e3];
+      if ("year" !== t3 && "relatedYear" !== t3 || (this.hasEra ? d2.eraYear = +n3 : d2.year = +n3), "month" === t3) {
+        const e4 = /^([0-9]*)(.*?)$/.exec(n3);
+        if (!e4 || 3 != e4.length || !e4[1] && !e4[2]) throw new RangeError(`Unexpected month: ${n3}`);
+        if (d2.month = e4[1] ? +e4[1] : 1, d2.month < 1) throw new RangeError(`Invalid month ${n3} from ${s2}[u-ca-${this.id}] (probably due to https://bugs.chromium.org/p/v8/issues/detail?id=10527)`);
+        if (d2.month > 13) throw new RangeError(`Invalid month ${n3} from ${s2}[u-ca-${this.id}] (probably due to https://bugs.chromium.org/p/v8/issues/detail?id=10529)`);
+        e4[2] && (d2.monthExtra = e4[2]);
+      }
+      "day" === t3 && (d2.day = +n3), this.hasEra && "era" === t3 && null != n3 && "" !== n3 && (d2.era = n3.split(" (")[0].normalize("NFD").replace(/[^-0-9 \p{L}]/gu, "").replace(/ /g, "-").toLowerCase());
+    }
+    if (this.hasEra && void 0 === d2.eraYear) throw new RangeError(`Intl.DateTimeFormat.formatToParts lacks relatedYear in ${this.id} calendar. Try Node 14+ or modern browsers.`);
+    if (this.hasEra) {
+      const e3 = this.eras.find(((e4) => d2.era === e4.genericName));
+      e3 && (d2.era = e3.code);
+    }
+    if (this.reviseIntlEra) {
+      const { era: t3, eraYear: n3 } = this.reviseIntlEra(d2, e2);
+      d2.era = t3, d2.eraYear = n3;
+    }
+    this.checkIcuBugs && this.checkIcuBugs(e2);
+    const h2 = this.adjustCalendarDate(d2, t2, "constrain", true);
+    if (void 0 === h2.year) throw new RangeError(`Missing year converting ${JSON.stringify(e2)}`);
+    if (void 0 === h2.month) throw new RangeError(`Missing month converting ${JSON.stringify(e2)}`);
+    if (void 0 === h2.day) throw new RangeError(`Missing day converting ${JSON.stringify(e2)}`);
+    return t2.set(i2, h2), ["constrain", "reject"].forEach(((n3) => {
+      const r3 = JSON.stringify({ func: "calendarToIsoDate", year: h2.year, month: h2.month, day: h2.day, overflow: n3, id: this.id });
+      t2.set(r3, e2);
+    })), h2;
+  }
+  validateCalendarDate(e2) {
+    const { month: t2, year: n2, day: r2, eraYear: o2, monthCode: i2, monthExtra: a2 } = e2;
+    if (void 0 !== a2) throw new RangeError("Unexpected `monthExtra` value");
+    if (void 0 === n2 && void 0 === o2) throw new TypeError("year or eraYear is required");
+    if (void 0 === t2 && void 0 === i2) throw new TypeError("month or monthCode is required");
+    if (void 0 === r2) throw new RangeError("Missing day");
+    if (void 0 !== i2) {
+      if ("string" != typeof i2) throw new RangeError("monthCode must be a string, not " + typeof i2);
+      if (!/^M([01]?\d)(L?)$/.test(i2)) throw new RangeError(`Invalid monthCode: ${i2}`);
+    }
+    if (this.hasEra && void 0 === e2.era != (void 0 === e2.eraYear)) throw new TypeError("properties era and eraYear must be provided together");
+  }
+  adjustCalendarDate(e2, t2 = void 0, n2 = "constrain", r2 = false) {
+    if ("lunisolar" === this.calendarType) throw new RangeError("Override required for lunisolar calendars");
+    let o2 = e2;
+    this.validateCalendarDate(o2);
+    const i2 = this.monthsInYear(o2, t2);
+    let { month: a2, monthCode: s2 } = o2;
+    return { month: a2, monthCode: s2 } = ti(o2, n2, i2), { ...o2, month: a2, monthCode: s2 };
+  }
+  regulateMonthDayNaive(e2, t2, n2) {
+    const r2 = this.monthsInYear(e2, n2);
+    let { month: o2, day: i2 } = e2;
+    return "reject" === t2 ? (Nr(o2, 1, r2), Nr(i2, 1, this.maximumMonthLength(e2))) : (o2 = jr(o2, 1, r2), i2 = jr(i2, 1, this.maximumMonthLength({ ...e2, month: o2 }))), { ...e2, month: o2, day: i2 };
+  }
+  calendarToIsoDate(e2, t2 = "constrain", n2) {
+    const r2 = e2;
+    let o2 = this.adjustCalendarDate(e2, n2, t2, false);
+    o2 = this.regulateMonthDayNaive(o2, t2, n2);
+    const { year: i2, month: a2, day: s2 } = o2, c2 = JSON.stringify({ func: "calendarToIsoDate", year: i2, month: a2, day: s2, overflow: t2, id: this.id });
+    let d2, h2 = n2.get(c2);
+    if (h2) return h2;
+    if (void 0 !== r2.year && void 0 !== r2.month && void 0 !== r2.day && (r2.year !== o2.year || r2.month !== o2.month || r2.day !== o2.day) && (d2 = JSON.stringify({ func: "calendarToIsoDate", year: r2.year, month: r2.month, day: r2.day, overflow: t2, id: this.id }), h2 = n2.get(d2), h2)) return h2;
+    let u2 = this.estimateIsoDate({ year: i2, month: a2, day: s2 });
+    const l2 = (e3) => {
+      let r3 = this.addDaysIso(u2, e3);
+      if (o2.day > this.minimumMonthLength(o2)) {
+        let e4 = this.isoToCalendarDate(r3, n2);
+        for (; e4.month !== a2 || e4.year !== i2; ) {
+          if ("reject" === t2) throw new RangeError(`day ${s2} does not exist in month ${a2} of year ${i2}`);
+          r3 = this.addDaysIso(r3, -1), e4 = this.isoToCalendarDate(r3, n2);
+        }
+      }
+      return r3;
+    };
+    let m2 = 0, f2 = this.isoToCalendarDate(u2, n2), y2 = ri(o2, f2);
+    if (0 !== y2.years || 0 !== y2.months || 0 !== y2.days) {
+      const e3 = 365 * y2.years + 30 * y2.months + y2.days;
+      u2 = this.addDaysIso(u2, e3), f2 = this.isoToCalendarDate(u2, n2), y2 = ri(o2, f2), 0 === y2.years && 0 === y2.months ? u2 = l2(y2.days) : m2 = this.compareCalendarDates(o2, f2);
+    }
+    let p2 = 8;
+    for (; m2; ) {
+      u2 = this.addDaysIso(u2, m2 * p2);
+      const e3 = f2;
+      f2 = this.isoToCalendarDate(u2, n2);
+      const i3 = m2;
+      if (m2 = this.compareCalendarDates(o2, f2), m2) {
+        if (y2 = ri(o2, f2), 0 === y2.years && 0 === y2.months) u2 = l2(y2.days), m2 = 0;
+        else if (i3 && m2 !== i3) if (p2 > 1) p2 /= 2;
+        else {
+          if ("reject" === t2) throw new RangeError(`Can't find ISO date from calendar date: ${JSON.stringify({ ...r2 })}`);
+          this.compareCalendarDates(f2, e3) > 0 && (u2 = this.addDaysIso(u2, -1)), m2 = 0;
+        }
+      }
+    }
+    if (n2.set(c2, u2), d2 && n2.set(d2, u2), void 0 === o2.year || void 0 === o2.month || void 0 === o2.day || void 0 === o2.monthCode || this.hasEra && (void 0 === o2.era || void 0 === o2.eraYear)) throw new RangeError("Unexpected missing property");
+    return u2;
+  }
+  compareCalendarDates(e2, t2) {
+    return e2.year !== t2.year ? Bo(e2.year - t2.year) : e2.month !== t2.month ? Bo(e2.month - t2.month) : e2.day !== t2.day ? Bo(e2.day - t2.day) : 0;
+  }
+  regulateDate(e2, t2 = "constrain", n2) {
+    const r2 = this.calendarToIsoDate(e2, t2, n2);
+    return this.isoToCalendarDate(r2, n2);
+  }
+  addDaysIso(e2, t2) {
+    return Or(e2.year, e2.month, e2.day + t2);
+  }
+  addDaysCalendar(e2, t2, n2) {
+    const r2 = this.calendarToIsoDate(e2, "constrain", n2), o2 = this.addDaysIso(r2, t2);
+    return this.isoToCalendarDate(o2, n2);
+  }
+  addMonthsCalendar(e2, t2, n2, r2) {
+    let o2 = e2;
+    const { day: i2 } = o2;
+    for (let e3 = 0, n3 = Math.abs(t2); e3 < n3; e3++) {
+      const { month: e4 } = o2, n4 = o2, a2 = t2 < 0 ? -Math.max(i2, this.daysInPreviousMonth(o2, r2)) : this.daysInMonth(o2, r2), s2 = this.calendarToIsoDate(o2, "constrain", r2);
+      let c2 = this.addDaysIso(s2, a2);
+      if (o2 = this.isoToCalendarDate(c2, r2), t2 > 0) {
+        const t3 = this.monthsInYear(n4, r2);
+        for (; o2.month - 1 != e4 % t3; ) c2 = this.addDaysIso(c2, -1), o2 = this.isoToCalendarDate(c2, r2);
+      }
+      o2.day !== i2 && (o2 = this.regulateDate({ ...o2, day: i2 }, "constrain", r2));
+    }
+    if ("reject" === n2 && o2.day !== i2) throw new RangeError(`Day ${i2} does not exist in resulting calendar month`);
+    return o2;
+  }
+  addCalendar(e2, { years: t2 = 0, months: n2 = 0, weeks: r2 = 0, days: o2 = 0 }, i2, a2) {
+    const { year: s2, day: c2, monthCode: d2 } = e2, h2 = this.adjustCalendarDate({ year: s2 + t2, monthCode: d2, day: c2 }, a2), u2 = this.addMonthsCalendar(h2, n2, i2, a2), l2 = o2 + 7 * r2;
+    return this.addDaysCalendar(u2, l2, a2);
+  }
+  untilCalendar(e2, t2, n2, r2) {
+    let o2 = 0, i2 = 0, a2 = 0, s2 = 0;
+    switch (n2) {
+      case "day":
+        o2 = this.calendarDaysUntil(e2, t2, r2);
+        break;
+      case "week": {
+        const n3 = this.calendarDaysUntil(e2, t2, r2);
+        o2 = n3 % 7, i2 = (n3 - o2) / 7;
+        break;
+      }
+      case "month":
+      case "year": {
+        const i3 = this.compareCalendarDates(t2, e2);
+        if (!i3) return { years: 0, months: 0, weeks: 0, days: 0 };
+        const c2 = t2.year - e2.year, d2 = t2.day - e2.day;
+        if ("year" === n2 && c2) {
+          let n3 = 0;
+          t2.monthCode > e2.monthCode && (n3 = 1), t2.monthCode < e2.monthCode && (n3 = -1), n3 || (n3 = Math.sign(d2)), s2 = n3 * i3 < 0 ? c2 - i3 : c2;
+        }
+        let h2, u2 = s2 ? this.addCalendar(e2, { years: s2 }, "constrain", r2) : e2;
+        do {
+          a2 += i3, h2 = u2, u2 = this.addMonthsCalendar(h2, i3, "constrain", r2), u2.day !== e2.day && (u2 = this.regulateDate({ ...u2, day: e2.day }, "constrain", r2));
+        } while (this.compareCalendarDates(t2, u2) * i3 >= 0);
+        a2 -= i3, o2 = this.calendarDaysUntil(h2, t2, r2);
+        break;
+      }
+    }
+    return { years: s2, months: a2, weeks: i2, days: o2 };
+  }
+  daysInMonth(e2, t2) {
+    const { day: n2 } = e2, r2 = this.maximumMonthLength(e2), o2 = this.minimumMonthLength(e2);
+    if (o2 === r2) return o2;
+    const i2 = n2 <= r2 - o2 ? r2 : o2, a2 = this.calendarToIsoDate(e2, "constrain", t2), s2 = this.addDaysIso(a2, i2), c2 = this.isoToCalendarDate(s2, t2), d2 = this.addDaysIso(s2, -c2.day);
+    return this.isoToCalendarDate(d2, t2).day;
+  }
+  daysInPreviousMonth(e2, t2) {
+    const { day: n2, month: r2, year: o2 } = e2;
+    let i2 = { year: r2 > 1 ? o2 : o2 - 1, month: r2, day: 1 };
+    const a2 = r2 > 1 ? r2 - 1 : this.monthsInYear(i2, t2);
+    i2 = { ...i2, month: a2 };
+    const s2 = this.minimumMonthLength(i2), c2 = this.maximumMonthLength(i2);
+    if (s2 === c2) return c2;
+    const d2 = this.calendarToIsoDate(e2, "constrain", t2), h2 = this.addDaysIso(d2, -n2);
+    return this.isoToCalendarDate(h2, t2).day;
+  }
+  startOfCalendarYear(e2) {
+    return { year: e2.year, month: 1, monthCode: "M01", day: 1 };
+  }
+  startOfCalendarMonth(e2) {
+    return { year: e2.year, month: e2.month, day: 1 };
+  }
+  calendarDaysUntil(e2, t2, n2) {
+    const r2 = this.calendarToIsoDate(e2, "constrain", n2), o2 = this.calendarToIsoDate(t2, "constrain", n2);
+    return Gr(o2.year, o2.month - 1, o2.day) - Gr(r2.year, r2.month - 1, r2.day);
+  }
+  monthDaySearchStartYear(e2, t2) {
+    return 1972;
+  }
+  monthDayFromFields(e2, t2, n2) {
+    let r2, o2, i2, a2, s2, { era: c2, eraYear: d2, year: h2, month: u2, monthCode: l2, day: m2 } = e2;
+    if (void 0 !== u2 && void 0 === h2 && (!this.hasEra || void 0 === c2 || void 0 === d2)) throw new TypeError("when month is present, year (or era and eraYear) are required");
+    (void 0 === l2 || void 0 !== h2 || this.hasEra && void 0 !== d2) && ({ monthCode: l2, day: m2 } = this.isoToCalendarDate(this.calendarToIsoDate(e2, t2, n2), n2));
+    const f2 = { year: this.monthDaySearchStartYear(l2, m2), month: 12, day: 31 }, y2 = this.isoToCalendarDate(f2, n2), p2 = y2.monthCode > l2 || y2.monthCode === l2 && y2.day >= m2 ? y2.year : y2.year - 1;
+    for (let e3 = 0; e3 < 20; e3++) {
+      const c3 = this.adjustCalendarDate({ day: m2, monthCode: l2, year: p2 - e3 }, n2), d3 = this.calendarToIsoDate(c3, "constrain", n2), h3 = this.isoToCalendarDate(d3, n2);
+      if ({ year: r2, month: o2, day: i2 } = d3, h3.monthCode === l2 && h3.day === m2) return { month: o2, day: i2, year: r2 };
+      if ("constrain" === t2) {
+        const e4 = this.maxLengthOfMonthCodeInAnyYear(h3.monthCode);
+        if (h3.monthCode === l2 && h3.day === e4 && m2 > e4) return { month: o2, day: i2, year: r2 };
+        (void 0 === a2 || h3.monthCode === a2.monthCode && h3.day > a2.day) && (a2 = h3, s2 = d3);
+      }
+    }
+    if ("constrain" === t2 && void 0 !== s2) return s2;
+    throw new RangeError(`No recent ${this.id} year with monthCode ${l2} and day ${m2}`);
+  }
+  getFirstDayOfWeek() {
+  }
+  getMinimalDaysInFirstWeek() {
+  }
+};
+var HebrewHelper = class extends HelperBase {
+  constructor() {
+    super(...arguments), this.id = "hebrew", this.calendarType = "lunisolar", this.months = { Tishri: { leap: 1, regular: 1, monthCode: "M01", days: 30 }, Heshvan: { leap: 2, regular: 2, monthCode: "M02", days: { min: 29, max: 30 } }, Kislev: { leap: 3, regular: 3, monthCode: "M03", days: { min: 29, max: 30 } }, Tevet: { leap: 4, regular: 4, monthCode: "M04", days: 29 }, Shevat: { leap: 5, regular: 5, monthCode: "M05", days: 30 }, Adar: { leap: void 0, regular: 6, monthCode: "M06", days: 29 }, "Adar I": { leap: 6, regular: void 0, monthCode: "M05L", days: 30 }, "Adar II": { leap: 7, regular: void 0, monthCode: "M06", days: 29 }, Nisan: { leap: 8, regular: 7, monthCode: "M07", days: 30 }, Iyar: { leap: 9, regular: 8, monthCode: "M08", days: 29 }, Sivan: { leap: 10, regular: 9, monthCode: "M09", days: 30 }, Tamuz: { leap: 11, regular: 10, monthCode: "M10", days: 29 }, Av: { leap: 12, regular: 11, monthCode: "M11", days: 30 }, Elul: { leap: 13, regular: 12, monthCode: "M12", days: 29 } };
+  }
+  inLeapYear(e2) {
+    const { year: t2 } = e2;
+    return (7 * t2 + 1) % 19 < 7;
+  }
+  monthsInYear(e2) {
+    return this.inLeapYear(e2) ? 13 : 12;
+  }
+  minimumMonthLength(e2) {
+    return this.minMaxMonthLength(e2, "min");
+  }
+  maximumMonthLength(e2) {
+    return this.minMaxMonthLength(e2, "max");
+  }
+  minMaxMonthLength(e2, t2) {
+    const { month: n2, year: r2 } = e2, o2 = this.getMonthCode(r2, n2), i2 = Object.entries(this.months).find(((e3) => e3[1].monthCode === o2));
+    if (void 0 === i2) throw new RangeError(`unmatched Hebrew month: ${n2}`);
+    const a2 = i2[1].days;
+    return "number" == typeof a2 ? a2 : a2[t2];
+  }
+  maxLengthOfMonthCodeInAnyYear(e2) {
+    return ["M04", "M06", "M08", "M10", "M12"].includes(e2) ? 29 : 30;
+  }
+  estimateIsoDate(e2) {
+    const { year: t2 } = e2;
+    return { year: t2 - 3760, month: 1, day: 1 };
+  }
+  getMonthCode(e2, t2) {
+    return this.inLeapYear({ year: e2 }) ? 6 === t2 ? ei(5, true) : ei(t2 < 6 ? t2 : t2 - 1) : ei(t2);
+  }
+  adjustCalendarDate(e2, t2, n2 = "constrain", r2 = false) {
+    let { year: o2, month: i2, monthCode: a2, day: s2, monthExtra: c2 } = e2;
+    if (void 0 === o2) throw new TypeError("Missing property: year");
+    if (r2) {
+      if (c2) {
+        const e3 = this.months[c2];
+        if (!e3) throw new RangeError(`Unrecognized month from formatToParts: ${c2}`);
+        i2 = this.inLeapYear({ year: o2 }) ? e3.leap : e3.regular;
+      }
+      return a2 = this.getMonthCode(o2, i2), { year: o2, month: i2, day: s2, monthCode: a2 };
+    }
+    if (this.validateCalendarDate(e2), void 0 === i2) if (a2.endsWith("L")) {
+      if ("M05L" !== a2) throw new RangeError(`Hebrew leap month must have monthCode M05L, not ${a2}`);
+      if (i2 = 6, !this.inLeapYear({ year: o2 })) {
+        if ("reject" === n2) throw new RangeError(`Hebrew monthCode M05L is invalid in year ${o2} which is not a leap year`);
+        i2 = 6, a2 = "M06";
+      }
+    } else {
+      i2 = Qo(a2), this.inLeapYear({ year: o2 }) && i2 >= 6 && i2++;
+      const e3 = this.monthsInYear({ year: o2 });
+      if (i2 < 1 || i2 > e3) throw new RangeError(`Invalid monthCode: ${a2}`);
+    }
+    else if ("reject" === n2 ? (Nr(i2, 1, this.monthsInYear({ year: o2 })), Nr(s2, 1, this.maximumMonthLength({ year: o2, month: i2 }))) : (i2 = jr(i2, 1, this.monthsInYear({ year: o2 })), s2 = jr(s2, 1, this.maximumMonthLength({ year: o2, month: i2 }))), void 0 === a2) a2 = this.getMonthCode(o2, i2);
+    else if (this.getMonthCode(o2, i2) !== a2) throw new RangeError(`monthCode ${a2} doesn't correspond to month ${i2} in Hebrew year ${o2}`);
+    return { ...e2, day: s2, month: i2, monthCode: a2, year: o2 };
+  }
+};
+var IslamicBaseHelper = class extends HelperBase {
+  constructor() {
+    super(...arguments), this.calendarType = "lunar", this.DAYS_PER_ISLAMIC_YEAR = 354 + 11 / 30, this.DAYS_PER_ISO_YEAR = 365.2425;
+  }
+  inLeapYear(e2, t2) {
+    const n2 = { year: e2.year, month: 1, monthCode: "M01", day: 1 }, r2 = { year: e2.year + 1, month: 1, monthCode: "M01", day: 1 };
+    return 355 === this.calendarDaysUntil(n2, r2, t2);
+  }
+  monthsInYear() {
+    return 12;
+  }
+  minimumMonthLength() {
+    return 29;
+  }
+  maximumMonthLength() {
+    return 30;
+  }
+  maxLengthOfMonthCodeInAnyYear() {
+    return 30;
+  }
+  estimateIsoDate(e2) {
+    const { year: t2 } = this.adjustCalendarDate(e2);
+    return { year: Math.floor(t2 * this.DAYS_PER_ISLAMIC_YEAR / this.DAYS_PER_ISO_YEAR) + 622, month: 1, day: 1 };
+  }
+};
+var IslamicHelper = class extends IslamicBaseHelper {
+  constructor() {
+    super(...arguments), this.id = "islamic";
+  }
+};
+var IslamicUmalquraHelper = class extends IslamicBaseHelper {
+  constructor() {
+    super(...arguments), this.id = "islamic-umalqura";
+  }
+};
+var IslamicTblaHelper = class extends IslamicBaseHelper {
+  constructor() {
+    super(...arguments), this.id = "islamic-tbla";
+  }
+};
+var IslamicCivilHelper = class extends IslamicBaseHelper {
+  constructor() {
+    super(...arguments), this.id = "islamic-civil";
+  }
+};
+var IslamicRgsaHelper = class extends IslamicBaseHelper {
+  constructor() {
+    super(...arguments), this.id = "islamic-rgsa";
+  }
+};
+var IslamicCcHelper = class extends IslamicBaseHelper {
+  constructor() {
+    super(...arguments), this.id = "islamicc";
+  }
+};
+var PersianHelper = class extends HelperBase {
+  constructor() {
+    super(...arguments), this.id = "persian", this.calendarType = "solar";
+  }
+  inLeapYear(e2, t2) {
+    return 30 === this.daysInMonth({ year: e2.year, month: 12, day: 1 }, t2);
+  }
+  monthsInYear() {
+    return 12;
+  }
+  minimumMonthLength(e2) {
+    const { month: t2 } = e2;
+    return 12 === t2 ? 29 : t2 <= 6 ? 31 : 30;
+  }
+  maximumMonthLength(e2) {
+    const { month: t2 } = e2;
+    return 12 === t2 ? 30 : t2 <= 6 ? 31 : 30;
+  }
+  maxLengthOfMonthCodeInAnyYear(e2) {
+    return Qo(e2) <= 6 ? 31 : 30;
+  }
+  estimateIsoDate(e2) {
+    const { year: t2 } = this.adjustCalendarDate(e2);
+    return { year: t2 + 621, month: 1, day: 1 };
+  }
+};
+var IndianHelper = class extends HelperBase {
+  constructor() {
+    super(...arguments), this.id = "indian", this.calendarType = "solar", this.months = { 1: { length: 30, month: 3, day: 22, leap: { length: 31, month: 3, day: 21 } }, 2: { length: 31, month: 4, day: 21 }, 3: { length: 31, month: 5, day: 22 }, 4: { length: 31, month: 6, day: 22 }, 5: { length: 31, month: 7, day: 23 }, 6: { length: 31, month: 8, day: 23 }, 7: { length: 30, month: 9, day: 23 }, 8: { length: 30, month: 10, day: 23 }, 9: { length: 30, month: 11, day: 22 }, 10: { length: 30, month: 12, day: 22 }, 11: { length: 30, month: 1, nextYear: true, day: 21 }, 12: { length: 30, month: 2, nextYear: true, day: 20 } }, this.vulnerableToBceBug = "10/11/-79 Saka" !== (/* @__PURE__ */ new Date("0000-01-01T00:00Z")).toLocaleDateString("en-US-u-ca-indian", { timeZone: "UTC" });
+  }
+  inLeapYear(e2) {
+    return oi(e2.year + 78);
+  }
+  monthsInYear() {
+    return 12;
+  }
+  minimumMonthLength(e2) {
+    return this.getMonthInfo(e2).length;
+  }
+  maximumMonthLength(e2) {
+    return this.getMonthInfo(e2).length;
+  }
+  maxLengthOfMonthCodeInAnyYear(e2) {
+    const t2 = Qo(e2);
+    let n2 = this.months[t2];
+    return n2 = n2.leap ?? n2, n2.length;
+  }
+  getMonthInfo(e2) {
+    const { month: t2 } = e2;
+    let n2 = this.months[t2];
+    if (void 0 === n2) throw new RangeError(`Invalid month: ${t2}`);
+    return this.inLeapYear(e2) && n2.leap && (n2 = n2.leap), n2;
+  }
+  estimateIsoDate(e2) {
+    const t2 = this.adjustCalendarDate(e2), n2 = this.getMonthInfo(t2);
+    return Or(t2.year + 78 + (n2.nextYear ? 1 : 0), n2.month, n2.day + t2.day - 1);
+  }
+  checkIcuBugs(e2) {
+    if (this.vulnerableToBceBug && e2.year < 1) throw new RangeError(`calendar '${this.id}' is broken for ISO dates before 0001-01-01 (see https://bugs.chromium.org/p/v8/issues/detail?id=10529)`);
+  }
+};
+function oi(e2) {
+  return e2 % 4 == 0 && (e2 % 100 != 0 || e2 % 400 == 0);
+}
+var GregorianBaseHelperFixedEpoch = class extends HelperBase {
+  constructor(e2, t2) {
+    super(), this.calendarType = "solar", this.id = e2, this.isoEpoch = t2;
+  }
+  inLeapYear(e2) {
+    const { year: t2 } = this.estimateIsoDate({ month: 1, day: 1, year: e2.year });
+    return oi(t2);
+  }
+  monthsInYear() {
+    return 12;
+  }
+  minimumMonthLength(e2) {
+    const { month: t2 } = e2;
+    return 2 === t2 ? this.inLeapYear(e2) ? 29 : 28 : [4, 6, 9, 11].indexOf(t2) >= 0 ? 30 : 31;
+  }
+  maximumMonthLength(e2) {
+    return this.minimumMonthLength(e2);
+  }
+  maxLengthOfMonthCodeInAnyYear(e2) {
+    return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][Qo(e2) - 1];
+  }
+  estimateIsoDate(e2) {
+    const t2 = this.adjustCalendarDate(e2);
+    return St(t2.year + this.isoEpoch.year, t2.month + this.isoEpoch.month, t2.day + this.isoEpoch.day, "constrain");
+  }
+};
+var GregorianBaseHelper = class extends HelperBase {
+  constructor(e2, t2) {
+    super(), this.hasEra = true, this.calendarType = "solar", this.id = e2;
+    const { eras: n2, anchorEra: r2 } = (function(e3) {
+      let t3, n3 = e3;
+      if (0 === n3.length) throw new RangeError("Invalid era data: eras are required");
+      if (1 === n3.length && n3[0].reverseOf) throw new RangeError("Invalid era data: anchor era cannot count years backwards");
+      if (1 === n3.length && !n3[0].code) throw new RangeError("Invalid era data: at least one named era is required");
+      if (n3.filter(((e4) => null != e4.reverseOf)).length > 1) throw new RangeError("Invalid era data: only one era can count years backwards");
+      n3.forEach(((e4) => {
+        if (e4.isAnchor || !e4.anchorEpoch && !e4.reverseOf) {
+          if (t3) throw new RangeError("Invalid era data: cannot have multiple anchor eras");
+          t3 = e4, e4.anchorEpoch = { year: e4.hasYearZero ? 0 : 1 };
+        } else if (!e4.code) throw new RangeError("If era name is blank, it must be the anchor era");
+      })), n3 = n3.filter(((e4) => e4.code)), n3.forEach(((e4) => {
+        const { reverseOf: t4 } = e4;
+        if (t4) {
+          const r4 = n3.find(((e5) => e5.code === t4));
+          if (void 0 === r4) throw new RangeError(`Invalid era data: unmatched reverseOf era: ${t4}`);
+          e4.reverseOf = r4, e4.anchorEpoch = r4.anchorEpoch, e4.isoEpoch = r4.isoEpoch;
+        }
+        void 0 === e4.anchorEpoch.month && (e4.anchorEpoch.month = 1), void 0 === e4.anchorEpoch.day && (e4.anchorEpoch.day = 1);
+      })), n3.sort(((e4, t4) => {
+        if (e4.reverseOf) return 1;
+        if (t4.reverseOf) return -1;
+        if (!e4.isoEpoch || !t4.isoEpoch) throw new RangeError("Invalid era data: missing ISO epoch");
+        return t4.isoEpoch.year - e4.isoEpoch.year;
+      }));
+      const r3 = n3[n3.length - 1].reverseOf;
+      if (r3 && r3 !== n3[n3.length - 2]) throw new RangeError("Invalid era data: invalid reverse-sign era");
+      return n3.forEach(((e4, t4) => {
+        e4.genericName = "era" + (n3.length - 1 - t4);
+      })), { eras: n3, anchorEra: t3 || n3[0] };
+    })(t2);
+    this.anchorEra = r2, this.eras = n2;
+  }
+  inLeapYear(e2) {
+    const { year: t2 } = this.estimateIsoDate({ month: 1, day: 1, year: e2.year });
+    return oi(t2);
+  }
+  monthsInYear() {
+    return 12;
+  }
+  minimumMonthLength(e2) {
+    const { month: t2 } = e2;
+    return 2 === t2 ? this.inLeapYear(e2) ? 29 : 28 : [4, 6, 9, 11].indexOf(t2) >= 0 ? 30 : 31;
+  }
+  maximumMonthLength(e2) {
+    return this.minimumMonthLength(e2);
+  }
+  maxLengthOfMonthCodeInAnyYear(e2) {
+    return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][Qo(e2) - 1];
+  }
+  completeEraYear(e2) {
+    const t2 = (t3, n3, r3) => {
+      const o3 = e2[t3];
+      if (null != o3 && o3 != n3 && !(r3 || []).includes(o3)) {
+        const e3 = r3 == null ? void 0 : r3[0];
+        throw new RangeError(`Input ${t3} ${o3} doesn't match calculated value ${e3 ? `${n3} (also called ${e3})` : n3}`);
+      }
+    }, n2 = (t3) => {
+      let n3;
+      const r3 = { ...e2, year: t3 }, o3 = this.eras.find(((e3, o4) => {
+        if (o4 === this.eras.length - 1) {
+          if (e3.reverseOf) {
+            if (t3 > 0) throw new RangeError(`Signed year ${t3} is invalid for era ${e3.code}`);
+            return n3 = e3.anchorEpoch.year - t3, true;
+          }
+          return n3 = t3 - e3.anchorEpoch.year + (e3.hasYearZero ? 0 : 1), true;
+        }
+        return this.compareCalendarDates(r3, e3.anchorEpoch) >= 0 && (n3 = t3 - e3.anchorEpoch.year + (e3.hasYearZero ? 0 : 1), true);
+      }));
+      if (!o3) throw new RangeError(`Year ${t3} was not matched by any era`);
+      return { eraYear: n3, era: o3.code, eraNames: o3.names };
+    };
+    let { year: r2, eraYear: o2, era: i2 } = e2;
+    if (null != r2) {
+      const e3 = n2(r2);
+      ({ eraYear: o2, era: i2 } = e3), t2("era", i2, e3 == null ? void 0 : e3.eraNames), t2("eraYear", o2);
+    } else {
+      if (null == o2) throw new RangeError("Either year or eraYear and era are required");
+      {
+        if (void 0 === i2) throw new RangeError("era and eraYear must be provided together");
+        const e3 = this.eras.find((({ code: e4, names: t3 = [] }) => e4 === i2 || t3.includes(i2)));
+        if (!e3) throw new RangeError(`Era ${i2} (ISO year ${o2}) was not matched by any era`);
+        r2 = e3.reverseOf ? e3.anchorEpoch.year - o2 : o2 + e3.anchorEpoch.year - (e3.hasYearZero ? 0 : 1), t2("year", r2), { eraYear: o2, era: i2 } = n2(r2);
+      }
+    }
+    return { ...e2, year: r2, eraYear: o2, era: i2 };
+  }
+  adjustCalendarDate(e2, t2, n2 = "constrain") {
+    let r2 = e2;
+    const { month: o2, monthCode: i2 } = r2;
+    return void 0 === o2 && (r2 = { ...r2, month: Qo(i2) }), this.validateCalendarDate(r2), r2 = this.completeEraYear(r2), super.adjustCalendarDate(r2, t2, n2);
+  }
+  estimateIsoDate(e2) {
+    const t2 = this.adjustCalendarDate(e2), { year: n2, month: r2, day: o2 } = t2, { anchorEra: i2 } = this;
+    return St(n2 + i2.isoEpoch.year - (i2.hasYearZero ? 0 : 1), r2, o2, "constrain");
+  }
+};
+var SameMonthDayAsGregorianBaseHelper = class extends GregorianBaseHelper {
+  constructor(e2, t2) {
+    super(e2, t2);
+  }
+  isoToCalendarDate(e2) {
+    const { year: t2, month: n2, day: r2 } = e2, o2 = ei(n2), i2 = t2 - this.anchorEra.isoEpoch.year + 1;
+    return this.completeEraYear({ year: i2, month: n2, monthCode: o2, day: r2 });
+  }
+};
+var ii = { inLeapYear(e2) {
+  const { year: t2 } = e2;
+  return (t2 + 1) % 4 == 0;
+}, monthsInYear: () => 13, minimumMonthLength(e2) {
+  const { month: t2 } = e2;
+  return 13 === t2 ? this.inLeapYear(e2) ? 6 : 5 : 30;
+}, maximumMonthLength(e2) {
+  return this.minimumMonthLength(e2);
+}, maxLengthOfMonthCodeInAnyYear: (e2) => "M13" === e2 ? 6 : 30 };
+var OrthodoxBaseHelperFixedEpoch = class extends GregorianBaseHelperFixedEpoch {
+  constructor(e2, t2) {
+    super(e2, t2), this.inLeapYear = ii.inLeapYear, this.monthsInYear = ii.monthsInYear, this.minimumMonthLength = ii.minimumMonthLength, this.maximumMonthLength = ii.maximumMonthLength, this.maxLengthOfMonthCodeInAnyYear = ii.maxLengthOfMonthCodeInAnyYear;
+  }
+};
+var OrthodoxBaseHelper = class extends GregorianBaseHelper {
+  constructor(e2, t2) {
+    super(e2, t2), this.inLeapYear = ii.inLeapYear, this.monthsInYear = ii.monthsInYear, this.minimumMonthLength = ii.minimumMonthLength, this.maximumMonthLength = ii.maximumMonthLength, this.maxLengthOfMonthCodeInAnyYear = ii.maxLengthOfMonthCodeInAnyYear;
+  }
+};
+var EthioaaHelper = class extends OrthodoxBaseHelperFixedEpoch {
+  constructor() {
+    super("ethioaa", { year: -5492, month: 7, day: 17 });
+  }
+};
+var CopticHelper = class extends OrthodoxBaseHelper {
+  constructor() {
+    super("coptic", [{ code: "coptic", isoEpoch: { year: 284, month: 8, day: 29 } }, { code: "coptic-inverse", reverseOf: "coptic" }]);
+  }
+};
+var EthiopicHelper = class extends OrthodoxBaseHelper {
+  constructor() {
+    super("ethiopic", [{ code: "ethioaa", names: ["ethiopic-amete-alem", "mundi"], isoEpoch: { year: -5492, month: 7, day: 17 } }, { code: "ethiopic", names: ["incar"], isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }]);
+  }
+};
+var RocHelper = class extends SameMonthDayAsGregorianBaseHelper {
+  constructor() {
+    super("roc", [{ code: "roc", names: ["minguo"], isoEpoch: { year: 1912, month: 1, day: 1 } }, { code: "roc-inverse", names: ["before-roc"], reverseOf: "roc" }]);
+  }
+};
+var BuddhistHelper = class extends GregorianBaseHelperFixedEpoch {
+  constructor() {
+    super("buddhist", { year: -543, month: 1, day: 1 });
+  }
+};
+var GregoryHelper = class extends SameMonthDayAsGregorianBaseHelper {
+  constructor() {
+    super("gregory", [{ code: "gregory", names: ["ad", "ce"], isoEpoch: { year: 1, month: 1, day: 1 } }, { code: "gregory-inverse", names: ["be", "bce"], reverseOf: "gregory" }]);
+  }
+  reviseIntlEra(e2) {
+    let { era: t2, eraYear: n2 } = e2;
+    return "b" === t2 && (t2 = "gregory-inverse"), "a" === t2 && (t2 = "gregory"), { era: t2, eraYear: n2 };
+  }
+  getFirstDayOfWeek() {
+    return 1;
+  }
+  getMinimalDaysInFirstWeek() {
+    return 1;
+  }
+};
+var JapaneseHelper = class extends SameMonthDayAsGregorianBaseHelper {
+  constructor() {
+    super("japanese", [{ code: "reiwa", isoEpoch: { year: 2019, month: 5, day: 1 }, anchorEpoch: { year: 2019, month: 5, day: 1 } }, { code: "heisei", isoEpoch: { year: 1989, month: 1, day: 8 }, anchorEpoch: { year: 1989, month: 1, day: 8 } }, { code: "showa", isoEpoch: { year: 1926, month: 12, day: 25 }, anchorEpoch: { year: 1926, month: 12, day: 25 } }, { code: "taisho", isoEpoch: { year: 1912, month: 7, day: 30 }, anchorEpoch: { year: 1912, month: 7, day: 30 } }, { code: "meiji", isoEpoch: { year: 1868, month: 9, day: 8 }, anchorEpoch: { year: 1868, month: 9, day: 8 } }, { code: "japanese", names: ["japanese", "gregory", "ad", "ce"], isoEpoch: { year: 1, month: 1, day: 1 } }, { code: "japanese-inverse", names: ["japanese-inverse", "gregory-inverse", "bc", "bce"], reverseOf: "japanese" }]), this.erasBeginMidYear = true;
+  }
+  reviseIntlEra(e2, t2) {
+    const { era: n2, eraYear: r2 } = e2, { year: o2 } = t2;
+    return this.eras.find(((e3) => e3.code === n2)) ? { era: n2, eraYear: r2 } : o2 < 1 ? { era: "japanese-inverse", eraYear: 1 - o2 } : { era: "japanese", eraYear: o2 };
+  }
+};
+var ChineseBaseHelper = class extends HelperBase {
+  constructor() {
+    super(...arguments), this.calendarType = "lunisolar";
+  }
+  inLeapYear(e2, t2) {
+    const n2 = this.getMonthList(e2.year, t2);
+    return 13 === Object.entries(n2).length;
+  }
+  monthsInYear(e2, t2) {
+    return this.inLeapYear(e2, t2) ? 13 : 12;
+  }
+  minimumMonthLength() {
+    return 29;
+  }
+  maximumMonthLength() {
+    return 30;
+  }
+  maxLengthOfMonthCodeInAnyYear(e2) {
+    return ["M01L", "M09L", "M10L", "M11L", "M12L"].includes(e2) ? 29 : 30;
+  }
+  monthDaySearchStartYear(e2, t2) {
+    const n2 = { M01L: [1651, 1651], M02L: [1947, 1765], M03L: [1966, 1955], M04L: [1963, 1944], M05L: [1971, 1952], M06L: [1960, 1941], M07L: [1968, 1938], M08L: [1957, 1718], M09L: [1832, 1832], M10L: [1870, 1870], M11L: [1814, 1814], M12L: [1890, 1890] }[e2] ?? [1972, 1972];
+    return t2 < 30 ? n2[0] : n2[1];
+  }
+  getMonthList(e2, t2) {
+    if (void 0 === e2) throw new TypeError("Missing year");
+    const n2 = JSON.stringify({ func: "getMonthList", calendarYear: e2, id: this.id }), r2 = t2.get(n2);
+    if (r2) return r2;
+    const o2 = this.getFormatter(), i2 = (e3, t3) => {
+      const n3 = ni({ isoYear: e3, isoMonth: 2, isoDay: 1 }), r3 = new Date(n3);
+      r3.setUTCDate(t3 + 1);
+      const i3 = o2.formatToParts(r3), a3 = i3.find(((e4) => "month" === e4.type)).value, s3 = +i3.find(((e4) => "day" === e4.type)).value, c3 = i3.find(((e4) => "relatedYear" === e4.type));
+      let d3;
+      if (void 0 === c3) throw new RangeError(`Intl.DateTimeFormat.formatToParts lacks relatedYear in ${this.id} calendar. Try Node 14+ or modern browsers.`);
+      return d3 = +c3.value, { calendarMonthString: a3, calendarDay: s3, calendarYearToVerify: d3 };
+    };
+    let a2 = 17, { calendarMonthString: s2, calendarDay: c2, calendarYearToVerify: d2 } = i2(e2, a2);
+    "1" !== s2 && (a2 += 29, { calendarMonthString: s2, calendarDay: c2 } = i2(e2, a2)), a2 -= c2 - 5;
+    const h2 = {};
+    let u2, l2, m2 = 1, f2 = false;
+    do {
+      ({ calendarMonthString: s2, calendarDay: c2, calendarYearToVerify: d2 } = i2(e2, a2)), u2 && (h2[l2].daysInMonth = u2 + 30 - c2), d2 !== e2 ? f2 = true : (h2[s2] = { monthIndex: m2++ }, a2 += 30), u2 = c2, l2 = s2;
+    } while (!f2);
+    return h2[l2].daysInMonth = u2 + 30 - c2, t2.set(n2, h2), h2;
+  }
+  estimateIsoDate(e2) {
+    const { year: t2, month: n2 } = e2;
+    return { year: t2, month: n2 >= 12 ? 12 : n2 + 1, day: 1 };
+  }
+  adjustCalendarDate(e2, t2, n2 = "constrain", r2 = false) {
+    let { year: o2, month: i2, monthExtra: a2, day: s2, monthCode: c2 } = e2;
+    if (void 0 === o2) throw new TypeError("Missing property: year");
+    if (r2) {
+      if (a2 && "bis" !== a2) throw new RangeError(`Unexpected leap month suffix: ${a2}`);
+      const e3 = ei(i2, void 0 !== a2), n3 = `${i2}${a2 || ""}`, r3 = this.getMonthList(o2, t2)[n3];
+      if (void 0 === r3) throw new RangeError(`Unmatched month ${n3} in Chinese year ${o2}`);
+      return i2 = r3.monthIndex, { year: o2, month: i2, day: s2, monthCode: e3 };
+    }
+    if (this.validateCalendarDate(e2), void 0 === i2) {
+      const e3 = this.getMonthList(o2, t2);
+      let r3 = c2.replace(/^M|L$/g, ((e4) => "L" === e4 ? "bis" : ""));
+      "0" === r3[0] && (r3 = r3.slice(1));
+      let a3 = e3[r3];
+      if (i2 = a3 && a3.monthIndex, void 0 === i2 && c2.endsWith("L") && "M13L" != c2 && "constrain" === n2) {
+        const t3 = +c2.replace(/^M0?|L$/g, "");
+        a3 = e3[t3], a3 && (i2 = a3.monthIndex, c2 = ei(t3));
+      }
+      if (void 0 === i2) throw new RangeError(`Unmatched month ${c2} in Chinese year ${o2}`);
+    } else if (void 0 === c2) {
+      const e3 = this.getMonthList(o2, t2), r3 = Object.entries(e3), a3 = r3.length;
+      "reject" === n2 ? (Nr(i2, 1, a3), Nr(s2, 1, this.maximumMonthLength())) : (i2 = jr(i2, 1, a3), s2 = jr(s2, 1, this.maximumMonthLength()));
+      const d2 = r3.find(((e4) => e4[1].monthIndex === i2));
+      if (void 0 === d2) throw new RangeError(`Invalid month ${i2} in Chinese year ${o2}`);
+      c2 = ei(+d2[0].replace("bis", ""), -1 !== d2[0].indexOf("bis"));
+    } else {
+      const e3 = this.getMonthList(o2, t2);
+      let n3 = c2.replace(/^M|L$/g, ((e4) => "L" === e4 ? "bis" : ""));
+      "0" === n3[0] && (n3 = n3.slice(1));
+      const r3 = e3[n3];
+      if (!r3) throw new RangeError(`Unmatched monthCode ${c2} in Chinese year ${o2}`);
+      if (i2 !== r3.monthIndex) throw new RangeError(`monthCode ${c2} doesn't correspond to month ${i2} in Chinese year ${o2}`);
+    }
+    return { ...e2, year: o2, month: i2, monthCode: c2, day: s2 };
+  }
+};
+var ChineseHelper = class extends ChineseBaseHelper {
+  constructor() {
+    super(...arguments), this.id = "chinese";
+  }
+};
+var DangiHelper = class extends ChineseBaseHelper {
+  constructor() {
+    super(...arguments), this.id = "dangi";
+  }
+};
+var NonIsoCalendar = class {
+  constructor(e2) {
+    this.helper = e2;
+  }
+  extraFields(e2) {
+    return this.helper.hasEra && e2.includes("year") ? ["era", "eraYear"] : [];
+  }
+  resolveFields(e2) {
+    if ("lunisolar" !== this.helper.calendarType) {
+      const t2 = new OneObjectCache();
+      ti(e2, void 0, this.helper.monthsInYear({ year: e2.year ?? 1972 }, t2));
+    }
+  }
+  dateToISO(e2, t2) {
+    const n2 = new OneObjectCache(), r2 = this.helper.calendarToIsoDate(e2, t2, n2);
+    return n2.setObject(r2), r2;
+  }
+  monthDayToISOReferenceDate(e2, t2) {
+    const n2 = new OneObjectCache(), r2 = this.helper.monthDayFromFields(e2, t2, n2);
+    return n2.setObject(r2), r2;
+  }
+  fieldKeysToIgnore(e2) {
+    const t2 = /* @__PURE__ */ new Set();
+    for (let n2 = 0; n2 < e2.length; n2++) {
+      const r2 = e2[n2];
+      switch (t2.add(r2), r2) {
+        case "era":
+          t2.add("eraYear"), t2.add("year");
+          break;
+        case "eraYear":
+          t2.add("era"), t2.add("year");
+          break;
+        case "year":
+          t2.add("era"), t2.add("eraYear");
+          break;
+        case "month":
+          t2.add("monthCode"), this.helper.erasBeginMidYear && (t2.add("era"), t2.add("eraYear"));
+          break;
+        case "monthCode":
+          t2.add("month"), this.helper.erasBeginMidYear && (t2.add("era"), t2.add("eraYear"));
+          break;
+        case "day":
+          this.helper.erasBeginMidYear && (t2.add("era"), t2.add("eraYear"));
+      }
+    }
+    return Go(t2);
+  }
+  dateAdd(e2, { years: t2, months: n2, weeks: r2, days: o2 }, i2) {
+    const a2 = OneObjectCache.getCacheForObject(e2), s2 = this.helper.isoToCalendarDate(e2, a2), c2 = this.helper.addCalendar(s2, { years: t2, months: n2, weeks: r2, days: o2 }, i2, a2), d2 = this.helper.calendarToIsoDate(c2, "constrain", a2);
+    return OneObjectCache.getCacheForObject(d2) || new OneObjectCache(a2).setObject(d2), d2;
+  }
+  dateUntil(e2, t2, n2) {
+    const r2 = OneObjectCache.getCacheForObject(e2), o2 = OneObjectCache.getCacheForObject(t2), i2 = this.helper.isoToCalendarDate(e2, r2), a2 = this.helper.isoToCalendarDate(t2, o2);
+    return this.helper.untilCalendar(i2, a2, n2, r2);
+  }
+  isoToDate(e2, t2) {
+    const n2 = OneObjectCache.getCacheForObject(e2), r2 = this.helper.isoToCalendarDate(e2, n2);
+    if (t2.dayOfWeek && (r2.dayOfWeek = Xo.iso8601.isoToDate(e2, { dayOfWeek: true }).dayOfWeek), t2.dayOfYear) {
+      const e3 = this.helper.startOfCalendarYear(r2), t3 = this.helper.calendarDaysUntil(e3, r2, n2);
+      r2.dayOfYear = t3 + 1;
+    }
+    if (t2.weekOfYear && (r2.weekOfYear = Ko(this.helper.id, e2)), r2.daysInWeek = 7, t2.daysInMonth && (r2.daysInMonth = this.helper.daysInMonth(r2, n2)), t2.daysInYear) {
+      const e3 = this.helper.startOfCalendarYear(r2), t3 = this.helper.addCalendar(e3, { years: 1 }, "constrain", n2);
+      r2.daysInYear = this.helper.calendarDaysUntil(e3, t3, n2);
+    }
+    return t2.monthsInYear && (r2.monthsInYear = this.helper.monthsInYear(r2, n2)), t2.inLeapYear && (r2.inLeapYear = this.helper.inLeapYear(r2, n2)), r2;
+  }
+  getFirstDayOfWeek() {
+    return this.helper.getFirstDayOfWeek();
+  }
+  getMinimalDaysInFirstWeek() {
+    return this.helper.getMinimalDaysInFirstWeek();
+  }
+};
+for (const e2 of [HebrewHelper, PersianHelper, EthiopicHelper, EthioaaHelper, CopticHelper, ChineseHelper, DangiHelper, RocHelper, IndianHelper, BuddhistHelper, GregoryHelper, JapaneseHelper, IslamicHelper, IslamicUmalquraHelper, IslamicTblaHelper, IslamicCivilHelper, IslamicRgsaHelper, IslamicCcHelper]) {
+  const t2 = new e2();
+  Xo[t2.id] = new NonIsoCalendar(t2);
+}
+se("calendarImpl", (function(e2) {
+  return Xo[e2];
+}));
+var ai = Intl.DateTimeFormat;
+function si(e2, t2) {
+  let n2 = re(e2, t2);
+  return "function" == typeof n2 && (n2 = new ai(re(e2, G), n2(re(e2, K))), (function(e3, t3, n3) {
+    const r2 = Q(e3);
+    if (void 0 === r2) throw new TypeError("Missing slots for the given container");
+    if (void 0 === r2[t3]) throw new TypeError(`tried to reset ${t3} which was not set`);
+    r2[t3] = n3;
+  })(e2, t2, n2)), n2;
+}
+function ci(e2) {
+  return ne(e2, q);
+}
+var DateTimeFormatImpl = class {
+  constructor(e2 = void 0, t2 = void 0) {
+    !(function(e3, t3, n2) {
+      const r2 = void 0 !== n2;
+      let o2;
+      if (r2) {
+        const e4 = ["localeMatcher", "calendar", "numberingSystem", "hour12", "hourCycle", "timeZone", "weekday", "era", "year", "month", "day", "dayPeriod", "hour", "minute", "second", "fractionalSecondDigits", "timeZoneName", "formatMatcher", "dateStyle", "timeStyle"];
+        o2 = (function(e5) {
+          if (null == e5) throw new TypeError(`Expected object not ${e5}`);
+          return Object(e5);
+        })(n2);
+        const t4 = /* @__PURE__ */ Object.create(null);
+        for (let n3 = 0; n3 < e4.length; n3++) {
+          const r3 = e4[n3];
+          Object.prototype.hasOwnProperty.call(o2, r3) && (t4[r3] = o2[r3]);
+        }
+        o2 = t4;
+      } else o2 = /* @__PURE__ */ Object.create(null);
+      const i2 = new ai(t3, o2), a2 = i2.resolvedOptions();
+      if (te(e3), r2) {
+        const t4 = Object.assign(/* @__PURE__ */ Object.create(null), a2);
+        for (const e4 in t4) Object.prototype.hasOwnProperty.call(o2, e4) || delete t4[e4];
+        t4.hour12 = o2.hour12, t4.hourCycle = o2.hourCycle, oe(e3, K, t4);
+      } else oe(e3, K, o2);
+      oe(e3, G, a2.locale), oe(e3, q, i2), oe(e3, W, a2.timeZone), oe(e3, J, a2.calendar), oe(e3, B, vi), oe(e3, Z, gi), oe(e3, F, wi), oe(e3, H, pi), oe(e3, z, bi), oe(e3, A, Di);
+      const s2 = r2 ? o2.timeZone : void 0;
+      if (void 0 === s2) oe(e3, _, a2.timeZone);
+      else {
+        const t4 = We(s2);
+        if (t4.startsWith("\u2212")) throw new RangeError("Unicode minus (U+2212) is not supported in time zone offsets");
+        oe(e3, _, Bn(t4));
+      }
+    })(this, e2, t2);
+  }
+  get format() {
+    vt(this, ci);
+    const e2 = ui.bind(this);
+    return Object.defineProperties(e2, { length: { value: 1, enumerable: false, writable: false, configurable: true }, name: { value: "", enumerable: false, writable: false, configurable: true } }), e2;
+  }
+  formatRange(e2, t2) {
+    return vt(this, ci), mi.call(this, e2, t2);
+  }
+  formatToParts(e2, ...t2) {
+    return vt(this, ci), li.call(this, e2, ...t2);
+  }
+  formatRangeToParts(e2, t2) {
+    return vt(this, ci), fi.call(this, e2, t2);
+  }
+  resolvedOptions() {
+    return vt(this, ci), hi.call(this);
+  }
+};
+"formatToParts" in ai.prototype || delete DateTimeFormatImpl.prototype.formatToParts, "formatRangeToParts" in ai.prototype || delete DateTimeFormatImpl.prototype.formatRangeToParts;
+var di = function(e2 = void 0, t2 = void 0) {
+  return new DateTimeFormatImpl(e2, t2);
+};
+function hi() {
+  const e2 = re(this, q).resolvedOptions();
+  return e2.timeZone = re(this, _), e2;
+}
+function ui(e2, ...t2) {
+  let n2, r2, o2 = $i(e2, this);
+  return o2.formatter ? (n2 = o2.formatter, r2 = [No(o2.epochNs, "floor")]) : (n2 = re(this, q), r2 = [e2, ...t2]), n2.format(...r2);
+}
+function li(e2, ...t2) {
+  let n2, r2, o2 = $i(e2, this);
+  return o2.formatter ? (n2 = o2.formatter, r2 = [No(o2.epochNs, "floor")]) : (n2 = re(this, q), r2 = [e2, ...t2]), n2.formatToParts(...r2);
+}
+function mi(e2, t2) {
+  if (void 0 === e2 || void 0 === t2) throw new TypeError("Intl.DateTimeFormat.formatRange requires two values");
+  const n2 = Ci(e2), r2 = Ci(t2);
+  let o2, i2 = [n2, r2];
+  if (Ii(n2) !== Ii(r2)) throw new TypeError("Intl.DateTimeFormat.formatRange accepts two values of the same type");
+  if (Ii(n2)) {
+    if (!Oi(n2, r2)) throw new TypeError("Intl.DateTimeFormat.formatRange accepts two values of the same type");
+    const { epochNs: e3, formatter: t3 } = $i(n2, this), { epochNs: a2, formatter: s2 } = $i(r2, this);
+    t3 && (o2 = t3, i2 = [No(e3, "floor"), No(a2, "floor")]);
+  }
+  return o2 || (o2 = re(this, q)), o2.formatRange(...i2);
+}
+function fi(e2, t2) {
+  if (void 0 === e2 || void 0 === t2) throw new TypeError("Intl.DateTimeFormat.formatRange requires two values");
+  const n2 = Ci(e2), r2 = Ci(t2);
+  let o2, i2 = [n2, r2];
+  if (Ii(n2) !== Ii(r2)) throw new TypeError("Intl.DateTimeFormat.formatRangeToParts accepts two values of the same type");
+  if (Ii(n2)) {
+    if (!Oi(n2, r2)) throw new TypeError("Intl.DateTimeFormat.formatRangeToParts accepts two values of the same type");
+    const { epochNs: e3, formatter: t3 } = $i(n2, this), { epochNs: a2, formatter: s2 } = $i(r2, this);
+    t3 && (o2 = t3, i2 = [No(e3, "floor"), No(a2, "floor")]);
+  }
+  return o2 || (o2 = re(this, q)), o2.formatRangeToParts(...i2);
+}
+function yi(e2 = {}, t2 = {}) {
+  const n2 = Object.assign({}, e2), r2 = ["year", "month", "day", "hour", "minute", "second", "weekday", "dayPeriod", "timeZoneName", "dateStyle", "timeStyle"];
+  for (let e3 = 0; e3 < r2.length; e3++) {
+    const o2 = r2[e3];
+    n2[o2] = o2 in t2 ? t2[o2] : n2[o2], false !== n2[o2] && void 0 !== n2[o2] || delete n2[o2];
+  }
+  return n2;
+}
+function pi(e2) {
+  const t2 = yi(e2, { year: false, month: false, day: false, weekday: false, timeZoneName: false, dateStyle: false });
+  if ("long" !== t2.timeStyle && "full" !== t2.timeStyle || (delete t2.timeStyle, Object.assign(t2, { hour: "numeric", minute: "2-digit", second: "2-digit" })), !Mi(t2)) {
+    if (Ei(e2)) throw new TypeError(`cannot format Temporal.PlainTime with options [${Object.keys(e2)}]`);
+    Object.assign(t2, { hour: "numeric", minute: "numeric", second: "numeric" });
+  }
+  return t2;
+}
+function gi(e2) {
+  const t2 = { short: { year: "2-digit", month: "numeric" }, medium: { year: "numeric", month: "short" }, long: { year: "numeric", month: "long" }, full: { year: "numeric", month: "long" } }, n2 = yi(e2, { day: false, hour: false, minute: false, second: false, weekday: false, dayPeriod: false, timeZoneName: false, timeStyle: false });
+  if ("dateStyle" in n2 && n2.dateStyle) {
+    const e3 = n2.dateStyle;
+    delete n2.dateStyle, Object.assign(n2, t2[e3]);
+  }
+  if (!("year" in n2 || "month" in n2 || "era" in n2)) {
+    if (Ei(e2)) throw new TypeError(`cannot format PlainYearMonth with options [${Object.keys(e2)}]`);
+    Object.assign(n2, { year: "numeric", month: "numeric" });
+  }
+  return n2;
+}
+function wi(e2) {
+  const t2 = { short: { month: "numeric", day: "numeric" }, medium: { month: "short", day: "numeric" }, long: { month: "long", day: "numeric" }, full: { month: "long", day: "numeric" } }, n2 = yi(e2, { year: false, hour: false, minute: false, second: false, weekday: false, dayPeriod: false, timeZoneName: false, timeStyle: false });
+  if ("dateStyle" in n2 && n2.dateStyle) {
+    const e3 = n2.dateStyle;
+    delete n2.dateStyle, Object.assign(n2, t2[e3]);
+  }
+  if (!("month" in n2) && !("day" in n2)) {
+    if (Ei(e2)) throw new TypeError(`cannot format PlainMonthDay with options [${Object.keys(e2)}]`);
+    Object.assign(n2, { month: "numeric", day: "numeric" });
+  }
+  return n2;
+}
+function vi(e2) {
+  const t2 = yi(e2, { hour: false, minute: false, second: false, dayPeriod: false, timeZoneName: false, timeStyle: false });
+  if (!Ti(t2)) {
+    if (Ei(e2)) throw new TypeError(`cannot format PlainDate with options [${Object.keys(e2)}]`);
+    Object.assign(t2, { year: "numeric", month: "numeric", day: "numeric" });
+  }
+  return t2;
+}
+function bi(e2) {
+  const t2 = yi(e2, { timeZoneName: false });
+  if (("long" === t2.timeStyle || "full" === t2.timeStyle) && (delete t2.timeStyle, Object.assign(t2, { hour: "numeric", minute: "2-digit", second: "2-digit" }), t2.dateStyle)) {
+    const e3 = { short: { year: "numeric", month: "numeric", day: "numeric" }, medium: { year: "numeric", month: "short", day: "numeric" }, long: { year: "numeric", month: "long", day: "numeric" }, full: { year: "numeric", month: "long", day: "numeric", weekday: "long" } };
+    Object.assign(t2, e3[t2.dateStyle]), delete t2.dateStyle;
+  }
+  if (!Mi(t2) && !Ti(t2)) {
+    if (Ei(e2)) throw new TypeError(`cannot format PlainDateTime with options [${Object.keys(e2)}]`);
+    Object.assign(t2, { year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" });
+  }
+  return t2;
+}
+function Di(e2) {
+  let t2 = e2;
+  return Mi(t2) || Ti(t2) || (t2 = Object.assign({}, t2, { year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" })), t2;
+}
+function Ti(e2) {
+  return "year" in e2 || "month" in e2 || "day" in e2 || "weekday" in e2 || "dateStyle" in e2 || "era" in e2;
+}
+function Mi(e2) {
+  return "hour" in e2 || "minute" in e2 || "second" in e2 || "timeStyle" in e2 || "dayPeriod" in e2 || "fractionalSecondDigits" in e2;
+}
+function Ei(e2) {
+  return Ti(e2) || Mi(e2) || "dateStyle" in e2 || "timeStyle" in e2 || "timeZoneName" in e2;
+}
+function Ii(e2) {
+  return mt(e2) || ft(e2) || yt(e2) || wt(e2) || pt(e2) || gt(e2) || ut(e2);
+}
+function Ci(e2) {
+  return Ii(e2) ? e2 : qe(e2);
+}
+function Oi(e2, t2) {
+  return !(!Ii(e2) || !Ii(t2) || ft(e2) && !ft(t2) || mt(e2) && !mt(t2) || yt(e2) && !yt(t2) || wt(e2) && !wt(t2) || pt(e2) && !pt(t2) || gt(e2) && !gt(t2) || ut(e2) && !ut(t2));
+}
+function $i(e2, t2) {
+  if (ft(e2)) {
+    const n2 = { isoDate: { year: 1970, month: 1, day: 1 }, time: re(e2, M) };
+    return { epochNs: An(re(t2, W), n2, "compatible"), formatter: si(t2, H) };
+  }
+  if (pt(e2)) {
+    const n2 = re(e2, E), r2 = re(t2, J);
+    if (n2 !== r2) throw new RangeError(`cannot format PlainYearMonth with calendar ${n2} in locale with calendar ${r2}`);
+    const o2 = xt(re(e2, D), { deltaDays: 0, hour: 12, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 });
+    return { epochNs: An(re(t2, W), o2, "compatible"), formatter: si(t2, Z) };
+  }
+  if (gt(e2)) {
+    const n2 = re(e2, E), r2 = re(t2, J);
+    if (n2 !== r2) throw new RangeError(`cannot format PlainMonthDay with calendar ${n2} in locale with calendar ${r2}`);
+    const o2 = xt(re(e2, D), { deltaDays: 0, hour: 12, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 });
+    return { epochNs: An(re(t2, W), o2, "compatible"), formatter: si(t2, F) };
+  }
+  if (mt(e2)) {
+    const n2 = re(e2, E), r2 = re(t2, J);
+    if ("iso8601" !== n2 && n2 !== r2) throw new RangeError(`cannot format PlainDate with calendar ${n2} in locale with calendar ${r2}`);
+    const o2 = xt(re(e2, D), { deltaDays: 0, hour: 12, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 });
+    return { epochNs: An(re(t2, W), o2, "compatible"), formatter: si(t2, B) };
+  }
+  if (yt(e2)) {
+    const n2 = re(e2, E), r2 = re(t2, J);
+    if ("iso8601" !== n2 && n2 !== r2) throw new RangeError(`cannot format PlainDateTime with calendar ${n2} in locale with calendar ${r2}`);
+    const o2 = re(e2, T);
+    return { epochNs: An(re(t2, W), o2, "compatible"), formatter: si(t2, z) };
+  }
+  if (wt(e2)) throw new TypeError("Temporal.ZonedDateTime not supported in DateTimeFormat methods. Use toLocaleString() instead.");
+  return ut(e2) ? { epochNs: re(e2, b), formatter: si(t2, A) } : {};
+}
+function Yi(e2) {
+  const t2 = /* @__PURE__ */ Object.create(null);
+  return t2.years = re(e2, Y), t2.months = re(e2, R), t2.weeks = re(e2, S), t2.days = re(e2, j), t2.hours = re(e2, k), t2.minutes = re(e2, N), t2.seconds = re(e2, x), t2.milliseconds = re(e2, L), t2.microseconds = re(e2, P), t2.nanoseconds = re(e2, U), t2;
+}
+DateTimeFormatImpl.prototype.constructor = di, Object.defineProperty(di, "prototype", { value: DateTimeFormatImpl.prototype, writable: false, enumerable: false, configurable: false }), di.supportedLocalesOf = ai.supportedLocalesOf, ae(di, "Intl.DateTimeFormat");
+var _a;
+var { format: Ri, formatToParts: Si } = ((_a = Intl.DurationFormat) == null ? void 0 : _a.prototype) ?? /* @__PURE__ */ Object.create(null);
+function ji(e2) {
+  Intl.DurationFormat.prototype.resolvedOptions.call(this);
+  const t2 = Yi(sn(e2));
+  return Ri.call(this, t2);
+}
+var _a2;
+((_a2 = Intl.DurationFormat) == null ? void 0 : _a2.prototype) && (Intl.DurationFormat.prototype.format = ji, Intl.DurationFormat.prototype.formatToParts = function(e2) {
+  Intl.DurationFormat.prototype.resolvedOptions.call(this);
+  const t2 = Yi(sn(e2));
+  return Si.call(this, t2);
+});
+var ki = Object.freeze({ __proto__: null, DateTimeFormat: di, ModifiedIntlDurationFormatPrototypeFormat: ji });
+var Instant = class {
+  constructor(e2) {
+    if (arguments.length < 1) throw new TypeError("missing argument: epochNanoseconds is required");
+    In(this, Lo(e2));
+  }
+  get epochMilliseconds() {
+    return vt(this, ut), No(re(this, b), "floor");
+  }
+  get epochNanoseconds() {
+    return vt(this, ut), ko(import_jsbi.default.BigInt(re(this, b)));
+  }
+  add(e2) {
+    return vt(this, ut), wo("add", this, e2);
+  }
+  subtract(e2) {
+    return vt(this, ut), wo("subtract", this, e2);
+  }
+  until(e2, t2 = void 0) {
+    return vt(this, ut), so("until", this, e2, t2);
+  }
+  since(e2, t2 = void 0) {
+    return vt(this, ut), so("since", this, e2, t2);
+  }
+  round(e2) {
+    if (vt(this, ut), void 0 === e2) throw new TypeError("options parameter is required");
+    const t2 = "string" == typeof e2 ? Fo("smallestUnit", e2) : Zo(e2), n2 = Ft(t2), r2 = Ut(t2, "halfExpand"), o2 = Wt(t2, "smallestUnit", "time", qt);
+    return Ht(n2, { hour: 24, minute: 1440, second: 86400, millisecond: 864e5, microsecond: 864e8, nanosecond: 864e11 }[o2], true), Cn(Io(re(this, b), n2, o2, r2));
+  }
+  equals(t2) {
+    vt(this, ut);
+    const n2 = cn(t2), r2 = re(this, b), o2 = re(n2, b);
+    return import_jsbi.default.equal(import_jsbi.default.BigInt(r2), import_jsbi.default.BigInt(o2));
+  }
+  toString(e2 = void 0) {
+    vt(this, ut);
+    const t2 = Zo(e2), n2 = zt(t2), r2 = Ut(t2, "trunc"), o2 = Wt(t2, "smallestUnit", "time", void 0);
+    if ("hour" === o2) throw new RangeError('smallestUnit must be a time unit other than "hour"');
+    let i2 = t2.timeZone;
+    void 0 !== i2 && (i2 = Bn(i2));
+    const { precision: a2, unit: s2, increment: c2 } = At(o2, n2);
+    return Xn(Cn(Io(re(this, b), c2, s2, r2)), i2, a2);
+  }
+  toJSON() {
+    return vt(this, ut), Xn(this, void 0, "auto");
+  }
+  toLocaleString(e2 = void 0, t2 = void 0) {
+    return vt(this, ut), new di(e2, t2).format(this);
+  }
+  valueOf() {
+    qo("Instant");
+  }
+  toZonedDateTimeISO(e2) {
+    vt(this, ut);
+    const t2 = Bn(e2);
+    return $n(re(this, b), t2, "iso8601");
+  }
+  static fromEpochMilliseconds(e2) {
+    return Cn(xo(qe(e2)));
+  }
+  static fromEpochNanoseconds(e2) {
+    return Cn(Lo(e2));
+  }
+  static from(e2) {
+    return cn(e2);
+  }
+  static compare(t2, n2) {
+    const r2 = cn(t2), o2 = cn(n2), i2 = re(r2, b), a2 = re(o2, b);
+    return import_jsbi.default.lessThan(i2, a2) ? -1 : import_jsbi.default.greaterThan(i2, a2) ? 1 : 0;
+  }
+};
+ae(Instant, "Temporal.Instant");
+var PlainDate = class {
+  constructor(e2, t2, n2, r2 = "iso8601") {
+    const o2 = _e(e2), i2 = _e(t2), a2 = _e(n2), s2 = zo(void 0 === r2 ? "iso8601" : Ve(r2));
+    xr(o2, i2, a2), yn(this, { year: o2, month: i2, day: a2 }, s2);
+  }
+  get calendarId() {
+    return vt(this, mt), re(this, E);
+  }
+  get era() {
+    return Ni(this, "era");
+  }
+  get eraYear() {
+    return Ni(this, "eraYear");
+  }
+  get year() {
+    return Ni(this, "year");
+  }
+  get month() {
+    return Ni(this, "month");
+  }
+  get monthCode() {
+    return Ni(this, "monthCode");
+  }
+  get day() {
+    return Ni(this, "day");
+  }
+  get dayOfWeek() {
+    return Ni(this, "dayOfWeek");
+  }
+  get dayOfYear() {
+    return Ni(this, "dayOfYear");
+  }
+  get weekOfYear() {
+    var _a3;
+    return (_a3 = Ni(this, "weekOfYear")) == null ? void 0 : _a3.week;
+  }
+  get yearOfWeek() {
+    var _a3;
+    return (_a3 = Ni(this, "weekOfYear")) == null ? void 0 : _a3.year;
+  }
+  get daysInWeek() {
+    return Ni(this, "daysInWeek");
+  }
+  get daysInMonth() {
+    return Ni(this, "daysInMonth");
+  }
+  get daysInYear() {
+    return Ni(this, "daysInYear");
+  }
+  get monthsInYear() {
+    return Ni(this, "monthsInYear");
+  }
+  get inLeapYear() {
+    return Ni(this, "inLeapYear");
+  }
+  with(e2, t2 = void 0) {
+    if (vt(this, mt), !Ae(e2)) throw new TypeError("invalid argument");
+    bt(e2);
+    const n2 = re(this, E);
+    let r2 = en(n2, re(this, D));
+    return r2 = Rn(n2, r2, tn(n2, e2, ["year", "month", "monthCode", "day"], [], "partial")), pn(Ln(n2, r2, Lt(Zo(t2))), n2);
+  }
+  withCalendar(e2) {
+    vt(this, mt);
+    const t2 = kn(e2);
+    return pn(re(this, D), t2);
+  }
+  add(e2, t2 = void 0) {
+    return vt(this, mt), vo("add", this, e2, t2);
+  }
+  subtract(e2, t2 = void 0) {
+    return vt(this, mt), vo("subtract", this, e2, t2);
+  }
+  until(e2, t2 = void 0) {
+    return vt(this, mt), co("until", this, e2, t2);
+  }
+  since(e2, t2 = void 0) {
+    return vt(this, mt), co("since", this, e2, t2);
+  }
+  equals(e2) {
+    vt(this, mt);
+    const t2 = rn(e2);
+    return 0 === Ro(re(this, D), re(t2, D)) && xn(re(this, E), re(t2, E));
+  }
+  toString(e2 = void 0) {
+    return vt(this, mt), er(this, Zt(Zo(e2)));
+  }
+  toJSON() {
+    return vt(this, mt), er(this);
+  }
+  toLocaleString(e2 = void 0, t2 = void 0) {
+    return vt(this, mt), new di(e2, t2).format(this);
+  }
+  valueOf() {
+    qo("PlainDate");
+  }
+  toPlainDateTime(e2 = void 0) {
+    vt(this, mt);
+    const t2 = un(e2);
+    return wn(xt(re(this, D), t2), re(this, E));
+  }
+  toZonedDateTime(e2) {
+    let t2, n2;
+    if (vt(this, mt), Ae(e2)) {
+      const r3 = e2.timeZone;
+      void 0 === r3 ? t2 = Bn(e2) : (t2 = Bn(r3), n2 = e2.plainTime);
+    } else t2 = Bn(e2);
+    const r2 = re(this, D);
+    let o2;
+    return void 0 === n2 ? o2 = _n(t2, r2) : (n2 = hn(n2), o2 = An(t2, xt(r2, re(n2, M)), "compatible")), $n(o2, t2, re(this, E));
+  }
+  toPlainYearMonth() {
+    vt(this, mt);
+    const e2 = re(this, E);
+    return En(Pn(e2, en(e2, re(this, D)), "constrain"), e2);
+  }
+  toPlainMonthDay() {
+    vt(this, mt);
+    const e2 = re(this, E);
+    return bn(Un(e2, en(e2, re(this, D)), "constrain"), e2);
+  }
+  static from(e2, t2 = void 0) {
+    return rn(e2, t2);
+  }
+  static compare(e2, t2) {
+    const n2 = rn(e2), r2 = rn(t2);
+    return Ro(re(n2, D), re(r2, D));
+  }
+};
+function Ni(e2, t2) {
+  vt(e2, mt);
+  const n2 = re(e2, D);
+  return Qt(e2).isoToDate(n2, { [t2]: true })[t2];
+}
+ae(PlainDate, "Temporal.PlainDate");
+var PlainDateTime = class {
+  constructor(e2, t2, n2, r2 = 0, o2 = 0, i2 = 0, a2 = 0, s2 = 0, c2 = 0, d2 = "iso8601") {
+    const h2 = _e(e2), u2 = _e(t2), l2 = _e(n2), m2 = void 0 === r2 ? 0 : _e(r2), f2 = void 0 === o2 ? 0 : _e(o2), y2 = void 0 === i2 ? 0 : _e(i2), p2 = void 0 === a2 ? 0 : _e(a2), g2 = void 0 === s2 ? 0 : _e(s2), w2 = void 0 === c2 ? 0 : _e(c2), v2 = zo(void 0 === d2 ? "iso8601" : Ve(d2));
+    Ur(h2, u2, l2, m2, f2, y2, p2, g2, w2), gn(this, { isoDate: { year: h2, month: u2, day: l2 }, time: { hour: m2, minute: f2, second: y2, millisecond: p2, microsecond: g2, nanosecond: w2 } }, v2);
+  }
+  get calendarId() {
+    return vt(this, yt), re(this, E);
+  }
+  get year() {
+    return xi(this, "year");
+  }
+  get month() {
+    return xi(this, "month");
+  }
+  get monthCode() {
+    return xi(this, "monthCode");
+  }
+  get day() {
+    return xi(this, "day");
+  }
+  get hour() {
+    return Li(this, "hour");
+  }
+  get minute() {
+    return Li(this, "minute");
+  }
+  get second() {
+    return Li(this, "second");
+  }
+  get millisecond() {
+    return Li(this, "millisecond");
+  }
+  get microsecond() {
+    return Li(this, "microsecond");
+  }
+  get nanosecond() {
+    return Li(this, "nanosecond");
+  }
+  get era() {
+    return xi(this, "era");
+  }
+  get eraYear() {
+    return xi(this, "eraYear");
+  }
+  get dayOfWeek() {
+    return xi(this, "dayOfWeek");
+  }
+  get dayOfYear() {
+    return xi(this, "dayOfYear");
+  }
+  get weekOfYear() {
+    var _a3;
+    return (_a3 = xi(this, "weekOfYear")) == null ? void 0 : _a3.week;
+  }
+  get yearOfWeek() {
+    var _a3;
+    return (_a3 = xi(this, "weekOfYear")) == null ? void 0 : _a3.year;
+  }
+  get daysInWeek() {
+    return xi(this, "daysInWeek");
+  }
+  get daysInYear() {
+    return xi(this, "daysInYear");
+  }
+  get daysInMonth() {
+    return xi(this, "daysInMonth");
+  }
+  get monthsInYear() {
+    return xi(this, "monthsInYear");
+  }
+  get inLeapYear() {
+    return xi(this, "inLeapYear");
+  }
+  with(e2, t2 = void 0) {
+    if (vt(this, yt), !Ae(e2)) throw new TypeError("invalid argument");
+    bt(e2);
+    const n2 = re(this, E), r2 = re(this, T);
+    let o2 = { ...en(n2, r2.isoDate), ...r2.time };
+    return o2 = Rn(n2, o2, tn(n2, e2, ["year", "month", "monthCode", "day"], ["hour", "minute", "second", "millisecond", "microsecond", "nanosecond"], "partial")), wn(on(n2, o2, Lt(Zo(t2))), n2);
+  }
+  withPlainTime(e2 = void 0) {
+    vt(this, yt);
+    const t2 = un(e2);
+    return wn(xt(re(this, T).isoDate, t2), re(this, E));
+  }
+  withCalendar(e2) {
+    vt(this, yt);
+    const t2 = kn(e2);
+    return wn(re(this, T), t2);
+  }
+  add(e2, t2 = void 0) {
+    return vt(this, yt), bo("add", this, e2, t2);
+  }
+  subtract(e2, t2 = void 0) {
+    return vt(this, yt), bo("subtract", this, e2, t2);
+  }
+  until(e2, t2 = void 0) {
+    return vt(this, yt), ho("until", this, e2, t2);
+  }
+  since(e2, t2 = void 0) {
+    return vt(this, yt), ho("since", this, e2, t2);
+  }
+  round(e2) {
+    if (vt(this, yt), void 0 === e2) throw new TypeError("options parameter is required");
+    const t2 = "string" == typeof e2 ? Fo("smallestUnit", e2) : Zo(e2), n2 = Ft(t2), r2 = Ut(t2, "halfExpand"), o2 = Wt(t2, "smallestUnit", "time", qt, ["day"]), i2 = { day: 1, hour: 24, minute: 60, second: 60, millisecond: 1e3, microsecond: 1e3, nanosecond: 1e3 }[o2];
+    Ht(n2, i2, 1 === i2);
+    const a2 = re(this, T);
+    return wn(1 === n2 && "nanosecond" === o2 ? a2 : Co(a2, n2, o2, r2), re(this, E));
+  }
+  equals(e2) {
+    vt(this, yt);
+    const t2 = an(e2);
+    return 0 === jo(re(this, T), re(t2, T)) && xn(re(this, E), re(t2, E));
+  }
+  toString(e2 = void 0) {
+    vt(this, yt);
+    const t2 = Zo(e2), n2 = Zt(t2), r2 = zt(t2), o2 = Ut(t2, "trunc"), i2 = Wt(t2, "smallestUnit", "time", void 0);
+    if ("hour" === i2) throw new RangeError('smallestUnit must be a time unit other than "hour"');
+    const { precision: a2, unit: s2, increment: c2 } = At(i2, r2), d2 = Co(re(this, T), c2, s2, o2);
+    return Br(d2), nr(d2, re(this, E), a2, n2);
+  }
+  toJSON() {
+    return vt(this, yt), nr(re(this, T), re(this, E), "auto");
+  }
+  toLocaleString(e2 = void 0, t2 = void 0) {
+    return vt(this, yt), new di(e2, t2).format(this);
+  }
+  valueOf() {
+    qo("PlainDateTime");
+  }
+  toZonedDateTime(e2, t2 = void 0) {
+    vt(this, yt);
+    const n2 = Bn(e2), r2 = Pt(Zo(t2));
+    return $n(An(n2, re(this, T), r2), n2, re(this, E));
+  }
+  toPlainDate() {
+    return vt(this, yt), pn(re(this, T).isoDate, re(this, E));
+  }
+  toPlainTime() {
+    return vt(this, yt), Tn(re(this, T).time);
+  }
+  static from(e2, t2 = void 0) {
+    return an(e2, t2);
+  }
+  static compare(e2, t2) {
+    const n2 = an(e2), r2 = an(t2);
+    return jo(re(n2, T), re(r2, T));
+  }
+};
+function xi(e2, t2) {
+  vt(e2, yt);
+  const n2 = re(e2, T).isoDate;
+  return Qt(e2).isoToDate(n2, { [t2]: true })[t2];
+}
+function Li(e2, t2) {
+  return vt(e2, yt), re(e2, T).time[t2];
+}
+ae(PlainDateTime, "Temporal.PlainDateTime");
+var Duration = class _Duration {
+  constructor(e2 = 0, t2 = 0, n2 = 0, r2 = 0, o2 = 0, i2 = 0, a2 = 0, s2 = 0, c2 = 0, d2 = 0) {
+    const h2 = void 0 === e2 ? 0 : Ge(e2), u2 = void 0 === t2 ? 0 : Ge(t2), l2 = void 0 === n2 ? 0 : Ge(n2), m2 = void 0 === r2 ? 0 : Ge(r2), f2 = void 0 === o2 ? 0 : Ge(o2), y2 = void 0 === i2 ? 0 : Ge(i2), p2 = void 0 === a2 ? 0 : Ge(a2), g2 = void 0 === s2 ? 0 : Ge(s2), w2 = void 0 === c2 ? 0 : Ge(c2), v2 = void 0 === d2 ? 0 : Ge(d2);
+    zr(h2, u2, l2, m2, f2, y2, p2, g2, w2, v2), te(this), oe(this, Y, h2), oe(this, R, u2), oe(this, S, l2), oe(this, j, m2), oe(this, k, f2), oe(this, N, y2), oe(this, x, p2), oe(this, L, g2), oe(this, P, w2), oe(this, U, v2);
+  }
+  get years() {
+    return vt(this, lt), re(this, Y);
+  }
+  get months() {
+    return vt(this, lt), re(this, R);
+  }
+  get weeks() {
+    return vt(this, lt), re(this, S);
+  }
+  get days() {
+    return vt(this, lt), re(this, j);
+  }
+  get hours() {
+    return vt(this, lt), re(this, k);
+  }
+  get minutes() {
+    return vt(this, lt), re(this, N);
+  }
+  get seconds() {
+    return vt(this, lt), re(this, x);
+  }
+  get milliseconds() {
+    return vt(this, lt), re(this, L);
+  }
+  get microseconds() {
+    return vt(this, lt), re(this, P);
+  }
+  get nanoseconds() {
+    return vt(this, lt), re(this, U);
+  }
+  get sign() {
+    return vt(this, lt), Mr(this);
+  }
+  get blank() {
+    return vt(this, lt), 0 === Mr(this);
+  }
+  with(e2) {
+    vt(this, lt);
+    const t2 = kt(e2), { years: n2 = re(this, Y), months: r2 = re(this, R), weeks: o2 = re(this, S), days: i2 = re(this, j), hours: a2 = re(this, k), minutes: s2 = re(this, N), seconds: c2 = re(this, x), milliseconds: d2 = re(this, L), microseconds: h2 = re(this, P), nanoseconds: u2 = re(this, U) } = t2;
+    return new _Duration(n2, r2, o2, i2, a2, s2, c2, d2, h2, u2);
+  }
+  negated() {
+    return vt(this, lt), Sr(this);
+  }
+  abs() {
+    return vt(this, lt), new _Duration(Math.abs(re(this, Y)), Math.abs(re(this, R)), Math.abs(re(this, S)), Math.abs(re(this, j)), Math.abs(re(this, k)), Math.abs(re(this, N)), Math.abs(re(this, x)), Math.abs(re(this, L)), Math.abs(re(this, P)), Math.abs(re(this, U)));
+  }
+  add(e2) {
+    return vt(this, lt), go("add", this, e2);
+  }
+  subtract(e2) {
+    return vt(this, lt), go("subtract", this, e2);
+  }
+  round(e2) {
+    if (vt(this, lt), void 0 === e2) throw new TypeError("options parameter is required");
+    const t2 = Jt(this), n2 = "string" == typeof e2 ? Fo("smallestUnit", e2) : Zo(e2);
+    let r2 = Wt(n2, "largestUnit", "datetime", void 0, ["auto"]), { plainRelativeTo: o2, zonedRelativeTo: i2 } = _t(n2);
+    const a2 = Ft(n2), s2 = Ut(n2, "halfExpand");
+    let c2 = Wt(n2, "smallestUnit", "datetime", void 0), d2 = true;
+    c2 || (d2 = false, c2 = "nanosecond");
+    const h2 = Gt(t2, c2);
+    let u2 = true;
+    if (r2 || (u2 = false, r2 = h2), "auto" === r2 && (r2 = h2), !d2 && !u2) throw new RangeError("at least one of smallestUnit or largestUnit is required");
+    if (Gt(r2, c2) !== r2) throw new RangeError(`largestUnit ${r2} cannot be smaller than smallestUnit ${c2}`);
+    const l2 = { hour: 24, minute: 60, second: 60, millisecond: 1e3, microsecond: 1e3, nanosecond: 1e3 }[c2];
+    if (void 0 !== l2 && Ht(a2, l2, false), a2 > 1 && "date" === Vt(c2) && r2 !== c2) throw new RangeError("For calendar units with roundingIncrement > 1, use largestUnit = smallestUnit");
+    if (i2) {
+      let e3 = Ar(this);
+      const t3 = re(i2, $), n3 = re(i2, E), o3 = re(i2, b);
+      return e3 = io(o3, po(o3, t3, n3, e3), t3, n3, r2, a2, c2, s2), "date" === Vt(r2) && (r2 = "hour"), _r(e3, r2);
+    }
+    if (o2) {
+      let e3 = qr(this);
+      const t3 = fo({ deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 }, e3.time), n3 = re(o2, D), i3 = re(o2, E), d3 = Sn(i3, n3, Nt(e3.date, t3.deltaDays), "constrain");
+      return e3 = oo(xt(n3, { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 }), xt(d3, t3), i3, r2, a2, c2, s2), _r(e3, r2);
+    }
+    if (Kt(t2)) throw new RangeError(`a starting point is required for ${t2}s balancing`);
+    if (Kt(r2)) throw new RangeError(`a starting point is required for ${r2}s balancing`);
+    let m2 = qr(this);
+    if ("day" === c2) {
+      const { quotient: e3, remainder: t3 } = m2.time.divmod(Se);
+      let n3 = m2.date.days + e3 + Yo(t3, "day");
+      n3 = Eo(n3, a2, s2), m2 = Jr({ years: 0, months: 0, weeks: 0, days: n3 }, TimeDuration.ZERO);
+    } else m2 = Jr({ years: 0, months: 0, weeks: 0, days: 0 }, $o(m2.time, a2, c2, s2));
+    return _r(m2, r2);
+  }
+  total(t2) {
+    if (vt(this, lt), void 0 === t2) throw new TypeError("options argument is required");
+    const n2 = "string" == typeof t2 ? Fo("unit", t2) : Zo(t2);
+    let { plainRelativeTo: r2, zonedRelativeTo: o2 } = _t(n2);
+    const i2 = Wt(n2, "unit", "datetime", qt);
+    if (o2) {
+      const e2 = Ar(this), t3 = re(o2, $), n3 = re(o2, E), r3 = re(o2, b);
+      return (function(e3, t4, n4, r4, o3) {
+        return "time" === Vt(o3) ? Yo(TimeDuration.fromEpochNsDiff(t4, e3), o3) : ro(eo(e3, t4, n4, r4, o3), t4, zn(n4, e3), n4, r4, o3);
+      })(r3, po(r3, t3, n3, e2), t3, n3, i2);
+    }
+    if (r2) {
+      const t3 = qr(this);
+      let n3 = fo({ deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 }, t3.time);
+      const o3 = re(r2, D), a3 = re(r2, E), s2 = Sn(a3, o3, Nt(t3.date, n3.deltaDays), "constrain");
+      return (function(t4, n4, r3, o4) {
+        if (0 == jo(t4, n4)) return 0;
+        Br(t4), Br(n4);
+        const i3 = Qr(t4, n4, r3, o4);
+        return "nanosecond" === o4 ? import_jsbi.default.toNumber(i3.time.totalNs) : ro(i3, pr(n4), t4, null, r3, o4);
+      })(xt(o3, { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 }), xt(s2, n3), a3, i2);
+    }
+    const a2 = Jt(this);
+    if (Kt(a2)) throw new RangeError(`a starting point is required for ${a2}s total`);
+    if (Kt(i2)) throw new RangeError(`a starting point is required for ${i2}s total`);
+    return Yo(qr(this).time, i2);
+  }
+  toString(e2 = void 0) {
+    vt(this, lt);
+    const t2 = Zo(e2), n2 = zt(t2), r2 = Ut(t2, "trunc"), o2 = Wt(t2, "smallestUnit", "time", void 0);
+    if ("hour" === o2 || "minute" === o2) throw new RangeError('smallestUnit must be a time unit other than "hours" or "minutes"');
+    const { precision: i2, unit: a2, increment: s2 } = At(o2, n2);
+    if ("nanosecond" === a2 && 1 === s2) return Qn(this, i2);
+    const c2 = Jt(this);
+    let d2 = Ar(this);
+    const h2 = $o(d2.time, s2, a2, r2);
+    return d2 = Jr(d2.date, h2), Qn(_r(d2, Gt(c2, "second")), i2);
+  }
+  toJSON() {
+    return vt(this, lt), Qn(this, "auto");
+  }
+  toLocaleString(e2 = void 0, t2 = void 0) {
+    if (vt(this, lt), "function" == typeof Intl.DurationFormat) {
+      const n2 = new Intl.DurationFormat(e2, t2);
+      return ji.call(n2, this);
+    }
+    return console.warn("Temporal.Duration.prototype.toLocaleString() requires Intl.DurationFormat."), Qn(this, "auto");
+  }
+  valueOf() {
+    qo("Duration");
+  }
+  static from(e2) {
+    return sn(e2);
+  }
+  static compare(t2, n2, r2 = void 0) {
+    const o2 = sn(t2), i2 = sn(n2), a2 = Zo(r2), { plainRelativeTo: s2, zonedRelativeTo: c2 } = _t(a2);
+    if (re(o2, Y) === re(i2, Y) && re(o2, R) === re(i2, R) && re(o2, S) === re(i2, S) && re(o2, j) === re(i2, j) && re(o2, k) === re(i2, k) && re(o2, N) === re(i2, N) && re(o2, x) === re(i2, x) && re(o2, L) === re(i2, L) && re(o2, P) === re(i2, P) && re(o2, U) === re(i2, U)) return 0;
+    const d2 = Jt(o2), h2 = Jt(i2), u2 = Ar(o2), l2 = Ar(i2);
+    if (c2 && ("date" === Vt(d2) || "date" === Vt(h2))) {
+      const t3 = re(c2, $), n3 = re(c2, E), r3 = re(c2, b), o3 = po(r3, t3, n3, u2), i3 = po(r3, t3, n3, l2);
+      return Bo(import_jsbi.default.toNumber(import_jsbi.default.subtract(o3, i3)));
+    }
+    let m2 = u2.date.days, f2 = l2.date.days;
+    if (Kt(d2) || Kt(h2)) {
+      if (!s2) throw new RangeError("A starting point is required for years, months, or weeks comparison");
+      m2 = Rr(u2.date, s2), f2 = Rr(l2.date, s2);
+    }
+    const y2 = u2.time.add24HourDays(m2), p2 = l2.time.add24HourDays(f2);
+    return y2.cmp(p2);
+  }
+};
+ae(Duration, "Temporal.Duration");
+var PlainMonthDay = class {
+  constructor(e2, t2, n2 = "iso8601", r2 = 1972) {
+    const o2 = _e(e2), i2 = _e(t2), a2 = zo(void 0 === n2 ? "iso8601" : Ve(n2)), s2 = _e(r2);
+    xr(s2, o2, i2), vn(this, { year: s2, month: o2, day: i2 }, a2);
+  }
+  get monthCode() {
+    return Pi(this, "monthCode");
+  }
+  get day() {
+    return Pi(this, "day");
+  }
+  get calendarId() {
+    return vt(this, gt), re(this, E);
+  }
+  with(e2, t2 = void 0) {
+    if (vt(this, gt), !Ae(e2)) throw new TypeError("invalid argument");
+    bt(e2);
+    const n2 = re(this, E);
+    let r2 = en(n2, re(this, D), "month-day");
+    return r2 = Rn(n2, r2, tn(n2, e2, ["year", "month", "monthCode", "day"], [], "partial")), bn(Un(n2, r2, Lt(Zo(t2))), n2);
+  }
+  equals(e2) {
+    vt(this, gt);
+    const t2 = dn(e2);
+    return 0 === Ro(re(this, D), re(t2, D)) && xn(re(this, E), re(t2, E));
+  }
+  toString(e2 = void 0) {
+    return vt(this, gt), rr(this, Zt(Zo(e2)));
+  }
+  toJSON() {
+    return vt(this, gt), rr(this);
+  }
+  toLocaleString(e2 = void 0, t2 = void 0) {
+    return vt(this, gt), new di(e2, t2).format(this);
+  }
+  valueOf() {
+    qo("PlainMonthDay");
+  }
+  toPlainDate(e2) {
+    if (vt(this, gt), !Ae(e2)) throw new TypeError("argument should be an object");
+    const t2 = re(this, E);
+    return pn(Ln(t2, Rn(t2, en(t2, re(this, D), "month-day"), tn(t2, e2, ["year"], [], [])), "constrain"), t2);
+  }
+  static from(e2, t2 = void 0) {
+    return dn(e2, t2);
+  }
+};
+function Pi(e2, t2) {
+  vt(e2, gt);
+  const n2 = re(e2, D);
+  return Qt(e2).isoToDate(n2, { [t2]: true })[t2];
+}
+function Ui(e2) {
+  return zn(e2, Po());
+}
+ae(PlainMonthDay, "Temporal.PlainMonthDay");
+var Bi = { instant: () => Cn(Po()), plainDateTimeISO: (e2 = Uo()) => wn(Ui(Bn(e2)), "iso8601"), plainDateISO: (e2 = Uo()) => pn(Ui(Bn(e2)).isoDate, "iso8601"), plainTimeISO: (e2 = Uo()) => Tn(Ui(Bn(e2)).time), timeZoneId: () => Uo(), zonedDateTimeISO: (e2 = Uo()) => {
+  const t2 = Bn(e2);
+  return $n(Po(), t2, "iso8601");
+}, [Symbol.toStringTag]: "Temporal.Now" };
+Object.defineProperty(Bi, Symbol.toStringTag, { value: "Temporal.Now", writable: false, enumerable: false, configurable: true });
+var PlainTime = class _PlainTime {
+  constructor(e2 = 0, t2 = 0, n2 = 0, r2 = 0, o2 = 0, i2 = 0) {
+    const a2 = void 0 === e2 ? 0 : _e(e2), s2 = void 0 === t2 ? 0 : _e(t2), c2 = void 0 === n2 ? 0 : _e(n2), d2 = void 0 === r2 ? 0 : _e(r2), h2 = void 0 === o2 ? 0 : _e(o2), u2 = void 0 === i2 ? 0 : _e(i2);
+    Pr(a2, s2, c2, d2, h2, u2), Dn(this, { hour: a2, minute: s2, second: c2, millisecond: d2, microsecond: h2, nanosecond: u2 });
+  }
+  get hour() {
+    return vt(this, ft), re(this, M).hour;
+  }
+  get minute() {
+    return vt(this, ft), re(this, M).minute;
+  }
+  get second() {
+    return vt(this, ft), re(this, M).second;
+  }
+  get millisecond() {
+    return vt(this, ft), re(this, M).millisecond;
+  }
+  get microsecond() {
+    return vt(this, ft), re(this, M).microsecond;
+  }
+  get nanosecond() {
+    return vt(this, ft), re(this, M).nanosecond;
+  }
+  with(e2, t2 = void 0) {
+    if (vt(this, ft), !Ae(e2)) throw new TypeError("invalid argument");
+    bt(e2);
+    const n2 = nn(e2, "partial"), r2 = nn(this);
+    let { hour: o2, minute: i2, second: a2, millisecond: s2, microsecond: c2, nanosecond: d2 } = Object.assign(r2, n2);
+    const h2 = Lt(Zo(t2));
+    return { hour: o2, minute: i2, second: a2, millisecond: s2, microsecond: c2, nanosecond: d2 } = jt(o2, i2, a2, s2, c2, d2, h2), new _PlainTime(o2, i2, a2, s2, c2, d2);
+  }
+  add(e2) {
+    return vt(this, ft), Do("add", this, e2);
+  }
+  subtract(e2) {
+    return vt(this, ft), Do("subtract", this, e2);
+  }
+  until(e2, t2 = void 0) {
+    return vt(this, ft), uo("until", this, e2, t2);
+  }
+  since(e2, t2 = void 0) {
+    return vt(this, ft), uo("since", this, e2, t2);
+  }
+  round(e2) {
+    if (vt(this, ft), void 0 === e2) throw new TypeError("options parameter is required");
+    const t2 = "string" == typeof e2 ? Fo("smallestUnit", e2) : Zo(e2), n2 = Ft(t2), r2 = Ut(t2, "halfExpand"), o2 = Wt(t2, "smallestUnit", "time", qt);
+    return Ht(n2, { hour: 24, minute: 60, second: 60, millisecond: 1e3, microsecond: 1e3, nanosecond: 1e3 }[o2], false), Tn(Oo(re(this, M), n2, o2, r2));
+  }
+  equals(e2) {
+    vt(this, ft);
+    const t2 = hn(e2);
+    return 0 === So(re(this, M), re(t2, M));
+  }
+  toString(e2 = void 0) {
+    vt(this, ft);
+    const t2 = Zo(e2), n2 = zt(t2), r2 = Ut(t2, "trunc"), o2 = Wt(t2, "smallestUnit", "time", void 0);
+    if ("hour" === o2) throw new RangeError('smallestUnit must be a time unit other than "hour"');
+    const { precision: i2, unit: a2, increment: s2 } = At(o2, n2);
+    return tr(Oo(re(this, M), s2, a2, r2), i2);
+  }
+  toJSON() {
+    return vt(this, ft), tr(re(this, M), "auto");
+  }
+  toLocaleString(e2 = void 0, t2 = void 0) {
+    return vt(this, ft), new di(e2, t2).format(this);
+  }
+  valueOf() {
+    qo("PlainTime");
+  }
+  static from(e2, t2 = void 0) {
+    return hn(e2, t2);
+  }
+  static compare(e2, t2) {
+    const n2 = hn(e2), r2 = hn(t2);
+    return So(re(n2, M), re(r2, M));
+  }
+};
+ae(PlainTime, "Temporal.PlainTime");
+var PlainYearMonth = class {
+  constructor(e2, t2, n2 = "iso8601", r2 = 1) {
+    const o2 = _e(e2), i2 = _e(t2), a2 = zo(void 0 === n2 ? "iso8601" : Ve(n2)), s2 = _e(r2);
+    xr(o2, i2, s2), Mn(this, { year: o2, month: i2, day: s2 }, a2);
+  }
+  get year() {
+    return Zi(this, "year");
+  }
+  get month() {
+    return Zi(this, "month");
+  }
+  get monthCode() {
+    return Zi(this, "monthCode");
+  }
+  get calendarId() {
+    return vt(this, pt), re(this, E);
+  }
+  get era() {
+    return Zi(this, "era");
+  }
+  get eraYear() {
+    return Zi(this, "eraYear");
+  }
+  get daysInMonth() {
+    return Zi(this, "daysInMonth");
+  }
+  get daysInYear() {
+    return Zi(this, "daysInYear");
+  }
+  get monthsInYear() {
+    return Zi(this, "monthsInYear");
+  }
+  get inLeapYear() {
+    return Zi(this, "inLeapYear");
+  }
+  with(e2, t2 = void 0) {
+    if (vt(this, pt), !Ae(e2)) throw new TypeError("invalid argument");
+    bt(e2);
+    const n2 = re(this, E);
+    let r2 = en(n2, re(this, D), "year-month");
+    return r2 = Rn(n2, r2, tn(n2, e2, ["year", "month", "monthCode"], [], "partial")), En(Pn(n2, r2, Lt(Zo(t2))), n2);
+  }
+  add(e2, t2 = void 0) {
+    return vt(this, pt), To("add", this, e2, t2);
+  }
+  subtract(e2, t2 = void 0) {
+    return vt(this, pt), To("subtract", this, e2, t2);
+  }
+  until(e2, t2 = void 0) {
+    return vt(this, pt), lo("until", this, e2, t2);
+  }
+  since(e2, t2 = void 0) {
+    return vt(this, pt), lo("since", this, e2, t2);
+  }
+  equals(e2) {
+    vt(this, pt);
+    const t2 = ln(e2);
+    return 0 === Ro(re(this, D), re(t2, D)) && xn(re(this, E), re(t2, E));
+  }
+  toString(e2 = void 0) {
+    return vt(this, pt), or(this, Zt(Zo(e2)));
+  }
+  toJSON() {
+    return vt(this, pt), or(this);
+  }
+  toLocaleString(e2 = void 0, t2 = void 0) {
+    return vt(this, pt), new di(e2, t2).format(this);
+  }
+  valueOf() {
+    qo("PlainYearMonth");
+  }
+  toPlainDate(e2) {
+    if (vt(this, pt), !Ae(e2)) throw new TypeError("argument should be an object");
+    const t2 = re(this, E);
+    return pn(Ln(t2, Rn(t2, en(t2, re(this, D), "year-month"), tn(t2, e2, ["day"], [], [])), "constrain"), t2);
+  }
+  static from(e2, t2 = void 0) {
+    return ln(e2, t2);
+  }
+  static compare(e2, t2) {
+    const n2 = ln(e2), r2 = ln(t2);
+    return Ro(re(n2, D), re(r2, D));
+  }
+};
+function Zi(e2, t2) {
+  vt(e2, pt);
+  const n2 = re(e2, D);
+  return Qt(e2).isoToDate(n2, { [t2]: true })[t2];
+}
+ae(PlainYearMonth, "Temporal.PlainYearMonth");
+var Fi = di.prototype.resolvedOptions;
+var ZonedDateTime = class {
+  constructor(e2, t2, n2 = "iso8601") {
+    if (arguments.length < 1) throw new TypeError("missing argument: epochNanoseconds is required");
+    const r2 = Lo(e2);
+    let o2 = Ve(t2);
+    const { tzName: i2, offsetMinutes: a2 } = Rt(o2);
+    if (void 0 === a2) {
+      const e3 = hr(i2);
+      if (!e3) throw new RangeError(`unknown time zone ${i2}`);
+      o2 = e3.identifier;
+    } else o2 = mr(a2);
+    On(this, r2, o2, zo(void 0 === n2 ? "iso8601" : Ve(n2)));
+  }
+  get calendarId() {
+    return vt(this, wt), re(this, E);
+  }
+  get timeZoneId() {
+    return vt(this, wt), re(this, $);
+  }
+  get year() {
+    return zi(this, "year");
+  }
+  get month() {
+    return zi(this, "month");
+  }
+  get monthCode() {
+    return zi(this, "monthCode");
+  }
+  get day() {
+    return zi(this, "day");
+  }
+  get hour() {
+    return Ai(this, "hour");
+  }
+  get minute() {
+    return Ai(this, "minute");
+  }
+  get second() {
+    return Ai(this, "second");
+  }
+  get millisecond() {
+    return Ai(this, "millisecond");
+  }
+  get microsecond() {
+    return Ai(this, "microsecond");
+  }
+  get nanosecond() {
+    return Ai(this, "nanosecond");
+  }
+  get era() {
+    return zi(this, "era");
+  }
+  get eraYear() {
+    return zi(this, "eraYear");
+  }
+  get epochMilliseconds() {
+    return vt(this, wt), No(re(this, b), "floor");
+  }
+  get epochNanoseconds() {
+    return vt(this, wt), ko(re(this, b));
+  }
+  get dayOfWeek() {
+    return zi(this, "dayOfWeek");
+  }
+  get dayOfYear() {
+    return zi(this, "dayOfYear");
+  }
+  get weekOfYear() {
+    var _a3;
+    return (_a3 = zi(this, "weekOfYear")) == null ? void 0 : _a3.week;
+  }
+  get yearOfWeek() {
+    var _a3;
+    return (_a3 = zi(this, "weekOfYear")) == null ? void 0 : _a3.year;
+  }
+  get hoursInDay() {
+    vt(this, wt);
+    const e2 = re(this, $), t2 = Hi(this).isoDate, n2 = Or(t2.year, t2.month, t2.day + 1), r2 = _n(e2, t2), o2 = _n(e2, n2);
+    return Yo(TimeDuration.fromEpochNsDiff(o2, r2), "hour");
+  }
+  get daysInWeek() {
+    return zi(this, "daysInWeek");
+  }
+  get daysInMonth() {
+    return zi(this, "daysInMonth");
+  }
+  get daysInYear() {
+    return zi(this, "daysInYear");
+  }
+  get monthsInYear() {
+    return zi(this, "monthsInYear");
+  }
+  get inLeapYear() {
+    return zi(this, "inLeapYear");
+  }
+  get offset() {
+    return vt(this, wt), Hn(Fn(re(this, $), re(this, b)));
+  }
+  get offsetNanoseconds() {
+    return vt(this, wt), Fn(re(this, $), re(this, b));
+  }
+  with(e2, t2 = void 0) {
+    if (vt(this, wt), !Ae(e2)) throw new TypeError("invalid zoned-date-time-like");
+    bt(e2);
+    const n2 = re(this, E), r2 = re(this, $), o2 = Fn(r2, re(this, b)), i2 = Hi(this);
+    let a2 = { ...en(n2, i2.isoDate), ...i2.time, offset: Hn(o2) };
+    a2 = Rn(n2, a2, tn(n2, e2, ["year", "month", "monthCode", "day"], ["hour", "minute", "second", "millisecond", "microsecond", "nanosecond", "offset"], "partial"));
+    const s2 = Zo(t2), c2 = Pt(s2), d2 = Bt(s2, "prefer"), h2 = on(n2, a2, Lt(s2)), u2 = sr(a2.offset);
+    return $n(mn(h2.isoDate, h2.time, "option", u2, r2, c2, d2, false), r2, n2);
+  }
+  withPlainTime(e2 = void 0) {
+    vt(this, wt);
+    const t2 = re(this, $), n2 = re(this, E), r2 = Hi(this).isoDate;
+    let o2;
+    return o2 = void 0 === e2 ? _n(t2, r2) : An(t2, xt(r2, re(hn(e2), M)), "compatible"), $n(o2, t2, n2);
+  }
+  withTimeZone(e2) {
+    vt(this, wt);
+    const t2 = Bn(e2);
+    return $n(re(this, b), t2, re(this, E));
+  }
+  withCalendar(e2) {
+    vt(this, wt);
+    const t2 = kn(e2);
+    return $n(re(this, b), re(this, $), t2);
+  }
+  add(e2, t2 = void 0) {
+    return vt(this, wt), Mo("add", this, e2, t2);
+  }
+  subtract(e2, t2 = void 0) {
+    return vt(this, wt), Mo("subtract", this, e2, t2);
+  }
+  until(e2, t2 = void 0) {
+    return vt(this, wt), mo("until", this, e2, t2);
+  }
+  since(e2, t2 = void 0) {
+    return vt(this, wt), mo("since", this, e2, t2);
+  }
+  round(t2) {
+    if (vt(this, wt), void 0 === t2) throw new TypeError("options parameter is required");
+    const n2 = "string" == typeof t2 ? Fo("smallestUnit", t2) : Zo(t2), r2 = Ft(n2), o2 = Ut(n2, "halfExpand"), i2 = Wt(n2, "smallestUnit", "time", qt, ["day"]), a2 = { day: 1, hour: 24, minute: 60, second: 60, millisecond: 1e3, microsecond: 1e3, nanosecond: 1e3 }[i2];
+    if (Ht(r2, a2, 1 === a2), "nanosecond" === i2 && 1 === r2) return $n(re(this, b), re(this, $), re(this, E));
+    const s2 = re(this, $), c2 = re(this, b), d2 = Hi(this);
+    let h2;
+    if ("day" === i2) {
+      const t3 = d2.isoDate, n3 = Or(t3.year, t3.month, t3.day + 1), r3 = _n(s2, t3), i3 = _n(s2, n3), a3 = import_jsbi.default.subtract(i3, r3);
+      h2 = TimeDuration.fromEpochNsDiff(c2, r3).round(a3, o2).addToEpochNs(r3);
+    } else {
+      const e2 = Co(d2, r2, i2, o2), t3 = Fn(s2, c2);
+      h2 = mn(e2.isoDate, e2.time, "option", t3, s2, "compatible", "prefer", false);
+    }
+    return $n(h2, s2, re(this, E));
+  }
+  equals(t2) {
+    vt(this, wt);
+    const n2 = fn(t2), r2 = re(this, b), o2 = re(n2, b);
+    return !!import_jsbi.default.equal(import_jsbi.default.BigInt(r2), import_jsbi.default.BigInt(o2)) && !!Zn(re(this, $), re(n2, $)) && xn(re(this, E), re(n2, E));
+  }
+  toString(e2 = void 0) {
+    vt(this, wt);
+    const t2 = Zo(e2), n2 = Zt(t2), r2 = zt(t2), o2 = (function(e3) {
+      return Ho(e3, "offset", ["auto", "never"], "auto");
+    })(t2), i2 = Ut(t2, "trunc"), a2 = Wt(t2, "smallestUnit", "time", void 0);
+    if ("hour" === a2) throw new RangeError('smallestUnit must be a time unit other than "hour"');
+    const s2 = (function(e3) {
+      return Ho(e3, "timeZoneName", ["auto", "never", "critical"], "auto");
+    })(t2), { precision: c2, unit: d2, increment: h2 } = At(a2, r2);
+    return ir(this, c2, n2, s2, o2, { unit: d2, increment: h2, roundingMode: i2 });
+  }
+  toLocaleString(e2 = void 0, t2 = void 0) {
+    vt(this, wt);
+    const n2 = Zo(t2), r2 = /* @__PURE__ */ Object.create(null);
+    if ((function(e3, t3, n3, r3) {
+      if (null == t3) return;
+      const o3 = Reflect.ownKeys(t3);
+      for (let i3 = 0; i3 < o3.length; i3++) {
+        const a3 = o3[i3];
+        if (!n3.some(((e4) => Object.is(e4, a3))) && Object.prototype.propertyIsEnumerable.call(t3, a3)) {
+          const n4 = t3[a3];
+          r3, e3[a3] = n4;
+        }
+      }
+    })(r2, n2, ["timeZone"]), void 0 !== n2.timeZone) throw new TypeError("ZonedDateTime toLocaleString does not accept a timeZone option");
+    if (void 0 === r2.year && void 0 === r2.month && void 0 === r2.day && void 0 === r2.era && void 0 === r2.weekday && void 0 === r2.dateStyle && void 0 === r2.hour && void 0 === r2.minute && void 0 === r2.second && void 0 === r2.fractionalSecondDigits && void 0 === r2.timeStyle && void 0 === r2.dayPeriod && void 0 === r2.timeZoneName && (r2.timeZoneName = "short"), r2.timeZone = re(this, $), ar(r2.timeZone)) throw new RangeError("toLocaleString does not currently support offset time zones");
+    const o2 = new di(e2, r2), i2 = Fi.call(o2).calendar, a2 = re(this, E);
+    if ("iso8601" !== a2 && "iso8601" !== i2 && !xn(i2, a2)) throw new RangeError(`cannot format ZonedDateTime with calendar ${a2} in locale with calendar ${i2}`);
+    return o2.format(Cn(re(this, b)));
+  }
+  toJSON() {
+    return vt(this, wt), ir(this, "auto");
+  }
+  valueOf() {
+    qo("ZonedDateTime");
+  }
+  startOfDay() {
+    vt(this, wt);
+    const e2 = re(this, $);
+    return $n(_n(e2, Hi(this).isoDate), e2, re(this, E));
+  }
+  getTimeZoneTransition(e2) {
+    vt(this, wt);
+    const t2 = re(this, $);
+    if (void 0 === e2) throw new TypeError("options parameter is required");
+    const n2 = Ho("string" == typeof e2 ? Fo("direction", e2) : Zo(e2), "direction", ["next", "previous"], qt);
+    if (void 0 === n2) throw new TypeError("direction option is required");
+    if (ar(t2) || "UTC" === t2) return null;
+    const r2 = re(this, b), o2 = "next" === n2 ? wr(t2, r2) : vr(t2, r2);
+    return null === o2 ? null : $n(o2, t2, re(this, E));
+  }
+  toInstant() {
+    return vt(this, wt), Cn(re(this, b));
+  }
+  toPlainDate() {
+    return vt(this, wt), pn(Hi(this).isoDate, re(this, E));
+  }
+  toPlainTime() {
+    return vt(this, wt), Tn(Hi(this).time);
+  }
+  toPlainDateTime() {
+    return vt(this, wt), wn(Hi(this), re(this, E));
+  }
+  static from(e2, t2 = void 0) {
+    return fn(e2, t2);
+  }
+  static compare(t2, n2) {
+    const r2 = fn(t2), o2 = fn(n2), i2 = re(r2, b), a2 = re(o2, b);
+    return import_jsbi.default.lessThan(import_jsbi.default.BigInt(i2), import_jsbi.default.BigInt(a2)) ? -1 : import_jsbi.default.greaterThan(import_jsbi.default.BigInt(i2), import_jsbi.default.BigInt(a2)) ? 1 : 0;
+  }
+};
+function Hi(e2) {
+  return zn(re(e2, $), re(e2, b));
+}
+function zi(e2, t2) {
+  vt(e2, wt);
+  const n2 = Hi(e2).isoDate;
+  return Qt(e2).isoToDate(n2, { [t2]: true })[t2];
+}
+function Ai(e2, t2) {
+  return vt(e2, wt), Hi(e2).time[t2];
+}
+ae(ZonedDateTime, "Temporal.ZonedDateTime");
+var qi = Object.freeze({ __proto__: null, Duration, Instant, Now: Bi, PlainDate, PlainDateTime, PlainMonthDay, PlainTime, PlainYearMonth, ZonedDateTime });
+var Wi = class LegacyDateImpl {
+  toTemporalInstant() {
+    return Cn(xo(Date.prototype.valueOf.call(this)));
+  }
+}.prototype.toTemporalInstant;
+var _i = [Instant, PlainDate, PlainDateTime, Duration, PlainMonthDay, PlainTime, PlainYearMonth, ZonedDateTime];
+for (const e2 of _i) {
+  const t2 = Object.getOwnPropertyDescriptor(e2, "prototype");
+  (t2.configurable || t2.enumerable || t2.writable) && (t2.configurable = false, t2.enumerable = false, t2.writable = false, Object.defineProperty(e2, "prototype", t2));
+}
+
+// src/lib/datetime.mjs
+var UNIT = {
+  year: "years",
+  years: "years",
+  quarter: "quarters",
+  quarters: "quarters",
+  month: "months",
+  months: "months",
+  week: "weeks",
+  weeks: "weeks",
+  day: "days",
+  days: "days",
+  hour: "hours",
+  hours: "hours",
+  minute: "minutes",
+  minutes: "minutes",
+  second: "seconds",
+  seconds: "seconds",
+  \u5E74: "years",
+  \u5B63\u5EA6: "quarters",
+  \u6708: "months",
+  \u5468: "weeks",
+  \u661F\u671F: "weeks",
+  \u5929: "days",
+  \u65E5: "days",
+  \u5C0F\u65F6: "hours",
+  \u5206\u949F: "minutes",
+  \u79D2: "seconds"
+};
+var normalizeDateTime = (text) => text.trim().replace(" ", "T");
+var pad = (value) => String(value).padStart(2, "0");
+var timeValue = (text) => ({ kind: "time", value: qi.PlainTime.from(text), dayOffset: 0 });
+var dateValue = (text) => ({ kind: "date", value: qi.PlainDate.from(text) });
+var dateTimeValue = (text) => ({ kind: "datetime", value: qi.PlainDateTime.from(normalizeDateTime(text)) });
+var zonedValue = (text, timeZone) => ({
+  kind: "zoned",
+  value: dateTimeValue(text).value.toZonedDateTime(timeZone, { disambiguation: "reject" })
+});
+var todayValue = (timeZone) => ({
+  kind: "date",
+  value: qi.Now.plainDateISO(timeZone || qi.Now.timeZoneId())
+});
+var nowValue = (timeZone) => ({
+  kind: "zoned",
+  value: qi.Now.zonedDateTimeISO(timeZone || qi.Now.timeZoneId())
+});
+var inZoneValue = (value, timeZone) => {
+  if (value.kind !== "zoned") {
+    throw new Error("inZone \u9700\u8981\u5E26\u65F6\u533A\u7684\u65E5\u671F\u65F6\u95F4\uFF0C\u8BF7\u5148\u4F7F\u7528 zoned()");
+  }
+  return { kind: "zoned", value: value.value.withTimeZone(timeZone) };
+};
+var calendarUnit = (unit) => {
+  const normalized = UNIT[String(unit || "days").toLowerCase()] || UNIT[unit];
+  if (!normalized) {
+    throw new Error("\u4E0D\u652F\u6301\u7684\u65E5\u671F\u5355\u4F4D: " + unit);
+  }
+  return normalized;
+};
+var dateAddValue = (value, amount, unit, subtract = false) => {
+  if (!["date", "datetime", "zoned"].includes(value.kind)) {
+    throw new Error("dateAdd \u9700\u8981\u65E5\u671F\u6216\u65E5\u671F\u65F6\u95F4");
+  }
+  const normalized = calendarUnit(unit);
+  if (value.kind === "date" && ["hours", "minutes", "seconds"].includes(normalized)) {
+    throw new Error("\u7EAF\u65E5\u671F\u4E0D\u80FD\u52A0\u51CF\u5C0F\u65F6\u3001\u5206\u949F\u6216\u79D2\uFF0C\u8BF7\u4F7F\u7528 datetime()");
+  }
+  const delta = Math.abs(amount) * (subtract ? -1 : 1);
+  const duration = { [normalized]: delta };
+  return { kind: value.kind, value: value.value.add(duration) };
+};
+var dateBetweenValue = (start, end, unit) => {
+  if (start.kind !== end.kind || !["date", "datetime", "zoned"].includes(start.kind)) {
+    throw new Error("dateBetween \u9700\u8981\u4E24\u4E2A\u540C\u7C7B\u578B\u7684\u65E5\u671F\u6216\u65E5\u671F\u65F6\u95F4");
+  }
+  const normalized = calendarUnit(unit);
+  const singular = normalized.slice(0, -1);
+  const duration = start.value.until(end.value, { largestUnit: singular });
+  return numberToFix(duration.total({ unit: singular, relativeTo: start.value }));
+};
+var addDurationValue = (value, seconds, subtract = false) => {
+  const amount = fixToNumber(seconds) * (subtract ? -1 : 1);
+  if (value.kind === "time") {
+    const current = value.value.hour * 3600 + value.value.minute * 60 + value.value.second + value.value.millisecond / 1e3;
+    const total = current + amount;
+    const dayOffset = value.dayOffset + Math.floor(total / 86400);
+    let wrapped = total % 86400;
+    if (wrapped < 0) {
+      wrapped += 86400;
+    }
+    const hour = Math.floor(wrapped / 3600);
+    const minute = Math.floor(wrapped % 3600 / 60);
+    const second = Math.floor(wrapped % 60);
+    const millisecond = Math.floor((wrapped - Math.floor(wrapped)) * 1e3);
+    return {
+      kind: "time",
+      value: qi.PlainTime.from({ hour, minute, second, millisecond }),
+      dayOffset
+    };
+  }
+  if (value.kind === "date") {
+    const days = amount / 86400;
+    if (!Number.isInteger(days)) {
+      throw new Error("\u7EAF\u65E5\u671F\u53EA\u80FD\u52A0\u51CF\u6574\u6570\u5929");
+    }
+    return { kind: "date", value: value.value.add({ days }) };
+  }
+  if (value.kind === "datetime" || value.kind === "zoned") {
+    return { kind: value.kind, value: value.value.add({ seconds: amount }) };
+  }
+  throw new Error("\u8BE5\u503C\u4E0D\u80FD\u52A0\u51CF\u65F6\u957F");
+};
+var differenceSeconds = (left, right) => {
+  if (left.kind !== right.kind) {
+    throw new Error("\u4E24\u4E2A\u65F6\u95F4\u503C\u7684\u7C7B\u578B\u4E0D\u4E00\u81F4");
+  }
+  if (left.kind === "time") {
+    const seconds = (value) => value.value.hour * 3600 + value.value.minute * 60 + value.value.second + value.value.millisecond / 1e3 + value.dayOffset * 86400;
+    return numberToFix(seconds(left) - seconds(right));
+  }
+  if (left.kind === "date") {
+    return numberToFix(left.value.since(right.value, { largestUnit: "days" }).days * 86400);
+  }
+  if (left.kind === "datetime" || left.kind === "zoned") {
+    return numberToFix(left.value.since(right.value, { largestUnit: "seconds" }).total("seconds"));
+  }
+  throw new Error("\u8FD9\u4E24\u4E2A\u503C\u4E0D\u80FD\u76F8\u51CF");
+};
+var partsOf = (value) => value.value;
+var formatDateValue = (value, format) => {
+  if (value.kind === "time") {
+    const time = value.value;
+    const suffix = value.dayOffset === 0 ? "" : value.dayOffset === 1 ? "\uFF08\u6B21\u65E5\uFF09" : `\uFF08${value.dayOffset > 0 ? "+" : ""}${value.dayOffset}\u5929\uFF09`;
+    return `${pad(time.hour)}:${pad(time.minute)}${time.second || time.millisecond ? ":" + pad(time.second) : ""}${suffix}`;
+  }
+  if (!["date", "datetime", "zoned"].includes(value.kind)) {
+    throw new Error("formatDate \u9700\u8981\u65E5\u671F\u6216\u65E5\u671F\u65F6\u95F4");
+  }
+  if (!format) {
+    return value.value.toString().replace("T", " ");
+  }
+  const part = partsOf(value);
+  const hour = part.hour || 0;
+  const replacements = {
+    YYYY: String(part.year).padStart(4, "0"),
+    MM: pad(part.month),
+    M: String(part.month),
+    DD: pad(part.day),
+    D: String(part.day),
+    HH: pad(hour),
+    H: String(hour),
+    hh: pad(hour % 12 || 12),
+    h: String(hour % 12 || 12),
+    mm: pad(part.minute || 0),
+    m: String(part.minute || 0),
+    ss: pad(part.second || 0),
+    s: String(part.second || 0),
+    A: hour < 12 ? "AM" : "PM",
+    a: hour < 12 ? "am" : "pm"
+  };
+  return String(format).replace(/YYYY|MM|DD|HH|hh|mm|ss|[MDHhmsAa]/g, (token) => replacements[token]);
+};
+var holidaysOf = (options) => new Set(options && options.holidays || []);
+var extraWorkdaysOf = (options) => new Set(options && options.extraWorkdays || []);
+var isWorkday = (date, options) => {
+  if (extraWorkdaysOf(options).has(date.toString())) {
+    return true;
+  }
+  const day = date.dayOfWeek;
+  return day !== 6 && day !== 7 && !holidaysOf(options).has(date.toString());
+};
+var workdaysValue = (start, end, options) => {
+  if (start.kind !== "date" || end.kind !== "date") {
+    throw new Error("workdays \u9700\u8981\u4E24\u4E2A\u7EAF\u65E5\u671F");
+  }
+  const direction = qi.PlainDate.compare(start.value, end.value) <= 0 ? 1 : -1;
+  let current = start.value;
+  let count = 0;
+  while (true) {
+    if (isWorkday(current, options)) {
+      count += direction;
+    }
+    if (qi.PlainDate.compare(current, end.value) === 0) {
+      break;
+    }
+    current = current.add({ days: direction });
+  }
+  return numberToFix(count);
+};
+var addWorkdaysValue = (value, amount, options) => {
+  if (value.kind !== "date" || !Number.isInteger(amount)) {
+    throw new Error("addWorkdays \u9700\u8981\u7EAF\u65E5\u671F\u548C\u6574\u6570\u5929\u6570");
+  }
+  let current = value.value;
+  const direction = amount < 0 ? -1 : 1;
+  let remaining = Math.abs(amount);
+  while (remaining > 0) {
+    current = current.add({ days: direction });
+    if (isWorkday(current, options)) {
+      remaining--;
+    }
+  }
+  return { kind: "date", value: current };
+};
+var dateParts = (value) => {
+  if (!["date", "datetime", "zoned"].includes(value.kind)) {
+    throw new Error("\u9700\u8981\u65E5\u671F\u6216\u65E5\u671F\u65F6\u95F4");
+  }
+  return value.value;
+};
+
+// src/lib/units.mjs
+var rat = (text) => {
+  const parts = String(text).split("/");
+  const numerator = fixToRat(fixFromString(parts[0]));
+  return parts.length === 1 ? numerator : ratDivExact(numerator, fixToRat(fixFromString(parts[1])));
+};
+var definition = (symbol, dimensions, factor = "1", offset = "0", aliases = []) => ({
+  symbol,
+  dimensions,
+  factor: rat(factor),
+  offset: rat(offset),
+  aliases,
+  terms: null
+});
+var DEFINITIONS = [
+  definition("s", { time: 1 }, "1", "0", ["sec", "second", "seconds", "\u79D2"]),
+  definition("min", { time: 1 }, "60", "0", ["minute", "minutes", "\u5206\u949F"]),
+  definition("h", { time: 1 }, "3600", "0", ["hr", "hour", "hours", "\u5C0F\u65F6"]),
+  definition("d", { time: 1 }, "86400", "0", ["day", "days", "\u5929"]),
+  definition("week", { time: 1 }, "604800", "0", ["weeks", "\u5468"]),
+  definition("m", { length: 1 }, "1", "0", ["meter", "meters", "\u7C73"]),
+  definition("mm", { length: 1 }, "0.001", "0", ["\u6BEB\u7C73"]),
+  definition("cm", { length: 1 }, "0.01", "0", ["\u5398\u7C73"]),
+  definition("km", { length: 1 }, "1000", "0", ["\u5343\u7C73", "\u516C\u91CC"]),
+  definition("inch", { length: 1 }, "0.0254", "0", ["inches", "\u82F1\u5BF8"]),
+  definition("ft", { length: 1 }, "0.3048", "0", ["foot", "feet", "\u82F1\u5C3A"]),
+  definition("yd", { length: 1 }, "0.9144", "0", ["yard", "yards", "\u7801"]),
+  definition("mi", { length: 1 }, "1609.344", "0", ["mile", "miles", "\u82F1\u91CC"]),
+  definition("nmi", { length: 1 }, "1852", "0", ["\u6D77\u91CC"]),
+  definition("kg", { mass: 1 }, "1", "0", ["\u5343\u514B", "\u516C\u65A4"]),
+  definition("g", { mass: 1 }, "0.001", "0", ["gram", "grams", "\u514B"]),
+  definition("mg", { mass: 1 }, "0.000001", "0", ["\u6BEB\u514B"]),
+  definition("tonne", { mass: 1 }, "1000", "0", ["\u5428"]),
+  definition("lb", { mass: 1 }, "0.45359237", "0", ["lbs", "pound", "pounds", "\u78C5"]),
+  definition("oz", { mass: 1 }, "0.028349523125", "0", ["ounce", "ounces", "\u76CE\u53F8"]),
+  definition("\u65A4", { mass: 1 }, "0.5"),
+  definition("\u4E24", { mass: 1 }, "0.05"),
+  definition("m^2", { length: 2 }, "1", "0", ["sqm", "\u5E73\u65B9\u7C73"]),
+  definition("cm^2", { length: 2 }, "0.0001", "0", ["\u5E73\u65B9\u5398\u7C73"]),
+  definition("km^2", { length: 2 }, "1000000", "0", ["\u5E73\u65B9\u5343\u7C73", "\u5E73\u65B9\u516C\u91CC"]),
+  definition("hectare", { length: 2 }, "10000", "0", ["ha", "\u516C\u9877"]),
+  definition("\u4EA9", { length: 2 }, "2000/3"),
+  definition("m^3", { length: 3 }, "1", "0", ["\u7ACB\u65B9\u7C73"]),
+  definition("L", { length: 3 }, "0.001", "0", ["l", "liter", "litre", "\u5347"]),
+  definition("mL", { length: 3 }, "0.000001", "0", ["ml", "\u6BEB\u5347"]),
+  definition("bit", { data: 1 }, "1", "0", ["bits", "\u6BD4\u7279"]),
+  definition("B", { data: 1 }, "8", "0", ["byte", "bytes", "\u5B57\u8282"]),
+  definition("KB", { data: 1 }, "8000"),
+  definition("MB", { data: 1 }, "8000000"),
+  definition("GB", { data: 1 }, "8000000000"),
+  definition("TB", { data: 1 }, "8000000000000"),
+  definition("KiB", { data: 1 }, "8192"),
+  definition("MiB", { data: 1 }, "8388608"),
+  definition("GiB", { data: 1 }, "8589934592"),
+  definition("TiB", { data: 1 }, "8796093022208"),
+  definition("K", { temperature: 1 }, "1", "0", ["kelvin", "\u5F00\u5C14\u6587"]),
+  definition("degC", { temperature: 1 }, "1", "273.15", ["\xB0C", "\u2103", "celsius", "\u6444\u6C0F\u5EA6"]),
+  definition("degF", { temperature: 1 }, "5/9", "229835/900", ["\xB0F", "\u2109", "fahrenheit", "\u534E\u6C0F\u5EA6"]),
+  definition("rad", { angle: 1 }, "1", "0", ["radian", "radians", "\u5F27\u5EA6"]),
+  definition("deg", { angle: 1 }, "0.017453292519943295", "0", ["\xB0", "degree", "degrees", "\u5EA6"])
+];
+var clone = (unit) => ({
+  symbol: unit.symbol,
+  dimensions: { ...unit.dimensions },
+  factor: unit.factor,
+  offset: unit.offset,
+  aliases: unit.aliases || [],
+  terms: unit.terms ? { ...unit.terms } : null
+});
+var BUILTIN_REGISTRY = /* @__PURE__ */ new Map();
+DEFINITIONS.forEach((unit) => {
+  BUILTIN_REGISTRY.set(unit.symbol, unit);
+  unit.aliases.forEach((alias) => BUILTIN_REGISTRY.set(alias, unit));
+});
+var createUnitRegistry = () => new Map(BUILTIN_REGISTRY);
+var resolveUnit = (name, registry) => {
+  const unit = (registry || BUILTIN_REGISTRY).get(name);
+  return unit ? clone(unit) : null;
+};
+var registerBaseUnit = (registry, name) => {
+  const existing = resolveUnit(name, registry);
+  if (existing) {
+    return existing;
+  }
+  const unit = definition(name, { ["custom_" + name]: 1 });
+  registry.set(name, unit);
+  return clone(unit);
+};
+var registerScaledUnit = (registry, name, amount, baseUnit) => {
+  if (resolveUnit(name, registry)) {
+    throw new Error("\u5355\u4F4D\u5DF2\u5B9A\u4E49: " + name);
+  }
+  const unit = definition(name, baseUnit.dimensions, "1");
+  unit.factor = ratMul(rat(amount), baseUnit.factor);
+  unit.offset = ratZero();
+  registry.set(name, unit);
+  return clone(unit);
+};
+var currencyUnit = (code) => definition(code, { ["currency_" + code]: 1 });
+var sameDimensions = (left, right) => {
+  const a2 = left.dimensions || left;
+  const b2 = right.dimensions || right;
+  const keys = /* @__PURE__ */ new Set([...Object.keys(a2), ...Object.keys(b2)]);
+  return [...keys].every((key) => (a2[key] || 0) === (b2[key] || 0));
+};
+var termsOf = (unit) => unit.terms || { [unit.symbol]: 1 };
+var symbolOf = (terms) => {
+  const numerator = [];
+  const denominator = [];
+  Object.entries(terms).forEach(([symbol, exponent]) => {
+    if (exponent > 0) {
+      numerator.push(symbol + (exponent === 1 ? "" : "^" + exponent));
+    } else if (exponent < 0) {
+      denominator.push(symbol + (exponent === -1 ? "" : "^" + -exponent));
+    }
+  });
+  return (numerator.join("*") || "1") + (denominator.length ? "/" + denominator.join("*") : "");
+};
+var combineUnits = (left, right, divide = false) => {
+  if (!ratIsZeroValue(left.offset) || !ratIsZeroValue(right.offset)) {
+    throw new Error("\u5E26\u504F\u79FB\u7684\u6E29\u5EA6\u5355\u4F4D\u4E0D\u80FD\u7528\u4E8E\u590D\u5408\u5355\u4F4D");
+  }
+  const dimensions = { ...left.dimensions };
+  Object.entries(right.dimensions).forEach(([key, exponent]) => {
+    dimensions[key] = (dimensions[key] || 0) + (divide ? -exponent : exponent);
+    if (dimensions[key] === 0) {
+      delete dimensions[key];
+    }
+  });
+  const terms = { ...termsOf(left) };
+  Object.entries(termsOf(right)).forEach(([symbol, exponent]) => {
+    terms[symbol] = (terms[symbol] || 0) + (divide ? -exponent : exponent);
+    if (terms[symbol] === 0) {
+      delete terms[symbol];
+    }
+  });
+  return {
+    symbol: symbolOf(terms),
+    dimensions,
+    factor: divide ? ratDivExact(left.factor, right.factor) : ratMul(left.factor, right.factor),
+    offset: ratZero(),
+    aliases: [],
+    terms
+  };
+};
+var powerUnit = (unit, exponent) => {
+  if (!Number.isInteger(exponent) || Math.abs(exponent) > 16 || !ratIsZeroValue(unit.offset)) {
+    throw new Error("\u5355\u4F4D\u6307\u6570\u5FC5\u987B\u662F\u975E\u96F6\u6574\u6570\uFF0C\u4E14\u4E0D\u80FD\u7528\u4E8E\u504F\u79FB\u6E29\u5EA6");
+  }
+  const dimensions = {};
+  Object.entries(unit.dimensions).forEach(([key, value]) => {
+    dimensions[key] = value * exponent;
+    if (dimensions[key] === 0) {
+      delete dimensions[key];
+    }
+  });
+  let factor = ratNorm([1], [1], false);
+  const count = Math.abs(exponent);
+  for (let i2 = 0; i2 < count; i2++) {
+    factor = exponent > 0 ? ratMul(factor, unit.factor) : ratDivExact(factor, unit.factor);
+  }
+  const terms = {};
+  Object.entries(termsOf(unit)).forEach(([symbol, value]) => {
+    terms[symbol] = value * exponent;
+    if (terms[symbol] === 0) {
+      delete terms[symbol];
+    }
+  });
+  return { symbol: symbolOf(terms), dimensions, factor, offset: ratZero(), aliases: [], terms };
+};
+var ratIsZeroValue = (value) => value.n.every((digit) => digit === 0);
+var quantityFromAmount = (amount, unit) => ({
+  kind: "quantity",
+  base: ratAdd(ratMul(fixToRat(amount), unit.factor), unit.offset),
+  unit: clone(unit)
+});
+var quantityFromBase = (base, unit) => ({ kind: "quantity", base, unit: clone(unit) });
+var quantityAmount = (quantity) => ratToFix(ratDivExact(
+  ratSub(quantity.base, quantity.unit.offset),
+  quantity.unit.factor
+));
+var convertQuantity = (quantity, target) => {
+  if (!sameDimensions(quantity.unit, target)) {
+    throw new Error("\u5355\u4F4D\u91CF\u7EB2\u4E0D\u4E00\u81F4: " + quantity.unit.symbol + " \u4E0E " + target.symbol);
+  }
+  return quantityFromBase(quantity.base, target);
+};
+var addQuantities = (left, right, subtract = false) => {
+  if (!sameDimensions(left.unit, right.unit)) {
+    throw new Error("\u5355\u4F4D\u91CF\u7EB2\u4E0D\u4E00\u81F4: " + left.unit.symbol + " \u4E0E " + right.unit.symbol);
+  }
+  return quantityFromBase(subtract ? ratSub(left.base, right.base) : ratAdd(left.base, right.base), left.unit);
+};
+var negateQuantity = (value) => quantityFromBase(ratNeg(value.base), value.unit);
+var timeUnit = (name) => {
+  const unit = resolveUnit(name);
+  return unit && Object.keys(unit.dimensions).length === 1 && unit.dimensions.time === 1 ? unit : null;
+};
+
+// src/lib/value.mjs
+var ONE = ratNorm([1], [1], false);
+var COMMON_CURRENCIES = /* @__PURE__ */ new Set([
+  "USD",
+  "CNY",
+  "EUR",
+  "JPY",
+  "GBP",
+  "HKD",
+  "TWD",
+  "KRW",
+  "AUD",
+  "CAD",
+  "CHF",
+  "SGD",
+  "NZD",
+  "SEK",
+  "NOK",
+  "DKK",
+  "PLN",
+  "CZK",
+  "HUF",
+  "INR",
+  "THB",
+  "MYR",
+  "IDR",
+  "PHP",
+  "VND",
+  "BRL",
+  "MXN",
+  "ZAR",
+  "AED",
+  "SAR",
+  "TRY",
+  "RUB",
+  "BTC",
+  "ETH",
+  "SOL",
+  "XRP",
+  "USDT",
+  "USDC"
+]);
+var numberValue = (value) => ({
+  kind: "number",
+  value: typeof value === "string" ? fixFromString(value) : typeof value === "number" ? numberToFix(value) : value
+});
+var moneyValue = (amount, currency) => ({ kind: "money", amount, currency });
+var durationFromSeconds = (seconds, displayUnit = null) => ({ kind: "duration", seconds, displayUnit });
+var isCurrency = (name, options = {}) => COMMON_CURRENCIES.has(name) || (options.currencies || []).includes(name) || Boolean(options.rates && options.rates.values && options.rates.values[name]);
+var fromLegacyValue = (value) => {
+  if (value && value.kind) {
+    return value;
+  }
+  if (value && value.re && cIsReal(value)) {
+    return numberValue(value.re);
+  }
+  throw new Error("\u8BE5\u7ED3\u679C\u4E0D\u80FD\u53C2\u4E0E\u6C47\u603B");
+};
+var literalValue = (amount, name, options = {}) => {
+  if (isCurrency(name, options)) {
+    return moneyValue(amount, name);
+  }
+  const unit = resolveUnit(name, options.unitRegistry);
+  if (!unit) {
+    throw new Error("\u672A\u77E5\u5355\u4F4D: " + name);
+  }
+  const time = timeUnit(unit.symbol) || (unit.dimensions.time === 1 ? unit : null);
+  if (time) {
+    return {
+      kind: "duration",
+      seconds: ratToFix(ratMul(fixToRat(amount), time.factor)),
+      displayUnit: time
+    };
+  }
+  return quantityFromAmount(amount, unit);
+};
+var unitValue = (name, options = {}) => {
+  const unit = resolveUnit(name, options.unitRegistry);
+  if (!unit) {
+    throw new Error("\u672A\u77E5\u5355\u4F4D: " + name);
+  }
+  return quantityFromAmount(fixFromString("1"), unit);
+};
+var durationAsQuantity = (value) => {
+  const unit = value.displayUnit || resolveUnit("s");
+  return quantityFromBase(fixToRat(value.seconds), unit);
+};
+var moneyAsQuantity = (value) => quantityFromAmount(value.amount, currencyUnit(value.currency));
+var numericResult = (rational) => numberValue(ratToFix(rational));
+var addValues = (left, right, subtract = false, options = {}) => {
+  if (left.kind === "number" && right.kind === "number") {
+    return numericResult(subtract ? ratSub(fixToRat(left.value), fixToRat(right.value)) : ratAdd(fixToRat(left.value), fixToRat(right.value)));
+  }
+  if (left.kind === "duration" && right.kind === "duration") {
+    return durationFromSeconds(numberValue(ratToFix(subtract ? ratSub(fixToRat(left.seconds), fixToRat(right.seconds)) : ratAdd(fixToRat(left.seconds), fixToRat(right.seconds)))).value);
+  }
+  if (["time", "date", "datetime", "zoned"].includes(left.kind) && right.kind === "duration") {
+    return addDurationValue(left, right.seconds, subtract);
+  }
+  if (!subtract && left.kind === "duration" && ["time", "date", "datetime", "zoned"].includes(right.kind)) {
+    return addDurationValue(right, left.seconds, false);
+  }
+  if (subtract && ["time", "date", "datetime", "zoned"].includes(left.kind) && left.kind === right.kind) {
+    return durationFromSeconds(differenceSeconds(left, right));
+  }
+  if (left.kind === "money" && right.kind === "money") {
+    if (left.currency !== right.currency) {
+      throw new Error("\u4E0D\u540C\u8D27\u5E01\u4E0D\u80FD\u76F4\u63A5\u52A0\u51CF\uFF0C\u8BF7\u5148\u4F7F\u7528 to \u8F6C\u6362");
+    }
+    return moneyValue(numericResult(subtract ? ratSub(fixToRat(left.amount), fixToRat(right.amount)) : ratAdd(fixToRat(left.amount), fixToRat(right.amount))).value, left.currency);
+  }
+  if (left.kind === "quantity" && right.kind === "quantity") {
+    return addQuantities(left, right, subtract);
+  }
+  if (left.kind === "money" && right.kind === "quantity") {
+    return addQuantities(moneyAsQuantity(left), right, subtract);
+  }
+  if (left.kind === "quantity" && right.kind === "money") {
+    return addQuantities(left, moneyAsQuantity(right), subtract);
+  }
+  if (left.kind === "quantity" && right.kind === "duration" || left.kind === "duration" && right.kind === "quantity") {
+    const quantity = left.kind === "quantity" ? left : right;
+    const duration = left.kind === "duration" ? left : right;
+    return addQuantities(quantity, durationAsQuantity(duration), subtract);
+  }
+  throw new Error((subtract ? "\u4E0D\u80FD\u76F8\u51CF: " : "\u4E0D\u80FD\u76F8\u52A0: ") + left.kind + " \u4E0E " + right.kind);
+};
+var negateValue = (value) => {
+  if (value.kind === "number") {
+    return numberValue(fixNeg(value.value));
+  }
+  if (value.kind === "duration") {
+    return durationFromSeconds(fixNeg(value.seconds), value.displayUnit);
+  }
+  if (value.kind === "quantity") {
+    return negateQuantity(value);
+  }
+  if (value.kind === "money") {
+    return moneyValue(fixNeg(value.amount), value.currency);
+  }
+  throw new Error("\u8BE5\u503C\u4E0D\u80FD\u53D6\u8D1F\u6570");
+};
+var multiplyValues = (left, right, divide = false) => {
+  if (left.kind === "number" && right.kind === "number") {
+    return numericResult(divide ? ratDivExact(fixToRat(left.value), fixToRat(right.value)) : ratMul(fixToRat(left.value), fixToRat(right.value)));
+  }
+  if (left.kind === "number" && right.kind === "duration" && !divide) {
+    return durationFromSeconds(ratToFix(ratMul(fixToRat(left.value), fixToRat(right.seconds))), right.displayUnit);
+  }
+  if (left.kind === "duration" && right.kind === "number") {
+    return durationFromSeconds(ratToFix((divide ? ratDivExact : ratMul)(fixToRat(left.seconds), fixToRat(right.value))), left.displayUnit);
+  }
+  if (left.kind === "number" && right.kind === "money" && !divide) {
+    return moneyValue(ratToFix(ratMul(fixToRat(left.value), fixToRat(right.amount))), right.currency);
+  }
+  if (left.kind === "money" && right.kind === "number") {
+    return moneyValue(ratToFix((divide ? ratDivExact : ratMul)(fixToRat(left.amount), fixToRat(right.value))), left.currency);
+  }
+  if (left.kind === "money" && right.kind === "money" && divide) {
+    if (left.currency !== right.currency) {
+      throw new Error("\u4E0D\u540C\u8D27\u5E01\u4E0D\u80FD\u76F4\u63A5\u76F8\u9664");
+    }
+    return numericResult(ratDivExact(fixToRat(left.amount), fixToRat(right.amount)));
+  }
+  if (left.kind === "number" && right.kind === "quantity") {
+    if (divide) {
+      throw new Error("\u6682\u4E0D\u652F\u6301\u6570\u5B57\u9664\u4EE5\u5E26\u5355\u4F4D\u7684\u91CF");
+    }
+    return quantityFromBase(ratMul(fixToRat(left.value), right.base), right.unit);
+  }
+  if (left.kind === "quantity" && right.kind === "number") {
+    return quantityFromBase((divide ? ratDivExact : ratMul)(left.base, fixToRat(right.value)), left.unit);
+  }
+  if (left.kind === "money" && (right.kind === "duration" || right.kind === "quantity")) {
+    left = moneyAsQuantity(left);
+    if (right.kind === "duration") {
+      right = durationAsQuantity(right);
+    }
+  }
+  if (left.kind === "duration") {
+    left = durationAsQuantity(left);
+  }
+  if (right.kind === "duration") {
+    right = durationAsQuantity(right);
+  }
+  if (left.kind === "quantity" && right.kind === "quantity") {
+    const unit = combineUnits(left.unit, right.unit, divide);
+    const base = divide ? ratDivExact(left.base, right.base) : ratMul(left.base, right.base);
+    if (Object.keys(unit.dimensions).length === 0) {
+      return numericResult(base);
+    }
+    return quantityFromBase(base, unit);
+  }
+  throw new Error((divide ? "\u4E0D\u80FD\u76F8\u9664: " : "\u4E0D\u80FD\u76F8\u4E58: ") + left.kind + " \u4E0E " + right.kind);
+};
+var powerValue = (left, right) => {
+  if (right.kind !== "number") {
+    throw new Error("\u6307\u6570\u5FC5\u987B\u662F\u666E\u901A\u6570\u5B57");
+  }
+  const exponent = fixToNumber(right.value);
+  if (left.kind === "number") {
+    if (Number.isInteger(exponent) && Math.abs(exponent) <= 64) {
+      let result = ONE;
+      for (let i2 = 0; i2 < Math.abs(exponent); i2++) {
+        result = exponent >= 0 ? ratMul(result, fixToRat(left.value)) : ratDivExact(result, fixToRat(left.value));
+      }
+      return numericResult(result);
+    }
+    return numberValue(Math.pow(fixToNumber(left.value), exponent));
+  }
+  if (left.kind === "quantity") {
+    const unit = powerUnit(left.unit, exponent);
+    let base = ONE;
+    for (let i2 = 0; i2 < Math.abs(exponent); i2++) {
+      base = exponent >= 0 ? ratMul(base, left.base) : ratDivExact(base, left.base);
+    }
+    return quantityFromBase(base, unit);
+  }
+  throw new Error("\u8BE5\u503C\u4E0D\u80FD\u8FDB\u884C\u5E42\u8FD0\u7B97");
+};
+var rateNumber = (value) => typeof value === "number" ? numberToFix(value) : fixFromString(String(value));
+var exchangeRate = (from, to2, options) => {
+  if (from === to2) {
+    return ONE;
+  }
+  const manual = options.exchangeRates || {};
+  if (manual[from + "/" + to2] !== void 0) {
+    return fixToRat(rateNumber(manual[from + "/" + to2]));
+  }
+  if (manual[to2 + "/" + from] !== void 0) {
+    return ratDivExact(ONE, fixToRat(rateNumber(manual[to2 + "/" + from])));
+  }
+  const rates = options.rates;
+  if (rates && rates.values && rates.values[from] !== void 0 && rates.values[to2] !== void 0) {
+    return ratDivExact(fixToRat(rateNumber(rates.values[to2])), fixToRat(rateNumber(rates.values[from])));
+  }
+  throw new Error("\u7F3A\u5C11\u6C47\u7387: " + from + "/" + to2 + "\uFF0C\u8BF7\u8BBE\u7F6E\u624B\u5DE5\u6C47\u7387\u6216\u66F4\u65B0\u5728\u7EBF\u6C47\u7387");
+};
+var convertValue = (value, targetName, options = {}) => {
+  var _a3;
+  if (value.kind === "money" && isCurrency(targetName, options)) {
+    const amount = ratToFix(ratMul(fixToRat(value.amount), exchangeRate(value.currency, targetName, options)));
+    return moneyValue(amount, targetName);
+  }
+  if (value.kind === "duration") {
+    const target = timeUnit(targetName) || ((_a3 = (resolveUnit(targetName, options.unitRegistry) || {}).dimensions) == null ? void 0 : _a3.time) === 1 ? resolveUnit(targetName, options.unitRegistry) : null;
+    if (!target) {
+      throw new Error("\u65F6\u957F\u53EA\u80FD\u8F6C\u6362\u4E3A\u79D2\u3001\u5206\u949F\u3001\u5C0F\u65F6\u3001\u5929\u6216\u5468");
+    }
+    return durationFromSeconds(value.seconds, target);
+  }
+  if (value.kind === "quantity" && isCurrency(targetName, options)) {
+    const keys = Object.keys(value.unit.dimensions);
+    if (keys.length === 1 && keys[0].startsWith("currency_") && value.unit.dimensions[keys[0]] === 1) {
+      const from = keys[0].slice(9);
+      const amount = ratToFix(ratMul(value.base, exchangeRate(from, targetName, options)));
+      return quantityFromAmount(amount, currencyUnit(targetName));
+    }
+  }
+  if (value.kind === "quantity") {
+    const target = resolveUnit(targetName, options.unitRegistry);
+    if (!target) {
+      throw new Error("\u672A\u77E5\u5355\u4F4D: " + targetName);
+    }
+    return convertQuantity(value, target);
+  }
+  throw new Error("\u8BE5\u503C\u4E0D\u80FD\u8FDB\u884C\u5355\u4F4D\u6362\u7B97");
+};
+var convertToValue = (value, target, options = {}) => {
+  if (target.kind === "money") {
+    return convertValue(value, target.currency, options);
+  }
+  if (target.kind === "quantity") {
+    if (value.kind === "quantity") {
+      return convertQuantity(value, target.unit);
+    }
+    if (value.kind === "duration" && target.unit.dimensions.time === 1) {
+      return durationFromSeconds(value.seconds, target.unit);
+    }
+  }
+  throw new Error("\u65E0\u6CD5\u6362\u7B97\u6210\u76EE\u6807\u5355\u4F4D");
+};
+var rounded = (rational, policy) => ratToFix(applyPrecision(rational, policy));
+var formatCompositeDuration = (seconds, policy) => {
+  const negative = seconds.neg;
+  let remaining = Math.abs(fixToNumber(seconds));
+  const days = Math.floor(remaining / 86400);
+  remaining -= days * 86400;
+  const hours = Math.floor(remaining / 3600);
+  remaining -= hours * 3600;
+  const minutes = Math.floor(remaining / 60);
+  remaining -= minutes * 60;
+  let text = "";
+  if (days) text += days + "d";
+  if (hours) text += hours + "h";
+  if (minutes) text += minutes + "min";
+  if (remaining || !text) {
+    const secondText = fixToString(rounded(fixToRat(numberToFix(remaining)), policy));
+    text += secondText + "s";
+  }
+  return (negative ? "-" : "") + text;
+};
+var formatValue = (value, options = {}) => {
+  const policy = normalizePolicy(options);
+  if (value.kind === "number") {
+    return fixToString(rounded(fixToRat(value.value), policy));
+  }
+  if (value.kind === "quantity") {
+    return fixToString(rounded(fixToRat(quantityAmount(value)), policy)) + value.unit.symbol;
+  }
+  if (value.kind === "money") {
+    return fixToString(rounded(fixToRat(value.amount), policy)) + value.currency;
+  }
+  if (value.kind === "duration") {
+    if (value.displayUnit) {
+      const amount = ratDivExact(fixToRat(value.seconds), value.displayUnit.factor);
+      return fixToString(rounded(amount, policy)) + value.displayUnit.symbol;
+    }
+    return formatCompositeDuration(value.seconds, policy);
+  }
+  if (["time", "date", "datetime", "zoned"].includes(value.kind)) {
+    return formatDateValue(value);
+  }
+  if (value.kind === "string") {
+    return value.value;
+  }
+  throw new Error("\u65E0\u6CD5\u663E\u793A\u8BE5\u7ED3\u679C");
+};
+var sumValues = (values) => {
+  if (!values.length) {
+    return numberValue("0");
+  }
+  return values.slice(1).reduce((total, value) => addValues(total, value), values[0]);
+};
+var averageValues = (values) => {
+  if (!values.length) {
+    throw new Error("\u5F53\u524D\u5206\u7EC4\u6CA1\u6709\u53EF\u6C42\u5E73\u5747\u7684\u7ED3\u679C");
+  }
+  return multiplyValues(sumValues(values), numberValue(String(values.length)), true);
+};
+var numericArgument = (value, name = "\u53C2\u6570") => {
+  if (value.kind !== "number") {
+    throw new Error(name + "\u5FC5\u987B\u662F\u666E\u901A\u6570\u5B57");
+  }
+  return value.value;
+};
+var stringArgument = (value, name = "\u53C2\u6570") => {
+  if (value.kind !== "string") {
+    throw new Error(name + "\u5FC5\u987B\u662F\u5B57\u7B26\u4E32");
+  }
+  return value.value;
+};
+
+// src/lib/typed-expr.mjs
+var T_NUM = "num";
+var T_NAME = "name";
+var T_STRING = "string";
+var T_TIME = "time";
+var T_OP = "op";
+var T_LP = "(";
+var T_RP = ")";
+var T_SEP = ",";
+var T_END = "end";
+var FULLWIDTH = {
+  "\uFF10": "0",
+  "\uFF11": "1",
+  "\uFF12": "2",
+  "\uFF13": "3",
+  "\uFF14": "4",
+  "\uFF15": "5",
+  "\uFF16": "6",
+  "\uFF17": "7",
+  "\uFF18": "8",
+  "\uFF19": "9",
+  "\uFF0B": "+",
+  "\uFF0D": "-",
+  "\uFF0A": "*",
+  "\uFF0F": "/",
+  "\uFF08": "(",
+  "\uFF09": ")",
+  "\uFF05": "%",
+  "\uFF3E": "^",
+  "\uFF0E": ".",
+  "\uFF0C": ",",
+  "\uFF1B": ";",
+  "\uFF1D": "=",
+  "\u3000": " "
+};
+var ALIAS = { "\xD7": "*", "\u2715": "*", "\u2716": "*", "\xB7": "*", "\u22C5": "*", "\xF7": "/", "\u2212": "-", "\u2013": "-", "\u2014": "-" };
+var isNameStart = (ch) => /^[\p{L}_°℃℉]$/u.test(ch || "");
+var isNameChar = (ch) => /^[\p{L}\p{N}_°℃℉]$/u.test(ch || "");
+var normalize = (source) => Array.from(source).map((ch) => ALIAS[ch] || FULLWIDTH[ch] || ch).join("");
+var tokenize = (source) => {
+  const tokens = [];
+  let i2 = 0;
+  while (i2 < source.length) {
+    const ch = source[i2];
+    if (/\s/.test(ch)) {
+      i2++;
+      continue;
+    }
+    const start = i2;
+    const time = source.slice(i2).match(/^\d{1,2}:\d{2}(?::\d{2})?/);
+    if (time) {
+      i2 += time[0].length;
+      tokens.push({ type: T_TIME, text: time[0], start, end: i2 });
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      let text = "";
+      let closed = false;
+      i2++;
+      while (i2 < source.length) {
+        if (source[i2] === quote) {
+          i2++;
+          closed = true;
+          break;
+        }
+        if (source[i2] === "\\" && i2 + 1 < source.length) {
+          const escaped = source[++i2];
+          text += escaped === "n" ? "\n" : escaped === "t" ? "	" : escaped;
+          i2++;
+        } else {
+          text += source[i2++];
+        }
+      }
+      if (!closed) {
+        throw new Error("\u5B57\u7B26\u4E32\u7F3A\u5C11\u7ED3\u675F\u5F15\u53F7");
+      }
+      tokens.push({ type: T_STRING, text, start, end: i2 });
+      continue;
+    }
+    if (/[0-9]/.test(ch) || ch === "." && /[0-9]/.test(source[i2 + 1] || "")) {
+      let text = "";
+      if (ch === ".") {
+        text = "0";
+      }
+      while (i2 < source.length && /[0-9]/.test(source[i2])) {
+        text += source[i2++];
+        if (source[i2] === "," && /^\d{3}(?!\d)/.test(source.slice(i2 + 1))) {
+          i2++;
+        }
+      }
+      if (source[i2] === ".") {
+        text += ".";
+        i2++;
+        while (i2 < source.length && /[0-9]/.test(source[i2])) {
+          text += source[i2++];
+        }
+      }
+      tokens.push({ type: T_NUM, text, start, end: i2 });
+      continue;
+    }
+    if (isNameStart(ch)) {
+      let text = "";
+      while (i2 < source.length && isNameChar(source[i2])) {
+        if (/\d/.test(source[i2]) && /^(?:h|min|s|d|week)$/.test(text)) {
+          break;
+        }
+        text += source[i2++];
+      }
+      tokens.push({ type: T_NAME, text, start, end: i2 });
+      continue;
+    }
+    if (ch === "(" || ch === ")") {
+      tokens.push({ type: ch === "(" ? T_LP : T_RP, text: ch, start, end: ++i2 });
+      continue;
+    }
+    if (ch === "," || ch === ";") {
+      tokens.push({ type: T_SEP, text: ch, start, end: ++i2 });
+      continue;
+    }
+    if ("+-*/%^=".includes(ch)) {
+      if (ch === "*" && source[i2 + 1] === "*") {
+        tokens.push({ type: T_OP, text: "^", start, end: i2 + 2 });
+        i2 += 2;
+      } else {
+        tokens.push({ type: T_OP, text: ch, start, end: ++i2 });
+      }
+      continue;
+    }
+    throw new Error("\u65E0\u6CD5\u8BC6\u522B\u7684\u5B57\u7B26: " + ch);
+  }
+  tokens.push({ type: T_END, text: "", start: source.length, end: source.length });
+  return tokens;
+};
+var parse = (tokens) => {
+  let pos = 0;
+  const peek = (offset = 0) => tokens[Math.min(pos + offset, tokens.length - 1)];
+  const next = () => tokens[pos++];
+  const isOp = (token, text) => token.type === T_OP && token.text === text;
+  const isConversion = (token) => token.type === T_NAME && (token.text === "to" || token.text === "\u6362\u7B97\u4E3A");
+  const parseStatement = () => {
+    if (peek().type === T_NAME && isOp(peek(1), "=")) {
+      const name = next().text;
+      next();
+      return { kind: "assign", name, value: parseExpression() };
+    }
+    return parseExpression();
+  };
+  const parseExpression = () => parseAdd();
+  const parseUnitTarget = () => {
+    const token = next();
+    if (token.type !== T_NAME) {
+      throw new Error("to \u540E\u9700\u8981\u76EE\u6807\u5355\u4F4D");
+    }
+    let node = { kind: "name", text: token.text, args: [], isCall: false };
+    while (isOp(peek(), "^") || isOp(peek(), "/") || isOp(peek(), "*")) {
+      const operator = next().text;
+      if (operator === "^") {
+        const exponent = next();
+        if (exponent.type !== T_NUM) {
+          throw new Error("\u5355\u4F4D\u6307\u6570\u5FC5\u987B\u662F\u6570\u5B57");
+        }
+        node = { kind: "binary", op: "^", left: node, right: { kind: "num", text: exponent.text } };
+      } else {
+        const name = next();
+        if (name.type !== T_NAME) {
+          throw new Error("\u590D\u5408\u5355\u4F4D\u5199\u6CD5\u4E0D\u6B63\u786E");
+        }
+        node = { kind: "binary", op: operator, left: node, right: { kind: "name", text: name.text, args: [], isCall: false } };
+      }
+    }
+    return node;
+  };
+  const parseAdd = () => {
+    let node = parseMul();
+    while (isOp(peek(), "+") || isOp(peek(), "-") || isConversion(peek())) {
+      if (isConversion(peek())) {
+        next();
+        node = { kind: "convert", value: node, target: parseUnitTarget() };
+      } else {
+        const op = next().text;
+        node = { kind: "binary", op, left: node, right: parseMul() };
+      }
+    }
+    return node;
+  };
+  const parseMul = () => {
+    let node = parseUnary();
+    while (true) {
+      if (isOp(peek(), "*") || isOp(peek(), "/") || isOp(peek(), "%")) {
+        const op = next().text;
+        node = { kind: "binary", op, left: node, right: parseUnary() };
+        continue;
+      }
+      if (node.kind === "quantity" && peek().type === T_NUM && peek(1).type === T_NAME) {
+        node = { kind: "binary", op: "+", left: node, right: parseUnary() };
+        continue;
+      }
+      break;
+    }
+    return node;
+  };
+  const parseUnary = () => {
+    if (isOp(peek(), "+") || isOp(peek(), "-")) {
+      const op = next().text;
+      const operand = parseUnary();
+      return op === "-" ? { kind: "negate", value: operand } : operand;
+    }
+    return parsePower();
+  };
+  const parsePower = () => {
+    const base = parsePostfix();
+    if (isOp(peek(), "^")) {
+      next();
+      const exponent = parseUnary();
+      if (base.kind === "quantity" && !base.parenthesized) {
+        return { kind: "quantityPower", amount: base.amount, unit: base.unit, exponent };
+      }
+      return { kind: "binary", op: "^", left: base, right: exponent };
+    }
+    return base;
+  };
+  const parsePostfix = () => {
+    let node = parsePrimary();
+    if (node.kind === "num" && peek().type === T_NAME && !isConversion(peek())) {
+      node = { kind: "quantity", amount: node, unit: next().text };
+    }
+    while (isOp(peek(), "%") && ![T_NUM, T_NAME, T_LP].includes(peek(1).type)) {
+      next();
+      node = { kind: "percent", value: node };
+    }
+    return node;
+  };
+  const parsePrimary = () => {
+    const token = next();
+    if (token.type === T_NUM) {
+      return { kind: "num", text: token.text };
+    }
+    if (token.type === T_STRING) {
+      return { kind: "string", value: token.text };
+    }
+    if (token.type === T_TIME) {
+      return { kind: "time", value: token.text };
+    }
+    if (token.type === T_NAME) {
+      const args = [];
+      let isCall = false;
+      if (peek().type === T_LP) {
+        next();
+        isCall = true;
+        if (peek().type !== T_RP) {
+          args.push(parseExpression());
+          while (peek().type === T_SEP) {
+            next();
+            args.push(parseExpression());
+          }
+        }
+        if (peek().type !== T_RP) {
+          throw new Error("\u51FD\u6570\u7F3A\u5C11 )");
+        }
+        next();
+      }
+      return { kind: "name", text: token.text, args, isCall };
+    }
+    if (token.type === T_LP) {
+      const node = parseExpression();
+      if (peek().type !== T_RP) {
+        throw new Error("\u7F3A\u5C11 )");
+      }
+      next();
+      return Object.assign(node, { parenthesized: true });
+    }
+    throw new Error("\u8868\u8FBE\u5F0F\u4E0D\u5B8C\u6574");
+  };
+  const statements = [parseStatement()];
+  while (peek().type === T_SEP) {
+    next();
+    statements.push(parseStatement());
+  }
+  if (peek().type !== T_END) {
+    throw new Error("\u8868\u8FBE\u5F0F\u5B58\u5728\u591A\u4F59\u5185\u5BB9\uFF0C\u4E58\u6CD5\u8BF7\u663E\u5F0F\u5199 *");
+  }
+  return { kind: "program", statements };
+};
+var realArg = (args, index, name) => {
+  if (index >= args.length) {
+    throw new Error(name + "() \u7F3A\u5C11\u53C2\u6570");
+  }
+  return fixToNumber(numericArgument(args[index], name));
+};
+var stringArg = (args, index, name) => stringArgument(args[index], name);
+var callNumeric = (name, args) => {
+  const values = args.map((arg) => fixToNumber(numericArgument(arg, name)));
+  switch (name) {
+    case "sqrt":
+      return Math.sqrt(values[0]);
+    case "abs":
+      return Math.abs(values[0]);
+    case "round":
+      return Math.round(values[0]);
+    case "floor":
+      return Math.floor(values[0]);
+    case "ceil":
+      return Math.ceil(values[0]);
+    case "trunc":
+    case "int":
+      return Math.trunc(values[0]);
+    case "min":
+      return Math.min(...values);
+    case "max":
+      return Math.max(...values);
+    case "sum":
+      return values.reduce((a2, b2) => a2 + b2, 0);
+    case "avg":
+    case "mean":
+      return values.reduce((a2, b2) => a2 + b2, 0) / values.length;
+    case "log":
+      return values.length > 1 ? Math.log(values[0]) / Math.log(values[1]) : Math.log10(values[0]);
+    case "ln":
+      return Math.log(values[0]);
+    case "exp":
+      return Math.exp(values[0]);
+    case "sin":
+    case "cos":
+    case "tan":
+    case "asin":
+    case "acos":
+    case "atan":
+      return Math[name](values[0]);
+    case "pow":
+      return Math.pow(values[0], values[1]);
+    default:
+      throw new Error("\u672A\u77E5\u51FD\u6570: " + name);
+  }
+};
+var evaluate = (program, options) => {
+  const variables = new Map(options.variables || []);
+  const constants = { pi: numberValue("3.14159265358979323846"), e: numberValue("2.718281828459045") };
+  const callFunction = (name, args) => {
+    const lower = name.toLowerCase();
+    if (lower === "unit") {
+      return literalValue(numericArgument(args[0], "unit"), stringArg(args, 1, "unit"), options);
+    }
+    if (lower === "money") {
+      return moneyValue(numericArgument(args[0], "money"), stringArg(args, 1, "money").toUpperCase());
+    }
+    if (lower === "time") return timeValue(stringArg(args, 0, "time"));
+    if (lower === "date") return dateValue(stringArg(args, 0, "date"));
+    if (lower === "datetime") return dateTimeValue(stringArg(args, 0, "datetime"));
+    if (lower === "zoned") return zonedValue(stringArg(args, 0, "zoned"), stringArg(args, 1, "zoned"));
+    if (lower === "inzone") return inZoneValue(args[0], stringArg(args, 1, "inZone"));
+    if (lower === "today") return todayValue(args.length ? stringArg(args, 0, "today") : void 0);
+    if (lower === "now") return nowValue(args.length ? stringArg(args, 0, "now") : void 0);
+    if (lower === "dateadd") return dateAddValue(args[0], realArg(args, 1, "dateAdd"), stringArg(args, 2, "dateAdd"));
+    if (lower === "datesubtract") return dateAddValue(args[0], realArg(args, 1, "dateSubtract"), stringArg(args, 2, "dateSubtract"), true);
+    if (lower === "datebetween") return numberValue(dateBetweenValue(args[0], args[1], stringArg(args, 2, "dateBetween")));
+    if (lower === "formatdate") return { kind: "string", value: formatDateValue(args[0], stringArg(args, 1, "formatDate")) };
+    if (lower === "format") return { kind: "string", value: formatValue(args[0], options) };
+    if (lower === "workdays") return numberValue(workdaysValue(args[0], args[1], options));
+    if (lower === "addworkdays") return addWorkdaysValue(args[0], realArg(args, 1, "addWorkdays"), options);
+    if (lower === "year" || lower === "month" || lower === "day" || lower === "hour" || lower === "minute") {
+      const part = dateParts(args[0]);
+      const key = lower === "day" ? "day" : lower;
+      return numberValue(part[key]);
+    }
+    return numberValue(callNumeric(lower, args));
+  };
+  const evalNode = (node) => {
+    switch (node.kind) {
+      case "program": {
+        let value = numberValue("0");
+        node.statements.forEach((statement) => {
+          value = evalNode(statement);
+        });
+        return value;
+      }
+      case "assign": {
+        const value = evalNode(node.value);
+        variables.set(node.name, value);
+        return value;
+      }
+      case "num":
+        return numberValue(node.text);
+      case "string":
+        return { kind: "string", value: node.value };
+      case "time":
+        return timeValue(node.value);
+      case "quantity":
+        return literalValue(evalNode(node.amount).value, node.unit, options);
+      case "quantityPower":
+        return multiplyValues(
+          evalNode(node.amount),
+          powerValue(unitValue(node.unit, options), evalNode(node.exponent)),
+          false
+        );
+      case "name": {
+        if (node.isCall) {
+          return callFunction(node.text, node.args.map(evalNode));
+        }
+        if (variables.has(node.text)) return variables.get(node.text);
+        if (Object.prototype.hasOwnProperty.call(options.specials || {}, node.text)) return options.specials[node.text];
+        if (constants[node.text]) return constants[node.text];
+        if (isCurrency(node.text, options)) return moneyValue(fixFromString("1"), node.text);
+        return unitValue(node.text, options);
+      }
+      case "negate":
+        return negateValue(evalNode(node.value));
+      case "percent":
+        return multiplyValues(evalNode(node.value), numberValue("100"), true);
+      case "convert":
+        return convertToValue(evalNode(node.value), evalNode(node.target), options);
+      case "binary": {
+        const left = evalNode(node.left);
+        const right = evalNode(node.right);
+        if (node.op === "+") return addValues(left, right, false, options);
+        if (node.op === "-") return addValues(left, right, true, options);
+        if (node.op === "*") return multiplyValues(left, right, false);
+        if (node.op === "/") return multiplyValues(left, right, true);
+        if (node.op === "^") return powerValue(left, right);
+        if (node.op === "%") {
+          return numberValue(fixToNumber(numericArgument(left)) % fixToNumber(numericArgument(right)));
+        }
+        throw new Error("\u4E0D\u652F\u6301\u7684\u8FD0\u7B97\u7B26: " + node.op);
+      }
+      default:
+        throw new Error("\u4E0D\u652F\u6301\u7684\u8868\u8FBE\u5F0F\u8282\u70B9: " + node.kind);
+    }
+  };
+  return evalNode(program);
+};
+var isExtendedExpression = (source, options = {}) => {
+  if (options.forceTyped) {
+    return true;
+  }
+  return /["']|\d{1,2}:\d{2}|\bto\b|换算为|\b(?:date|datetime|zoned|inZone|dateAdd|dateSubtract|dateBetween|formatDate|today|now|workdays|addWorkdays|prev|total|average|unit|money)\b/i.test(source) || /[\d)]\s*[\p{L}_°℃℉]/u.test(source);
+};
+var calculateTyped = (source, options = {}) => {
+  try {
+    if (typeof source !== "string" || !source.trim() || source.length > (options.maxLength || 1e4)) {
+      throw new Error("\u8868\u8FBE\u5F0F\u4E3A\u7A7A\u6216\u8FC7\u957F");
+    }
+    const value = evaluate(parse(tokenize(normalize(source))), options);
+    return { ok: true, value, text: formatValue(value, options), assignments: [] };
+  } catch (error) {
+    return { ok: false, error: error && error.message ? error.message : String(error), position: -1 };
+  }
+};
+
+// src/lib/polynomial.mjs
+var NEWTON_MAX_ITERATIONS = 120;
+var NUMERIC_DEFAULT_DIGITS = 10;
+var ratZeroValue = () => ({ n: [0], d: [1], neg: false });
+var ratOneValue = () => ({ n: [1], d: [1], neg: false });
+var ratFromSmallInt = (value) => {
+  const text = String(Math.abs(Math.trunc(value)));
+  const digits = [];
+  for (let i2 = 0; i2 < text.length; i2++) {
+    digits.push(text.charCodeAt(i2) - 48);
+  }
+  return { n: trimLeading(digits), d: [1], neg: value < 0 };
+};
+var polyZero = () => ({ coeffs: /* @__PURE__ */ new Map() });
+var polyConst = (rational) => ratIsZero(rational) ? polyZero() : { coeffs: /* @__PURE__ */ new Map([[0, rational]]) };
+var polyVariable = () => ({ coeffs: /* @__PURE__ */ new Map([[1, ratOneValue()]]) });
+var polyHasVariable = (poly) => {
+  let found = false;
+  poly.coeffs.forEach((coefficient, degree) => {
+    if (degree > 0 && !ratIsZero(coefficient)) {
+      found = true;
+    }
+  });
+  return found;
+};
+var polyDegree = (poly) => {
+  let degree = -1;
+  poly.coeffs.forEach((coefficient, power) => {
+    if (!ratIsZero(coefficient) && power > degree) {
+      degree = power;
+    }
+  });
+  return degree;
+};
+var polyCoefficient = (poly, power) => poly.coeffs.get(power) || ratZeroValue();
+var polyAdd = (a2, b2) => {
+  const coeffs = new Map(a2.coeffs);
+  b2.coeffs.forEach((coefficient, power) => {
+    const existing = coeffs.get(power);
+    const sum = existing ? ratAdd(existing, coefficient) : coefficient;
+    if (ratIsZero(sum)) {
+      coeffs.delete(power);
+    } else {
+      coeffs.set(power, sum);
+    }
+  });
+  return { coeffs };
+};
+var polyNeg = (poly) => {
+  const coeffs = /* @__PURE__ */ new Map();
+  poly.coeffs.forEach((coefficient, power) => {
+    coeffs.set(power, { n: coefficient.n, d: coefficient.d, neg: !coefficient.neg });
+  });
+  return { coeffs };
+};
+var polySub = (a2, b2) => polyAdd(a2, polyNeg(b2));
+var polyMul = (a2, b2) => {
+  const coeffs = /* @__PURE__ */ new Map();
+  a2.coeffs.forEach((left, leftPower) => {
+    b2.coeffs.forEach((right, rightPower) => {
+      const power = leftPower + rightPower;
+      const product = ratMul(left, right);
+      const existing = coeffs.get(power);
+      const sum = existing ? ratAdd(existing, product) : product;
+      if (ratIsZero(sum)) {
+        coeffs.delete(power);
+      } else {
+        coeffs.set(power, sum);
+      }
+    });
+  });
+  return { coeffs };
+};
+var polyPow = (poly, exponent) => {
+  let result = polyConst(ratOneValue());
+  for (let i2 = 0; i2 < exponent; i2++) {
+    result = polyMul(result, poly);
+  }
+  return result;
+};
+var polyEvaluate = (poly, value) => {
+  let total = cZero();
+  poly.coeffs.forEach((coefficient, power) => {
+    let term = cFromFix(ratToFix(coefficient));
+    for (let i2 = 0; i2 < power; i2++) {
+      term = cMul(term, value);
+    }
+    total = cAdd(total, term);
+  });
+  return total;
+};
+var fixToRatExact = (fix) => {
+  const digits = trimLeading(fix.int);
+  const d2 = [1].concat(new Array(fix.scale).fill(0));
+  return ratNorm(digits, d2, fix.neg);
+};
+var numberToRat = (value) => fixToRatExact(numberToFix(value));
+var ratToDisplayString = (rational, policy) => fixToString(ratToFix(applyPrecision(rational, policy)));
+var fixToDisplayString = (fix, policy) => ratToDisplayString(fixToRatExact(fix), policy);
+var complexToDisplayString = (value, policy) => {
+  const realText = fixToDisplayString(value.re, policy);
+  if (fixIsZero(value.im)) {
+    return realText;
+  }
+  const imagAbs = fixToDisplayString({ int: value.im.int, scale: value.im.scale, neg: false }, policy);
+  const imagText = imagAbs === "1" ? "i" : imagAbs + "i";
+  if (realText === "0") {
+    return (value.im.neg ? "-" : "") + imagText;
+  }
+  return realText + (value.im.neg ? "-" : "+") + imagText;
+};
+var solveEquation = (left, right, variableName, policy) => {
+  const difference = polySub(left, right);
+  const degree = polyDegree(difference);
+  const variable = variableName || "x";
+  if (degree < 0) {
+    return { ok: true, text: "\u4EFB\u610F\u503C", solutions: [], note: "identity", variable };
+  }
+  if (degree === 0) {
+    return { ok: false, error: "\u65B9\u7A0B\u65E0\u89E3" };
+  }
+  if (degree === 1) {
+    const a2 = polyCoefficient(difference, 1);
+    const b2 = polyCoefficient(difference, 0);
+    const solution = ratDiv({ n: b2.n, d: b2.d, neg: !b2.neg }, a2);
+    const text2 = ratToDisplayString(solution, policy);
+    return { ok: true, text: text2, solutions: [text2], note: "exact", variable };
+  }
+  if (degree === 2) {
+    const a2 = polyCoefficient(difference, 2);
+    const b2 = polyCoefficient(difference, 1);
+    const c2 = polyCoefficient(difference, 0);
+    const discriminant = ratSub(ratMul(b2, b2), ratMul(ratMul(ratFromSmallInt(4), a2), c2));
+    const twoA = ratMul(ratFromSmallInt(2), a2);
+    const negativeB = { n: b2.n, d: b2.d, neg: !b2.neg };
+    if (ratIsZero(discriminant)) {
+      const text2 = ratToDisplayString(ratDiv(negativeB, twoA), policy);
+      return { ok: true, text: text2, solutions: [text2], note: "exact", variable };
+    }
+    if (discriminant.neg) {
+      const realPart = ratDiv(negativeB, twoA);
+      const absDiscriminant = { n: discriminant.n, d: discriminant.d, neg: false };
+      const imagPart = ratDiv(numberToRat(Math.sqrt(fixToNumber(ratToFix(absDiscriminant)))), twoA);
+      const realText = ratToDisplayString(realPart, policy);
+      const imagText = ratToDisplayString(imagPart, policy);
+      if (realText === "0") {
+        const plus2 = imagText + "i";
+        return {
+          ok: true,
+          text: plus2 + " \u6216 -" + plus2,
+          solutions: [plus2, "-" + plus2],
+          note: "complex",
+          variable
+        };
+      }
+      const plus = realText + "+" + imagText + "i";
+      const minus = realText + "-" + imagText + "i";
+      return {
+        ok: true,
+        text: plus + " \u6216 " + minus,
+        solutions: [plus, minus],
+        note: "complex",
+        variable
+      };
+    }
+    const root = numberToRat(Math.sqrt(fixToNumber(ratToFix(discriminant))));
+    const first = ratDiv(ratSub(negativeB, root), twoA);
+    const second = ratDiv(ratAdd(negativeB, root), twoA);
+    const firstText = ratToDisplayString(first, policy);
+    const secondText = ratToDisplayString(second, policy);
+    const solutions = firstText === secondText ? [firstText] : [firstText, secondText];
+    return {
+      ok: true,
+      text: solutions.join(" \u6216 "),
+      solutions,
+      note: "exact",
+      variable
+    };
+  }
+  const realRoot = newtonRealRoot(difference);
+  if (realRoot === null) {
+    return { ok: false, error: "\u65E0\u6CD5\u6C42\u89E3\u8BE5\u65B9\u7A0B" };
+  }
+  const effective = policyIsExact(policy) ? normalizePolicy({ roundMode: "digits", roundDigits: NUMERIC_DEFAULT_DIGITS }) : policy;
+  const text = ratToDisplayString(realRoot, effective);
+  return { ok: true, text, solutions: [text], note: "numeric", variable };
+};
+var newtonRealRoot = (poly) => {
+  const coefficients = polyToDoubleCoefficients(poly);
+  const degree = coefficients.length - 1;
+  if (degree < 1) {
+    return null;
+  }
+  const evaluate3 = (x2) => {
+    let total = 0;
+    for (let i2 = coefficients.length - 1; i2 >= 0; i2--) {
+      total = total * x2 + coefficients[i2];
+    }
+    return total;
+  };
+  const evaluateDerivative = (x2) => {
+    let total = 0;
+    for (let i2 = coefficients.length - 1; i2 >= 1; i2--) {
+      total = total * x2 + i2 * coefficients[i2];
+    }
+    return total;
+  };
+  const starts = [0, 1, -1, 2, -2, 7, -7, 0.5, -0.5];
+  for (const start of starts) {
+    let x2 = start;
+    for (let i2 = 0; i2 < NEWTON_MAX_ITERATIONS; i2++) {
+      const value = evaluate3(x2);
+      if (!isFinite(value)) {
+        break;
+      }
+      if (Math.abs(value) < 1e-14) {
+        return doubleToCleanRat(x2);
+      }
+      const slope = evaluateDerivative(x2);
+      if (!isFinite(slope) || Math.abs(slope) < 1e-300) {
+        break;
+      }
+      const delta = value / slope;
+      x2 -= delta;
+      if (!isFinite(x2)) {
+        break;
+      }
+      if (Math.abs(delta) < 1e-15 * Math.max(1, Math.abs(x2))) {
+        break;
+      }
+    }
+    if (isFinite(x2) && Math.abs(evaluate3(x2)) < 1e-9) {
+      return doubleToCleanRat(x2);
+    }
+  }
+  return null;
+};
+var polyToDoubleCoefficients = (poly) => {
+  const degree = polyDegree(poly);
+  if (degree < 0) {
+    return [0];
+  }
+  const out = new Array(degree + 1).fill(0);
+  poly.coeffs.forEach((coefficient, power) => {
+    out[power] = fixToNumber(ratToFix(coefficient));
+  });
+  return out;
+};
+var doubleToCleanRat = (value) => {
+  if (!isFinite(value)) {
+    return null;
+  }
+  const rounded2 = Math.round(value);
+  if (rounded2 !== 0 && Math.abs(value - rounded2) <= Math.abs(value) * 1e-12) {
+    return ratFromSmallInt(rounded2);
+  }
+  if (rounded2 === 0 && Math.abs(value) < 1e-12) {
+    return ratZeroValue();
+  }
+  return numberToRat(value);
+};
+
+// src/lib/expr.mjs
+var FULLWIDTH_MAP = {
+  "\uFF10": "0",
+  "\uFF11": "1",
+  "\uFF12": "2",
+  "\uFF13": "3",
+  "\uFF14": "4",
+  "\uFF15": "5",
+  "\uFF16": "6",
+  "\uFF17": "7",
+  "\uFF18": "8",
+  "\uFF19": "9",
+  "\uFF0B": "+",
+  "\uFF0D": "-",
+  "\uFF0A": "*",
+  "\uFF0F": "/",
+  "\uFF08": "(",
+  "\uFF09": ")",
+  "\uFF05": "%",
+  "\uFF3E": "^",
+  "\uFF0E": ".",
+  "\uFF0C": ",",
+  "\uFF1B": ";",
+  "\uFF3F": "_",
+  "\uFF1D": "=",
+  "\u3000": " "
+};
+var OPERATOR_ALIAS = {
+  "\xD7": "*",
+  "\u2715": "*",
+  "\u2716": "*",
+  "\xB7": "*",
+  "\u22C5": "*",
+  "\u2219": "*",
+  "\u2217": "*",
+  "\xF7": "/",
+  "\u2215": "/",
+  "\u2044": "/",
+  "\u2212": "-",
+  "\u2013": "-",
+  "\u2014": "-",
+  "\u30FC": "-",
+  "\u03C0": "pi",
+  "\u03A0": "pi",
+  "\u{1D70B}": "pi",
+  "\u03C4": "tau"
+};
+var isNameStart2 = (ch) => /^[\p{L}_]$/u.test(ch || "");
+var isNameChar2 = (ch) => /^[\p{L}\p{N}_]$/u.test(ch || "");
+var isEqualsChar = (ch) => ch === "=" || ch === "\uFF1D";
+var normalizeExpression = (source) => {
+  let out = "";
+  for (let i2 = 0; i2 < source.length; i2++) {
+    const ch = source[i2];
+    out += OPERATOR_ALIAS[ch] !== void 0 ? OPERATOR_ALIAS[ch] : FULLWIDTH_MAP[ch] !== void 0 ? FULLWIDTH_MAP[ch] : ch;
+  }
+  return out;
+};
+var T_NUM2 = "num";
+var T_NAME2 = "name";
+var T_OP2 = "op";
+var T_LP2 = "(";
+var T_RP2 = ")";
+var T_SEP2 = ",";
+var T_END2 = "end";
+var calcError = (message, position) => {
+  const error = new Error(message);
+  error.name = "CalcError";
+  error.position = position;
+  return error;
+};
+var tokenize2 = (source) => {
+  const tokens = [];
+  let i2 = 0;
+  while (i2 < source.length) {
+    const ch = source[i2];
+    if (ch === " " || ch === "	" || ch === "\xA0") {
+      i2++;
+      continue;
+    }
+    const start = i2;
+    if (/[0-9]/.test(ch) || ch === "." && /[0-9]/.test(source[i2 + 1] || "")) {
+      let text = "";
+      if (ch === ".") {
+        text = "0.";
+        i2++;
+        while (i2 < source.length && /[0-9]/.test(source[i2])) {
+          text += source[i2];
+          i2++;
+        }
+      } else {
+        while (i2 < source.length && /[0-9]/.test(source[i2])) {
+          text += source[i2];
+          i2++;
+          if (source[i2] === "," && /^[0-9]{3}(?![0-9])/.test(source.slice(i2 + 1))) {
+            i2++;
+          }
+        }
+        if (source[i2] === ".") {
+          text += ".";
+          i2++;
+          while (i2 < source.length && /[0-9]/.test(source[i2])) {
+            text += source[i2];
+            i2++;
+          }
+        }
+      }
+      tokens.push({ type: T_NUM2, text, start, end: i2 });
+      continue;
+    }
+    if (isNameStart2(ch)) {
+      let text = "";
+      while (i2 < source.length && isNameChar2(source[i2])) {
+        text += source[i2];
+        i2++;
+      }
+      tokens.push({ type: T_NAME2, text, start, end: i2 });
+      continue;
+    }
+    if (ch === "(" || ch === ")") {
+      tokens.push({ type: ch === "(" ? T_LP2 : T_RP2, text: ch, start, end: start + 1 });
+      i2++;
+      continue;
+    }
+    if (ch === "," || ch === ";") {
+      tokens.push({ type: T_SEP2, text: ch, start, end: start + 1 });
+      i2++;
+      continue;
+    }
+    if ("+-*/%^=".indexOf(ch) > -1) {
+      if (ch === "*" && source[i2 + 1] === "*") {
+        tokens.push({ type: T_OP2, text: "^", start, end: start + 2 });
+        i2 += 2;
+        continue;
+      }
+      tokens.push({ type: T_OP2, text: ch, start, end: start + 1 });
+      i2++;
+      continue;
+    }
+    throw calcError("unexpected token", start);
+  }
+  tokens.push({ type: T_END2, text: "", start: source.length, end: source.length });
+  return tokens;
+};
+var parse2 = (tokens) => {
+  let pos = 0;
+  const peek = (offset) => tokens[Math.min(pos + (offset || 0), tokens.length - 1)];
+  const next = () => tokens[pos++];
+  const isOp = (token, text) => token.type === T_OP2 && token.text === text;
+  const isModulo = (token) => isOp(token, "%") && (peek(1).type === T_NUM2 || peek(1).type === T_NAME2 || peek(1).type === T_LP2);
+  const endOf = (node) => node && node.end !== void 0 ? node.end : pos;
+  const parseChain = () => {
+    const first = parseTerm();
+    const segments = [first];
+    while (isOp(peek(), "=")) {
+      next();
+      segments.push(parseTerm());
+    }
+    if (segments.length === 1) {
+      return first;
+    }
+    return { kind: "chain", segments, start: first.start, end: endOf(segments[segments.length - 1]) };
+  };
+  const parseExpression = () => parseChain();
+  const parseTerm = () => {
+    let node = parseFactor();
+    while (true) {
+      const token = peek();
+      if (isOp(token, "+") || isOp(token, "-") || isModulo(token)) {
+        next();
+        const right = parseFactor();
+        node = {
+          kind: "binary",
+          op: isOp(token, "%") ? "mod" : token.text,
+          left: node,
+          right,
+          start: node.start,
+          end: endOf(right)
+        };
+        continue;
+      }
+      break;
+    }
+    return node;
+  };
+  const parseFactor = () => {
+    let node = parseUnary();
+    while (true) {
+      const token = peek();
+      if (isOp(token, "*") || isOp(token, "/") || isModulo(token)) {
+        next();
+        const right = parseUnary();
+        node = {
+          kind: "binary",
+          op: isOp(token, "%") ? "mod" : token.text,
+          left: node,
+          right,
+          start: node.start,
+          end: endOf(right)
+        };
+        continue;
+      }
+      break;
+    }
+    return node;
+  };
+  const parseUnary = () => {
+    const token = peek();
+    if (isOp(token, "-") || isOp(token, "+")) {
+      next();
+      const operand = parseUnary();
+      return { kind: "unary", op: token.text, operand, start: token.start, end: endOf(operand) };
+    }
+    return parsePower();
+  };
+  const parsePower = () => {
+    const base = parsePostfix();
+    if (isOp(peek(), "^")) {
+      next();
+      const right = parseUnary();
+      return { kind: "binary", op: "^", left: base, right, start: base.start, end: endOf(right) };
+    }
+    return base;
+  };
+  const parsePostfix = () => {
+    let node = parsePrimary();
+    while (peek().type === T_OP2 && peek().text === "%" && !isModulo(peek())) {
+      next();
+      node = { kind: "percent", operand: node, start: node.start, end: endOf(node) };
+    }
+    return node;
+  };
+  const parsePrimary = () => {
+    const token = next();
+    if (token.type === T_NUM2) {
+      return { kind: "num", text: token.text, start: token.start, end: token.end };
+    }
+    if (token.type === T_NAME2) {
+      const args = [];
+      let isCall = false;
+      let callEnd = token.end;
+      if (peek().type === T_LP2) {
+        next();
+        isCall = true;
+        if (peek().type !== T_RP2) {
+          args.push(parseExpression());
+          while (peek().type === T_SEP2) {
+            next();
+            args.push(parseExpression());
+          }
+        }
+        if (peek().type !== T_RP2) {
+          throw calcError("missing )", peek().start);
+        }
+        callEnd = next().end;
+      }
+      return { kind: "name", text: token.text, args, isCall, start: token.start, end: callEnd };
+    }
+    if (token.type === T_LP2) {
+      const inner = parseExpression();
+      if (peek().type !== T_RP2) {
+        throw calcError("missing )", peek().start);
+      }
+      next();
+      return inner;
+    }
+    throw calcError("unexpected token", token.start);
+  };
+  const parseStatement = () => {
+    if (peek().type === T_NAME2 && isOp(peek(1), "=")) {
+      const nameToken = next();
+      next();
+      return {
+        kind: "assign",
+        name: nameToken.text,
+        value: parseExpression(),
+        start: nameToken.start,
+        end: nameToken.end
+      };
+    }
+    return { kind: "expr", value: parseExpression() };
+  };
+  const statements = [parseStatement()];
+  while (peek().type === T_SEP2) {
+    next();
+    statements.push(parseStatement());
+  }
+  if (peek().type !== T_END2) {
+    throw calcError("unexpected token", peek().start);
+  }
+  return { kind: "program", statements };
+};
+var CONSTANTS = {
+  pi: () => fixFromString("3.14159265358979323846"),
+  e: () => fixFromString("2.718281828459045"),
+  tau: () => fixFromString("6.283185307179586")
+};
+var isConstantName = (name) => Object.prototype.hasOwnProperty.call(CONSTANTS, name);
+var createMathEnvironment = () => {
+  const complexPow = (base, exponent) => {
+    if (!cIsReal(exponent)) {
+      throw new Error("unsupported exponent");
+    }
+    const exponentFix = exponent.re;
+    if (exponentFix.scale === 0 && !exponentFix.neg) {
+      const times = parseInt(digitsToString(exponentFix.int), 10);
+      if (isFinite(times) && times <= 64) {
+        let result = cFromFix(fixFromString("1"));
+        for (let i2 = 0; i2 < times; i2++) {
+          result = cMul(result, base);
+        }
+        return result;
+      }
+    }
+    if (!cIsReal(base)) {
+      throw new Error("unsupported power");
+    }
+    const value = Math.pow(fixToNumber(base.re), fixToNumber(exponentFix));
+    if (!isFinite(value)) {
+      throw new Error("result is out of range");
+    }
+    return cFromNumber(value);
+  };
+  const callFunction = (name, args) => {
+    const realArg2 = (index) => {
+      if (index >= args.length) {
+        throw new Error(name + "() missing argument");
+      }
+      if (!cIsReal(args[index])) {
+        throw new Error(name + "() does not accept complex numbers");
+      }
+      return args[index].re;
+    };
+    const finite = (value) => {
+      if (!isFinite(value)) {
+        throw new Error("result is out of range");
+      }
+      return value;
+    };
+    const roundViaMath = (fix, fn2) => {
+      const value = fn2(fixToNumber(fix));
+      if (!isFinite(value)) {
+        throw new Error("result is out of range");
+      }
+      return numberToFix(value);
+    };
+    switch (name) {
+      case "sqrt": {
+        const value = realArg2(0);
+        if (value.neg) {
+          return { re: fixFromString("0"), im: numberToFix(Math.sqrt(-fixToNumber(value))) };
+        }
+        return cFromNumber(Math.sqrt(fixToNumber(value)));
+      }
+      case "abs":
+        return cFromFix({ int: realArg2(0).int, scale: realArg2(0).scale, neg: false });
+      case "floor":
+        return cFromFix(roundViaMath(realArg2(0), Math.floor));
+      case "ceil":
+        return cFromFix(roundViaMath(realArg2(0), Math.ceil));
+      case "round":
+        return cFromFix(roundViaMath(realArg2(0), Math.round));
+      case "trunc":
+      case "int":
+        return cFromFix(roundViaMath(realArg2(0), Math.trunc));
+      case "min": {
+        let best = realArg2(0);
+        for (let i2 = 1; i2 < args.length; i2++) {
+          const candidate = realArg2(i2);
+          if (fixToNumber(candidate) < fixToNumber(best)) {
+            best = candidate;
+          }
+        }
+        return cFromFix(best);
+      }
+      case "max": {
+        let best = realArg2(0);
+        for (let i2 = 1; i2 < args.length; i2++) {
+          const candidate = realArg2(i2);
+          if (fixToNumber(candidate) > fixToNumber(best)) {
+            best = candidate;
+          }
+        }
+        return cFromFix(best);
+      }
+      case "sum": {
+        let total = cZero();
+        args.forEach((item) => {
+          total = cAdd(total, item);
+        });
+        return total;
+      }
+      case "avg":
+      case "mean": {
+        if (args.length === 0) {
+          throw new Error("avg() missing argument");
+        }
+        let total = cZero();
+        args.forEach((item) => {
+          total = cAdd(total, item);
+        });
+        return cDiv(total, cFromNumber(args.length));
+      }
+      case "log": {
+        const value = realArg2(0);
+        if (value.neg || fixIsZero(value)) {
+          throw new Error("log() domain error");
+        }
+        if (args.length > 1) {
+          return cFromNumber(finite(Math.log(fixToNumber(value)) / Math.log(fixToNumber(realArg2(1)))));
+        }
+        return cFromNumber(Math.log10(fixToNumber(value)));
+      }
+      case "ln": {
+        const value = realArg2(0);
+        if (value.neg || fixIsZero(value)) {
+          throw new Error("ln() domain error");
+        }
+        return cFromNumber(Math.log(fixToNumber(value)));
+      }
+      case "exp":
+        return cFromNumber(finite(Math.exp(fixToNumber(realArg2(0)))));
+      case "sin":
+      case "cos":
+      case "tan":
+      case "asin":
+      case "acos":
+      case "atan":
+        return cFromNumber(Math[name](fixToNumber(realArg2(0))));
+      case "pow":
+        if (args.length < 2) {
+          throw new Error("pow() missing argument");
+        }
+        return complexPow(args[0], args[1]);
+      default:
+        throw new Error("unknown function: " + name);
+    }
+  };
+  return { complexPow, callFunction };
+};
+var evaluate2 = (statement) => {
+  const variables = {};
+  const effects = [];
+  const environment = createMathEnvironment();
+  const { complexPow, callFunction } = environment;
+  const getVariable = (name) => {
+    if (Object.prototype.hasOwnProperty.call(variables, name)) {
+      return variables[name];
+    }
+    throw new Error("undefined variable: " + name);
+  };
+  const evalChain = (segments) => evalNode(segments[segments.length - 1]);
+  const evalNode = (node) => {
+    switch (node.kind) {
+      case "num":
+        return cFromFix(fixFromString(node.text));
+      case "seq":
+        evalNode(node.left);
+        return evalNode(node.right);
+      case "unary": {
+        const operand = evalNode(node.operand);
+        return node.op === "-" ? cNeg(operand) : operand;
+      }
+      case "percent":
+        return cMul(cFromFix(fixFromString("0.01")), evalNode(node.operand));
+      case "binary": {
+        const left = evalNode(node.left);
+        const right = evalNode(node.right);
+        switch (node.op) {
+          case "+":
+            return cAdd(left, right);
+          case "-":
+            return cSub(left, right);
+          case "*":
+            return cMul(left, right);
+          case "/":
+            return cDiv(left, right);
+          case "mod": {
+            if (!cIsReal(left) || !cIsReal(right)) {
+              throw new Error("unsupported modulo");
+            }
+            const divisor = fixToNumber(right.re);
+            if (divisor === 0) {
+              throw new Error("divide by zero");
+            }
+            return cFromNumber(fixToNumber(left.re) % divisor);
+          }
+          case "^":
+            return complexPow(left, right);
+          default:
+            throw new Error("unsupported operator: " + node.op);
+        }
+      }
+      case "chain":
+        return evalChain(node.segments);
+      case "name": {
+        const lower = node.text.toLowerCase();
+        if (!node.isCall) {
+          if (Object.prototype.hasOwnProperty.call(CONSTANTS, lower)) {
+            return cFromFix(CONSTANTS[lower]());
+          }
+          return getVariable(node.text);
+        }
+        return callFunction(lower, node.args.map(evalNode));
+      }
+      default:
+        throw new Error("unsupported node: " + node.kind);
+    }
+  };
+  const run = (node) => {
+    if (node.kind === "program") {
+      let value = cZero();
+      let lastAssigned = null;
+      node.statements.forEach((statement2) => {
+        value = run(statement2);
+        lastAssigned = statement2.kind === "assign" ? statement2.name : lastAssigned;
+      });
+      if (lastAssigned !== null && node.statements[node.statements.length - 1].kind === "expr") {
+        const lastValue = node.statements[node.statements.length - 1].value;
+        if (lastValue && lastValue.kind === "name" && !lastValue.isCall && Object.prototype.hasOwnProperty.call(variables, lastValue.text)) {
+          return variables[lastValue.text];
+        }
+      }
+      return value;
+    }
+    if (node.kind === "assign") {
+      const value = evalNode(node.value);
+      if (!cIsReal(value)) {
+        throw new Error("assignment requires a real value");
+      }
+      variables[node.name] = value;
+      effects.push({
+        name: node.name,
+        value,
+        start: node.start,
+        end: node.end
+      });
+      return value;
+    }
+    if (node.kind === "name" && !node.isCall && Object.prototype.hasOwnProperty.call(variables, node.text)) {
+      return variables[node.text];
+    }
+    return evalNode(node.value);
+  };
+  return { value: run(statement), effects };
+};
+var complexToPoly = (value) => {
+  if (!cIsReal(value)) {
+    throw new Error("\u7ED3\u679C\u4E0D\u662F\u5B9E\u6570\uFF0C\u65E0\u6CD5\u4F5C\u4E3A\u65B9\u7A0B\u7CFB\u6570");
+  }
+  return polyConst(fixToRat(value.re));
+};
+var complexOf = (node, context) => {
+  const value = polyOf(node, context);
+  if (polyHasVariable(value)) {
+    throw new Error("\u8FD9\u91CC\u4E0D\u80FD\u542B\u672A\u77E5\u91CF");
+  }
+  return polyEvaluate(value, cZero());
+};
+var evalAssignmentValue = (node, context) => {
+  const value = polyOf(node, context);
+  if (polyHasVariable(value)) {
+    throw new Error("\u8D4B\u503C\u53F3\u503C\u91CC\u4E0D\u80FD\u542B\u672A\u77E5\u91CF");
+  }
+  const evaluated = polyEvaluate(value, cZero());
+  if (!cIsReal(evaluated)) {
+    throw new Error("\u8D4B\u503C\u53F3\u503C\u5FC5\u987B\u662F\u5B9E\u6570");
+  }
+  return fixToRat(evaluated.re);
+};
+var collectVariableNames = (node, out) => {
+  if (!node) {
+    return out;
+  }
+  switch (node.kind) {
+    case "program":
+      node.statements.forEach((item) => collectVariableNames(item, out));
+      break;
+    case "assign":
+      collectVariableNames(node.value, out);
+      break;
+    case "chain":
+      node.segments.forEach((item) => collectVariableNames(item, out));
+      break;
+    case "unary":
+      collectVariableNames(node.operand, out);
+      break;
+    case "percent":
+      collectVariableNames(node.operand, out);
+      break;
+    case "binary":
+      collectVariableNames(node.left, out);
+      collectVariableNames(node.right, out);
+      break;
+    case "name":
+      if (node.isCall) {
+        node.args.forEach((item) => collectVariableNames(item, out));
+      } else if (!isConstantName(node.text.toLowerCase())) {
+        out.add(node.text);
+      }
+      break;
+    default:
+      break;
+  }
+  return out;
+};
+var setEquationResult = (context, chainNode) => {
+  const segments = chainNode.segments;
+  if (segments.length !== 2) {
+    throw new Error("\u6682\u4E0D\u652F\u6301\u591A\u91CD\u7B49\u53F7\u7684\u65B9\u7A0B");
+  }
+  const names = collectVariableNames(chainNode, /* @__PURE__ */ new Set());
+  const unknowns = Array.from(names).filter((name) => !context.variables.has(name));
+  if (unknowns.length === 0) {
+    throw new Error("no unknown");
+  }
+  if (unknowns.length > 1) {
+    throw new Error("\u65B9\u7A0B\u91CC\u51FA\u73B0\u4E86\u591A\u4E2A\u672A\u77E5\u91CF: " + unknowns.join(" \u548C "));
+  }
+  const variable = unknowns[0];
+  context.targetVariable = variable;
+  const left = polyOf(segments[0], context);
+  const right = polyOf(segments[1], context);
+  const solution = solveEquation(left, right, variable, context.policy);
+  if (!solution.ok) {
+    throw new Error(solution.error);
+  }
+  context.equation = solution;
+  return polyZero();
+};
+var polyOf = (node, context) => {
+  switch (node.kind) {
+    case "num":
+      return polyConst(fixToRat(fixFromString(node.text)));
+    case "expr":
+      return polyOf(node.value, context);
+    case "program": {
+      let value = polyZero();
+      node.statements.forEach((statement) => {
+        value = polyOf(statement, context);
+      });
+      return value;
+    }
+    case "assign":
+      context.variables.set(node.name, evalAssignmentValue(node.value, context));
+      return polyZero();
+    case "chain":
+      return setEquationResult(context, node);
+    case "unary": {
+      const operand = polyOf(node.operand, context);
+      return node.op === "-" ? polyNeg(operand) : operand;
+    }
+    case "percent":
+      return polyMul(polyConst(fixToRat(fixFromString("0.01"))), polyOf(node.operand, context));
+    case "binary": {
+      const left = polyOf(node.left, context);
+      const right = polyOf(node.right, context);
+      switch (node.op) {
+        case "+":
+          return polyAdd(left, right);
+        case "-":
+          return polySub(left, right);
+        case "*":
+          return polyMul(left, right);
+        case "/": {
+          if (polyHasVariable(right)) {
+            throw new Error("\u6682\u4E0D\u652F\u6301\u9664\u4EE5\u542B\u672A\u77E5\u91CF\u7684\u5F0F\u5B50");
+          }
+          const divisor = polyEvaluate(right, cZero());
+          if (!cIsReal(divisor) || fixIsZero(divisor.re)) {
+            throw new Error("divide by zero");
+          }
+          const inverse = ratDiv(fixToRat(fixFromString("1")), fixToRat(divisor.re));
+          return polyMul(left, polyConst(inverse));
+        }
+        case "mod": {
+          const leftValue = complexOf(node.left, context);
+          const rightValue = complexOf(node.right, context);
+          if (!cIsReal(leftValue) || !cIsReal(rightValue)) {
+            throw new Error("unsupported modulo");
+          }
+          const divisor = fixToNumber(rightValue.re);
+          if (divisor === 0) {
+            throw new Error("divide by zero");
+          }
+          return polyConst(numberToRat2(fixToNumber(leftValue.re) % divisor));
+        }
+        case "^": {
+          if (polyHasVariable(right)) {
+            throw new Error("\u6307\u6570\u91CC\u4E0D\u80FD\u542B\u672A\u77E5\u91CF");
+          }
+          const exponentValue = polyEvaluate(right, cZero());
+          if (!cIsReal(exponentValue)) {
+            throw new Error("\u65B9\u7A0B\u7684\u5E42\u6307\u6570\u5FC5\u987B\u662F\u5B9E\u6570");
+          }
+          const exponentFix = exponentValue.re;
+          if (exponentFix.scale !== 0 || exponentFix.neg) {
+            throw new Error("\u65B9\u7A0B\u7684\u5E42\u6307\u6570\u5FC5\u987B\u662F\u975E\u8D1F\u6574\u6570");
+          }
+          const times = Number.parseInt(digitsToString(exponentFix.int), 10);
+          if (!Number.isFinite(times) || times > 16) {
+            throw new Error("\u5E42\u6B21\u8FC7\u5927");
+          }
+          return polyPow(left, times);
+        }
+        default:
+          throw new Error("\u4E0D\u652F\u6301\u7684\u8FD0\u7B97\u7B26: " + node.op);
+      }
+    }
+    case "name": {
+      const lower = node.text.toLowerCase();
+      if (!node.isCall) {
+        if (isConstantName(lower)) {
+          return polyConst(fixToRat(CONSTANTS[lower]()));
+        }
+        if (context.variables.has(node.text)) {
+          return polyConst(context.variables.get(node.text));
+        }
+        if (node.text === context.targetVariable) {
+          return polyVariable();
+        }
+        throw new Error("undefined variable: " + node.text);
+      }
+      const args = node.args.map((argument) => complexOf(argument, context));
+      return complexToPoly(context.callFunction(lower, args));
+    }
+    default:
+      throw new Error("\u4E0D\u652F\u6301\u7684\u8282\u70B9: " + node.kind);
+  }
+};
+var numberToRat2 = (value) => fixToRat(numberToFix(value));
+var calculateLegacy = (source, options) => {
+  try {
+    const maxLength = options && Number.isFinite(options.maxLength) ? options.maxLength : 500;
+    if (typeof source !== "string" || source.length > maxLength) {
+      throw new Error("expression too long");
+    }
+    const trimmed = source.trim();
+    if (isNameStart2(trimmed[0]) && Array.from(trimmed).every(isNameChar2) && !isConstantName(trimmed.toLowerCase())) {
+      return { ok: false, error: "incomplete assignment", position: -1 };
+    }
+    const policy = normalizePolicy(options);
+    const statement = parse2(tokenize2(normalizeExpression(source)));
+    const context = {
+      variables: /* @__PURE__ */ new Map(),
+      targetVariable: null,
+      equation: null,
+      policy,
+      callFunction: createMathEnvironment().callFunction
+    };
+    try {
+      const value2 = polyOf(statement, context);
+      if (context.equation) {
+        return {
+          ok: true,
+          text: context.equation.text,
+          assignments: [],
+          equation: context.equation
+        };
+      }
+      if (!polyHasVariable(value2)) {
+        const evaluated = polyEvaluate(value2, cZero());
+        return {
+          ok: true,
+          text: complexToDisplayString(evaluated, policy),
+          value: evaluated,
+          assignments: buildAssignments(context, statement)
+        };
+      }
+    } catch (error) {
+      if (error && error.message === "\u65B9\u7A0B\u65E0\u89E3") {
+        return { ok: false, error: error.message, position: -1 };
+      }
+    }
+    const { value, effects } = evaluate2(statement);
+    const lastByName = /* @__PURE__ */ new Map();
+    effects.forEach((effect) => {
+      lastByName.set(effect.name, effect);
+    });
+    return {
+      ok: true,
+      text: complexToDisplayString(value, policy),
+      value,
+      assignments: Array.from(lastByName.values())
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error && error.message ? error.message : String(error),
+      position: error && typeof error.position === "number" ? error.position : -1
+    };
+  }
+};
+var calculate = (source, options = {}) => {
+  return isExtendedExpression(source, options) ? calculateTyped(source, options) : calculateLegacy(source, options);
+};
+var buildAssignments = (context, statement) => {
+  const statements = statement.statements || [];
+  return statements.filter((item) => item.kind === "assign" && context.variables.has(item.name)).map((item) => ({
+    name: item.name,
+    value: context.variables.get(item.name),
+    start: item.start,
+    end: item.end
+  }));
+};
+var isExprStartChar = (ch) => {
+  if (ch === void 0 || ch === "") {
+    return false;
+  }
+  if (/[0-9_(.+-]/.test(ch) || isNameStart2(ch)) {
+    return true;
+  }
+  if (ch === "\uFF08") {
+    return true;
+  }
+  return FULLWIDTH_MAP[ch] !== void 0 && /[0-9]/.test(FULLWIDTH_MAP[ch]);
+};
+var isComparisonBefore = (ch) => ch === "=" || ch === ">" || ch === "<" || ch === "!" || ch === "\uFF1D";
+var isDigitsOrNameChar = (ch) => /[0-9.]/.test(ch) || isNameChar2(ch) || FULLWIDTH_MAP[ch] !== void 0 && /[0-9.]/.test(FULLWIDTH_MAP[ch]);
+var findCalculation = (text, options) => {
+  if (typeof text !== "string" || text.length === 0) {
+    return null;
+  }
+  if (!isEqualsChar(text[text.length - 1])) {
+    return null;
+  }
+  const before = text[text.length - 2];
+  const beforeIsOperand = before !== void 0 && (/[0-9_)）.．%]/.test(before) || isNameChar2(before) || FULLWIDTH_MAP[before] !== void 0 && /[0-9%]/.test(FULLWIDTH_MAP[before]));
+  if (!beforeIsOperand) {
+    return null;
+  }
+  const prefix = text.slice(0, -1);
+  const starts = [];
+  for (let i2 = 0; i2 < prefix.length; i2++) {
+    const ch = prefix[i2];
+    const prev = i2 > 0 ? prefix[i2 - 1] : "";
+    if (isDigitsOrNameChar(ch)) {
+      const prevIsName = isNameStart2(prev);
+      const chIsDigit = /[0-9]/.test(ch) || FULLWIDTH_MAP[ch] !== void 0 && /[0-9]/.test(FULLWIDTH_MAP[ch]);
+      if (i2 === 0 || !isDigitsOrNameChar(prev) || prevIsName && chIsDigit) {
+        starts.push(i2);
+      }
+      continue;
+    }
+    starts.push(i2);
+  }
+  for (let k2 = 0; k2 < starts.length; k2++) {
+    const start = starts[k2];
+    if (start >= prefix.length) {
+      continue;
+    }
+    if (start > 0) {
+      const prev = prefix[start - 1];
+      if (isComparisonBefore(prev)) {
+        continue;
+      }
+      if ((prefix[start] === "(" || prefix[start] === "\uFF08") && /[0-9_)）.]/.test(prev)) {
+        continue;
+      }
+      const isPrefixContext = prev === "(" || prev === "\uFF08" || prev === ";" || prev === ";";
+      if (!isPrefixContext && "+-*/^%".indexOf(prev) > -1) {
+        continue;
+      }
+      if ((prev === "(" || prev === "\uFF08") && !hasBalancedParens(prefix)) {
+        continue;
+      }
+    }
+    if (!isExprStartChar(prefix[start])) {
+      continue;
+    }
+    if ((prefix[start] === "+" || prefix[start] === "-") && start > 0) {
+      const beforeSign = prefix[start - 1];
+      if ("=;,(\uFF08".indexOf(beforeSign) === -1) {
+        continue;
+      }
+    }
+    const body = prefix.slice(start);
+    if (!hasBalancedParens(body) || hasTopLevelEqualsInsideParens(body)) {
+      continue;
+    }
+    const result = calculate(body, options);
+    if (!result.ok) {
+      continue;
+    }
+    return {
+      start,
+      end: text.length,
+      source: body,
+      text: result.text,
+      assignments: result.assignments
+    };
+  }
+  return null;
+};
+var hasTopLevelEqualsInsideParens = (body) => {
+  let depth = 0;
+  for (let i2 = 0; i2 < body.length; i2++) {
+    const ch = body[i2];
+    if (ch === "(" || ch === "\uFF08") {
+      depth++;
+    } else if (ch === ")" || ch === "\uFF09") {
+      depth = Math.max(0, depth - 1);
+    } else if (depth > 0 && (ch === "=" || ch === "\uFF1D")) {
+      return true;
+    }
+  }
+  return false;
+};
+var hasBalancedParens = (body) => {
+  let depth = 0;
+  for (let i2 = 0; i2 < body.length; i2++) {
+    if (body[i2] === "(" || body[i2] === "\uFF08") {
+      depth++;
+    } else if (body[i2] === ")" || body[i2] === "\uFF09") {
+      depth--;
+      if (depth < 0) {
+        return false;
+      }
+    }
+  }
+  return depth === 0;
+};
+var settleText = (text, options) => {
+  const calculation = findCalculation(text, options);
+  if (!calculation) {
+    return { text, changed: false, calculation: null };
+  }
+  const result = text.slice(0, calculation.start) + calculation.source + "=" + calculation.text + text.slice(calculation.end);
+  return { text: result, changed: result !== text, calculation };
+};
+
+// src/lib/notebook.mjs
+var DEFINITION_PATTERN = /^([\p{L}_][\p{L}\p{N}_]*)\s*=\s*(.*)$/u;
+var UNIT_PATTERN = /^unit\s+([\p{L}_][\p{L}\p{N}_]*)\s*=\s*([0-9]+(?:\.[0-9]+)?)\s+([\p{L}_][\p{L}\p{N}_]*)$/u;
+var CALC_OPTIONS = { maxLength: 1e4 };
+var createEvaluator = (options) => {
+  const unitRegistry = createUnitRegistry();
+  const definitions = [];
+  let previous = null;
+  let group = [];
+  const resultOf = (expression, localOptions = {}) => {
+    const specials = {};
+    if (previous) {
+      specials.prev = previous;
+    }
+    if (/\btotal\b/.test(expression)) {
+      try {
+        specials.total = sumValues(group);
+      } catch (error) {
+        return { ok: false, error: error.message };
+      }
+    }
+    if (/\baverage\b/.test(expression)) {
+      try {
+        specials.average = averageValues(group);
+      } catch (error) {
+        return { ok: false, error: error.message };
+      }
+    }
+    const source = definitions.concat(expression).join(";");
+    const result = calculate(source, Object.assign({}, options, CALC_OPTIONS, localOptions, { unitRegistry, specials }));
+    if (!result.ok) {
+      return { ok: false, error: result.error };
+    }
+    let value = null;
+    if (result.value) {
+      try {
+        value = fromLegacyValue(result.value);
+      } catch {
+        value = null;
+      }
+    }
+    return { ok: true, value: result.text, rawValue: value };
+  };
+  const record = (result, includeInGroup = true) => {
+    if (!result.ok || !result.rawValue) {
+      return;
+    }
+    previous = result.rawValue;
+    if (includeInGroup) {
+      group.push(result.rawValue);
+    }
+  };
+  const parseInline = (line) => {
+    const parts = [];
+    let cursor = 0;
+    const appendText = (end) => {
+      if (end > cursor) {
+        parts.push({ kind: "text", text: line.slice(cursor, end) });
+      }
+    };
+    while (cursor < line.length) {
+      const open = line.indexOf("{{", cursor);
+      const close = line.indexOf("}}", cursor);
+      if (close > -1 && (open === -1 || close < open)) {
+        appendText(close);
+        parts.push({ kind: "error", error: "\u7F3A\u5C11 {{" });
+        cursor = close + 2;
+        continue;
+      }
+      if (open === -1) {
+        appendText(line.length);
+        break;
+      }
+      appendText(open);
+      const end = line.indexOf("}}", open + 2);
+      if (end === -1) {
+        parts.push({ kind: "error", error: "\u7F3A\u5C11 }}" });
+        break;
+      }
+      const expression = line.slice(open + 2, end).trim();
+      const result = expression ? resultOf(expression) : { ok: false, error: "\u516C\u5F0F\u4E3A\u7A7A" };
+      parts.push(Object.assign({ kind: "calculation", source: line.slice(open, end + 2), expression }, result));
+      record(result, !/\b(?:total|average|prev)\b/.test(expression));
+      cursor = end + 2;
+    }
+    return parts;
+  };
+  const looksLikeFormula = (line) => {
+    if (/^[0-9./*^%()]/.test(line) || /^[+-]/.test(line) && !/^[+-]\s/.test(line) || /\d/.test(line) && /[+\-*/^%]/.test(line) || /^[A-Za-z_][A-Za-z0-9_]*\s*\(/.test(line) || /^[A-Za-z_][A-Za-z0-9_]*(?:\s*[+\-*/^%]\s*[A-Za-z_][A-Za-z0-9_]*)+$/.test(line)) {
+      return true;
+    }
+    return definitions.some((definition2) => {
+      const name = definition2.slice(0, definition2.indexOf("=")).trim();
+      return new RegExp("(?<![\\p{L}\\p{N}_])" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}\\p{N}_])", "u").test(line);
+    });
+  };
+  const defineUnit = (match) => {
+    const [, name, amount, baseName] = match;
+    try {
+      const base = resolveUnit(baseName, unitRegistry) || registerBaseUnit(unitRegistry, baseName);
+      registerScaledUnit(unitRegistry, name, amount, base);
+      return {
+        kind: "definition",
+        name: "unit " + name,
+        expression: amount + " " + baseName,
+        result: { ok: true, value: amount + baseName }
+      };
+    } catch (error) {
+      return {
+        kind: "definition",
+        name: "unit " + name,
+        expression: amount + " " + baseName,
+        result: { ok: false, error: error.message }
+      };
+    }
+  };
+  const evaluateLine = (line) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      group = [];
+      return { kind: "blank", source: line };
+    }
+    const unit = trimmed.match(UNIT_PATTERN);
+    if (unit) {
+      return Object.assign(defineUnit(unit), { source: line });
+    }
+    const definition2 = trimmed.match(DEFINITION_PATTERN);
+    if (definition2) {
+      const name = definition2[1];
+      const expression2 = definition2[2].trim();
+      const result2 = expression2 ? resultOf(expression2) : { ok: false, error: "\u7F3A\u5C11\u53D8\u91CF\u503C\u6216\u516C\u5F0F" };
+      if (result2.ok) {
+        definitions.push(name + "=" + expression2);
+        record(result2, false);
+      }
+      return { kind: "definition", source: line, name, expression: expression2, result: result2 };
+    }
+    if (trimmed.includes("{{") || trimmed.includes("}}")) {
+      return { kind: "inline", source: line, parts: parseInline(line) };
+    }
+    const expression = trimmed;
+    const result = resultOf(expression);
+    if (result.ok || looksLikeFormula(trimmed)) {
+      record(result, !/\b(?:total|average|prev)\b/.test(expression));
+      return { kind: "formula", source: line, expression: trimmed, result };
+    }
+    return { kind: "text", source: line };
+  };
+  return evaluateLine;
+};
+var evaluateNotebook = (source, options = {}) => {
+  const lines = String(source || "").replace(/\r\n?/g, "\n").split("\n");
+  const evaluateLine = createEvaluator(options);
+  return lines.map(evaluateLine);
+};
+
+// src/notebook-view.js
+var viewStates = /* @__PURE__ */ new WeakMap();
+var VIEW_ATTRIBUTE = "custom-plugin-calc-view";
+var VIEW_MODES = [
+  { id: "vertical", label: "\u4E0A\u4E0B" },
+  { id: "horizontal", label: "\u5DE6\u53F3" },
+  { id: "live", label: "\u9010\u884C" }
+];
+var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
+  const document2 = options.element.ownerDocument;
+  const blockElement = options.element.closest('[data-type="NodeCustomBlock"]');
+  const stateElement = blockElement || options.element;
+  const state = viewStates.get(stateElement) || { showFormula: true, mode: "horizontal", activeLine: null };
+  const savedMode = blockElement == null ? void 0 : blockElement.getAttribute(VIEW_ATTRIBUTE);
+  if (VIEW_MODES.some((item) => item.id === savedMode)) {
+    state.mode = savedMode;
+  }
+  viewStates.set(stateElement, state);
+  let source = options.content;
+  let saveTimer = null;
+  let disposed = false;
+  let activeLine = Number.isInteger(state.activeLine) ? state.activeLine : null;
+  let root;
+  let status;
+  const updateStatus = (text) => {
+    if (status) {
+      status.textContent = text;
+    }
+  };
+  const appendFormula = (row, expression) => {
+    if (!state.showFormula || !expression) {
+      return;
+    }
+    const formula = document2.createElement("span");
+    formula.className = "plugin-calc-notebook__formula";
+    formula.textContent = "(" + expression + ")";
+    row.append(formula);
+  };
+  const appendResult = (row, expression, result, definition2 = false) => {
+    if (!result.ok) {
+      const error = document2.createElement("span");
+      error.className = "plugin-calc-notebook__error";
+      error.textContent = "\u9519\u8BEF\uFF1A" + result.error;
+      row.append(error);
+      return;
+    }
+    const value = document2.createElement("strong");
+    value.className = "plugin-calc-notebook__result";
+    value.textContent = result.value;
+    row.append(value);
+    if (!definition2 || expression !== result.value) {
+      appendFormula(row, expression);
+    }
+  };
+  const renderLine = (row, line) => {
+    row.className = "plugin-calc-notebook__line plugin-calc-notebook__line--" + line.kind;
+    if (line.kind === "blank" || line.kind === "text") {
+      row.textContent = line.kind === "blank" ? "" : line.source;
+      return;
+    }
+    if (line.kind === "definition") {
+      const name = document2.createElement("span");
+      name.className = "plugin-calc-notebook__name";
+      name.textContent = line.name + " = ";
+      row.append(name);
+      appendResult(row, line.expression, line.result, true);
+      return;
+    }
+    if (line.kind === "formula") {
+      appendResult(row, line.expression, line.result);
+      return;
+    }
+    line.parts.forEach((part) => {
+      if (part.kind === "text") {
+        row.append(document2.createTextNode(part.text));
+      } else if (part.kind === "error") {
+        const error = document2.createElement("span");
+        error.className = "plugin-calc-notebook__error";
+        error.textContent = "\u9519\u8BEF\uFF1A" + part.error;
+        row.append(error);
+      } else {
+        appendResult(row, part.expression, part);
+      }
+    });
+  };
+  const currentEditor = () => root.querySelector("textarea");
+  const focusEditor = (editor, caret) => {
+    if (!editor) {
+      return;
+    }
+    editor.focus();
+    const position = Math.min(caret ?? editor.value.length, editor.value.length);
+    editor.setSelectionRange(position, position);
+  };
+  const scheduleSave = () => {
+    updateStatus("");
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+    }
+    saveTimer = setTimeout(() => {
+      if (disposed) {
+        return;
+      }
+      const editor = currentEditor();
+      const active = document2.activeElement === editor;
+      const selectionStart = editor ? editor.selectionStart : 0;
+      state.activeLine = activeLine;
+      state.saving = true;
+      if (!options.setContent(source)) {
+        state.saving = false;
+        updateStatus("\u5185\u5BB9\u6682\u672A\u4FDD\u5B58\uFF0C\u8BF7\u68C0\u67E5\u53EA\u8BFB\u72B6\u6001\u6216\u8F93\u5165\u5185\u5BB9");
+        return;
+      }
+      if (active) {
+        queueMicrotask(() => {
+          const nextEditor = (blockElement || options.element).querySelector("textarea");
+          focusEditor(nextEditor, selectionStart);
+          state.saving = false;
+        });
+      } else {
+        state.saving = false;
+      }
+    }, 300);
+  };
+  const resize = (editor) => {
+    editor.style.height = "auto";
+    editor.style.height = Math.max(120, editor.scrollHeight) + "px";
+  };
+  const createPreview = () => {
+    const preview = document2.createElement("div");
+    preview.className = "plugin-calc-notebook__preview";
+    evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions)).forEach((line) => {
+      const row = document2.createElement("div");
+      renderLine(row, line);
+      preview.append(row);
+    });
+    return preview;
+  };
+  let refreshingRates = false;
+  const maybeRefreshRates = () => {
+    if (refreshingRates || calcOptions.rates || typeof calcOptions.refreshRates !== "function" || !/(?:\d\s*[A-Z]{3}\b|\bto\s+[A-Z]{3}\b)/.test(source)) {
+      return;
+    }
+    refreshingRates = true;
+    updateStatus("\u6B63\u5728\u66F4\u65B0\u5728\u7EBF\u6C47\u7387\u2026");
+    calcOptions.refreshRates().then(() => {
+      if (disposed || !root.isConnected) {
+        return;
+      }
+      if (state.mode === "live") {
+        renderLive();
+      } else {
+        const preview = root.querySelector(".plugin-calc-notebook__preview");
+        if (preview) {
+          preview.replaceWith(createPreview());
+        }
+      }
+      updateStatus(calcOptions.rates && calcOptions.rates.date ? `\u6C47\u7387\uFF1AFrankfurter \xB7 ${calcOptions.rates.date}` : "\u6C47\u7387\u5DF2\u66F4\u65B0");
+    }).catch((error) => {
+      updateStatus("\u5728\u7EBF\u6C47\u7387\u66F4\u65B0\u5931\u8D25\uFF0C\u53EF\u7528\u624B\u5DE5\u6C47\u7387\uFF1A" + error.message);
+    }).finally(() => {
+      refreshingRates = false;
+    });
+  };
+  const persistMode = () => {
+    if (!blockElement) {
+      return;
+    }
+    const id = blockElement.getAttribute("data-node-id");
+    blockElement.setAttribute(VIEW_ATTRIBUTE, state.mode);
+    fetch("/api/attr/setBlockAttrs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, attrs: { [VIEW_ATTRIBUTE]: state.mode } })
+    }).then((response) => response.json()).then((result) => {
+      if (result.code !== 0) {
+        throw new Error(result.msg || "setBlockAttrs failed");
+      }
+    }).catch((error) => {
+      console.error("[plugin-calc] \u4FDD\u5B58\u89C6\u56FE\u6A21\u5F0F\u5931\u8D25", error);
+      updateStatus("\u89C6\u56FE\u9009\u62E9\u6682\u672A\u4FDD\u5B58");
+    });
+  };
+  const setActiveLine = (index, caret) => {
+    activeLine = index;
+    state.activeLine = index;
+    renderLive();
+    focusEditor(currentEditor(), caret);
+  };
+  const updateLiveSource = (lines, index, caret) => {
+    source = lines.join("\n");
+    activeLine = index;
+    state.activeLine = index;
+    renderLive();
+    focusEditor(currentEditor(), caret);
+    scheduleSave();
+  };
+  const bindLiveEditor = (editor, index) => {
+    editor.addEventListener("input", () => {
+      const chunks = editor.value.split("\n");
+      if (chunks.length > 1) {
+        const lines2 = source.split("\n");
+        lines2.splice(index, 1, ...chunks);
+        updateLiveSource(lines2, index + chunks.length - 1, chunks[chunks.length - 1].length);
+        return;
+      }
+      const lines = source.split("\n");
+      lines[index] = editor.value;
+      source = lines.join("\n");
+      const evaluated = evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions));
+      [...root.querySelectorAll(".plugin-calc-notebook__live > .plugin-calc-notebook__line")].forEach((row, rowIndex) => {
+        if (rowIndex !== activeLine && evaluated[rowIndex]) {
+          row.replaceChildren();
+          renderLine(row, evaluated[rowIndex]);
+        }
+      });
+      editor.style.height = "auto";
+      editor.style.height = Math.max(30, editor.scrollHeight) + "px";
+      scheduleSave();
+    });
+    editor.addEventListener("keydown", (event) => {
+      if (event.isComposing) {
+        return;
+      }
+      const lines = source.split("\n");
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const before = editor.value.slice(0, start);
+        const after = editor.value.slice(end);
+        lines[index] = before;
+        lines.splice(index + 1, 0, after);
+        updateLiveSource(lines, index + 1, 0);
+      } else if (event.key === "ArrowUp" && index > 0) {
+        event.preventDefault();
+        setActiveLine(index - 1, Math.min(start, lines[index - 1].length));
+      } else if (event.key === "ArrowDown" && index < lines.length - 1) {
+        event.preventDefault();
+        setActiveLine(index + 1, Math.min(start, lines[index + 1].length));
+      } else if (event.key === "Backspace" && start === 0 && end === 0 && index > 0) {
+        event.preventDefault();
+        const caret = lines[index - 1].length;
+        lines[index - 1] += lines[index];
+        lines.splice(index, 1);
+        updateLiveSource(lines, index - 1, caret);
+      } else if (event.key === "Delete" && start === editor.value.length && end === start && index < lines.length - 1) {
+        event.preventDefault();
+        const caret = lines[index].length;
+        lines[index] += lines[index + 1];
+        lines.splice(index + 1, 1);
+        updateLiveSource(lines, index, caret);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        activeLine = null;
+        state.activeLine = null;
+        renderLive();
+      }
+    });
+    editor.addEventListener("blur", () => {
+      setTimeout(() => {
+        if (disposed || state.saving || !root.isConnected || root.contains(document2.activeElement)) {
+          return;
+        }
+        activeLine = null;
+        state.activeLine = null;
+        renderLive();
+      }, 0);
+    });
+  };
+  function renderLive() {
+    const live = root.querySelector(".plugin-calc-notebook__live");
+    const evaluated = evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions));
+    if (activeLine !== null) {
+      activeLine = Math.max(0, Math.min(activeLine, evaluated.length - 1));
+      state.activeLine = activeLine;
+    }
+    live.replaceChildren();
+    evaluated.forEach((line, index) => {
+      const row = document2.createElement("div");
+      renderLine(row, line);
+      row.dataset.lineIndex = String(index);
+      if (index === activeLine) {
+        row.classList.add("plugin-calc-notebook__line--editing");
+        row.replaceChildren();
+        const editor2 = document2.createElement("textarea");
+        editor2.className = "plugin-calc-notebook__live-editor";
+        editor2.setAttribute("aria-label", `\u8BA1\u7B97\u7B14\u8BB0\u672C\u7B2C ${index + 1} \u884C\u539F\u6587`);
+        editor2.spellcheck = false;
+        editor2.rows = 1;
+        editor2.value = line.source;
+        row.append(editor2);
+        bindLiveEditor(editor2, index);
+      } else {
+        row.addEventListener("click", () => setActiveLine(index, line.source.length));
+      }
+      live.append(row);
+    });
+    const editor = currentEditor();
+    if (editor) {
+      editor.style.height = "auto";
+      editor.style.height = Math.max(30, editor.scrollHeight) + "px";
+    }
+  }
+  const renderShell = () => {
+    root.replaceChildren();
+    root.className = `plugin-calc-notebook plugin-calc-notebook--${state.mode}`;
+    root.dataset.view = state.mode;
+    const header = document2.createElement("div");
+    header.className = "plugin-calc-notebook__header";
+    const title = document2.createElement("strong");
+    title.textContent = "\u8BA1\u7B97\u7B14\u8BB0\u672C";
+    const controls = document2.createElement("div");
+    controls.className = "plugin-calc-notebook__controls";
+    VIEW_MODES.forEach((item) => {
+      const button = document2.createElement("button");
+      button.type = "button";
+      button.className = "b3-button b3-button--text plugin-calc-notebook__view-button";
+      button.textContent = item.label;
+      button.dataset.view = item.id;
+      button.setAttribute("aria-pressed", String(state.mode === item.id));
+      button.title = { vertical: "\u4E0A\u4E0B\u7F16\u8F91\u4E0E\u9884\u89C8", horizontal: "\u5DE6\u53F3\u7F16\u8F91\u4E0E\u9884\u89C8", live: "\u4EC5\u7F16\u8F91\u5149\u6807\u6240\u5728\u884C" }[item.id];
+      button.addEventListener("click", () => {
+        state.mode = item.id;
+        activeLine = null;
+        state.activeLine = null;
+        persistMode();
+        renderShell();
+      });
+      controls.append(button);
+    });
+    const toggle = document2.createElement("button");
+    toggle.type = "button";
+    toggle.className = "b3-button b3-button--text";
+    toggle.textContent = state.showFormula ? "\u9690\u85CF\u516C\u5F0F" : "\u663E\u793A\u516C\u5F0F";
+    toggle.setAttribute("aria-pressed", String(state.showFormula));
+    toggle.addEventListener("click", () => {
+      state.showFormula = !state.showFormula;
+      renderShell();
+    });
+    controls.append(toggle);
+    header.append(title, controls);
+    root.append(header);
+    status = document2.createElement("div");
+    status.className = "plugin-calc-notebook__status";
+    status.setAttribute("role", "status");
+    if (state.mode === "live") {
+      const live = document2.createElement("div");
+      live.className = "plugin-calc-notebook__live";
+      root.append(live, status);
+      renderLive();
+      maybeRefreshRates();
+      return;
+    }
+    const body = document2.createElement("div");
+    body.className = "plugin-calc-notebook__body";
+    const editor = document2.createElement("textarea");
+    editor.className = "plugin-calc-notebook__editor";
+    editor.setAttribute("aria-label", "\u8BA1\u7B97\u7B14\u8BB0\u672C\u539F\u6587");
+    editor.spellcheck = false;
+    editor.value = source;
+    editor.addEventListener("input", () => {
+      source = editor.value;
+      body.querySelector(".plugin-calc-notebook__preview").replaceWith(createPreview());
+      resize(editor);
+      scheduleSave();
+    });
+    body.append(editor, createPreview());
+    root.append(body, status);
+    resize(editor);
+    maybeRefreshRates();
+  };
+  root = document2.createElement("section");
+  options.element.replaceChildren(root);
+  renderShell();
+  return () => {
+    disposed = true;
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+    }
+  };
+};
+
+// src/index.js
+var STORAGE_NAME = "settings";
+var NOTEBOOK_MARKDOWN = `;;;plugin-calc/notebook
+\u5355\u4EF7=68
+\u6570\u91CF=2
+\u8FD0\u8D39=10
+
+\u5546\u54C1\u91D1\u989D\uFF1A{{\u5355\u4EF7*\u6570\u91CF}}
+\u542B\u8FD0\u8D39\u603B\u4EF7\uFF1A{{\u5355\u4EF7*\u6570\u91CF+\u8FD0\u8D39}}
+;;;`;
+var DEFAULT_SETTINGS = {
+  enabled: true,
+  triggerOnSpace: false,
+  triggerOnCtrlEnter: true,
+  /** 结果精度：exact（精确）/ places（小数位）/ digits（有效数字） */
+  roundMode: "exact",
+  /** places 模式是小数位数；digits 模式是有效数字位数 */
+  roundDigits: 6,
+  manualExchangeRates: "{}",
+  holidays: "",
+  extraWorkdays: "",
+  onlineRates: null
+};
+var EqualsCalcPlugin = class extends import_siyuan.Plugin {
+  constructor(options) {
+    super(options);
+    this.settings = Object.assign({}, DEFAULT_SETTINGS);
+    this.onKeyDownBindThis = this.onKeyDown.bind(this);
+  }
+  async onload() {
+    await this.loadSettings();
+    this.customBlockRenders.notebook = {
+      render: (options) => {
+        const calcOptions = this.getCalculationOptions();
+        calcOptions.refreshRates = async () => {
+          await this.refreshOnlineRates();
+          calcOptions.rates = this.settings.onlineRates;
+        };
+        return renderCalcNotebook(options, this.getPrecisionOptions(), calcOptions);
+      }
+    };
+    this.protyleSlash.push({
+      id: "calc-notebook",
+      filter: ["\u8BA1\u7B97", "\u8BA1\u7B97\u7B14\u8BB0\u672C", "\u7B97\u5F0F", "calc", "calc notebook", "js"],
+      html: '<span class="plugin-calc-slash">\u2211<span>\u8BA1\u7B97\u7B14\u8BB0\u672C</span></span>',
+      callback: (protyle) => {
+        protyle.insert(NOTEBOOK_MARKDOWN, true, true);
+      }
+    });
+    document.addEventListener("keydown", this.onKeyDownBindThis, true);
+  }
+  onunload() {
+    document.removeEventListener("keydown", this.onKeyDownBindThis, true);
+  }
+  /* ---------------------------------------------------------------- *
+   * 设置
+   * ---------------------------------------------------------------- */
+  async loadSettings() {
+    let saved = {};
+    try {
+      saved = await this.loadData(STORAGE_NAME) || {};
+    } catch (error) {
+      console.warn(`[${this.name}] \u8BFB\u53D6\u8BBE\u7F6E\u5931\u8D25\uFF0C\u4F7F\u7528\u9ED8\u8BA4\u503C`, error);
+    }
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+    this.createSetting();
+  }
+  async saveSettings() {
+    await this.saveData(STORAGE_NAME, this.settings);
+  }
+  /**
+   * 构建设置面板。
+   *
+   * 注意：必须给 Setting 传 confirmCallback。思源内部实现是
+   *   const btnsElement = dialog.element.querySelectorAll(".b3-dialog__action .b3-button");
+   *   btnsElement[0].addEventListener(...)
+   * 没有 confirmCallback 时那一行虽然带 fn__none，但按钮仍然会被创建，
+   * 问题在于按钮容器被隐藏时 querySelectorAll 取不到按钮，于是 btnsElement[0] 为 undefined，
+   * 抛出 TypeError 导致对话框根本显示不出来（表现为「点击设置没反应」）。
+   */
+  createSetting() {
+    this.setting = new import_siyuan.Setting({
+      confirmCallback: () => {
+        this.saveSettings();
+        (0, import_siyuan.showMessage)(this.i18n.savedMessage);
+      }
+    });
+    this.renderSettings();
+  }
+  renderSettings() {
+    if (!this.setting) {
+      return;
+    }
+    const addSwitch = (title, description, key) => {
+      const select = this.buildSelect([
+        { value: "true", label: this.i18n.on },
+        { value: "false", label: this.i18n.off }
+      ], this.settings[key] ? "true" : "false", (value) => {
+        this.settings[key] = value === "true";
+        this.saveSettings();
+      });
+      this.setting.addItem({ title, description, actionElement: select });
+    };
+    addSwitch(this.i18n.enabledTitle, this.i18n.enabledTip, "enabled");
+    addSwitch(this.i18n.spaceTitle, this.i18n.spaceTip, "triggerOnSpace");
+    addSwitch(this.i18n.ctrlEnterTitle, this.i18n.ctrlEnterTip, "triggerOnCtrlEnter");
+    const modeSelect = this.buildSelect([
+      { value: "exact", label: this.i18n.roundExact },
+      { value: "places", label: this.i18n.roundPlaces },
+      { value: "digits", label: this.i18n.roundDigits }
+    ], this.settings.roundMode, (value) => {
+      this.settings.roundMode = value;
+      this.saveSettings();
+      digitsInput.disabled = value === "exact";
+      digitsInput.classList.toggle("plugin-calc__disabled", value === "exact");
+    });
+    const digitsInput = document.createElement("input");
+    digitsInput.type = "number";
+    digitsInput.min = "0";
+    digitsInput.max = "15";
+    digitsInput.step = "1";
+    digitsInput.className = "b3-text-field fn__size200";
+    digitsInput.value = String(this.settings.roundDigits);
+    digitsInput.disabled = this.settings.roundMode === "exact";
+    digitsInput.classList.toggle("plugin-calc__disabled", digitsInput.disabled);
+    digitsInput.addEventListener("change", () => {
+      const parsed = Number.parseInt(digitsInput.value, 10);
+      this.settings.roundDigits = Number.isFinite(parsed) ? parsed : 6;
+      digitsInput.value = String(this.settings.roundDigits);
+      this.saveSettings();
+    });
+    const precisionRow = document.createElement("div");
+    precisionRow.className = "fn__flex plugin-calc__row";
+    precisionRow.append(modeSelect, digitsInput);
+    this.setting.addItem({
+      title: this.i18n.precisionTitle,
+      description: this.i18n.precisionTip,
+      actionElement: precisionRow
+    });
+    const manualRates = document.createElement("textarea");
+    manualRates.className = "b3-text-field fn__size200";
+    manualRates.rows = 3;
+    manualRates.value = this.settings.manualExchangeRates;
+    manualRates.placeholder = '{"USD/CNY":7.2,"EUR/USD":1.09}';
+    manualRates.addEventListener("change", () => {
+      try {
+        JSON.parse(manualRates.value || "{}");
+        this.settings.manualExchangeRates = manualRates.value || "{}";
+        this.saveSettings();
+        manualRates.classList.remove("plugin-calc__invalid");
+      } catch {
+        manualRates.classList.add("plugin-calc__invalid");
+      }
+    });
+    this.setting.addItem({
+      title: "\u624B\u5DE5\u6C47\u7387",
+      description: 'JSON \u683C\u5F0F\uFF1B\u4F18\u5148\u4E8E\u5728\u7EBF\u6C47\u7387\uFF0C\u4F8B\u5982 {"USD/CNY":7.2}',
+      actionElement: manualRates
+    });
+    const holidays = document.createElement("textarea");
+    holidays.className = "b3-text-field fn__size200";
+    holidays.rows = 3;
+    holidays.value = this.settings.holidays;
+    holidays.placeholder = "2026-01-01, 2026-10-01";
+    holidays.addEventListener("change", () => {
+      this.settings.holidays = holidays.value;
+      this.saveSettings();
+    });
+    this.setting.addItem({
+      title: "\u8282\u5047\u65E5",
+      description: "\u7528\u9017\u53F7\u6216\u6362\u884C\u5206\u9694\u7684 YYYY-MM-DD \u65E5\u671F\uFF1B\u5DE5\u4F5C\u65E5\u8BA1\u7B97\u4F1A\u6392\u9664\u8FD9\u4E9B\u65E5\u671F",
+      actionElement: holidays
+    });
+    const extraWorkdays = document.createElement("textarea");
+    extraWorkdays.className = "b3-text-field fn__size200";
+    extraWorkdays.rows = 2;
+    extraWorkdays.value = this.settings.extraWorkdays;
+    extraWorkdays.placeholder = "2026-11-29";
+    extraWorkdays.addEventListener("change", () => {
+      this.settings.extraWorkdays = extraWorkdays.value;
+      this.saveSettings();
+    });
+    this.setting.addItem({
+      title: "\u8C03\u4F11\u5DE5\u4F5C\u65E5",
+      description: "\u5468\u672B\u4E2D\u4ECD\u9700\u4E0A\u73ED\u7684\u65E5\u671F\uFF0C\u683C\u5F0F\u540C\u8282\u5047\u65E5\uFF1B\u4F18\u5148\u4E8E\u5468\u672B\u89C4\u5219",
+      actionElement: extraWorkdays
+    });
+    const refreshButton = document.createElement("button");
+    refreshButton.className = "b3-button";
+    refreshButton.textContent = "\u66F4\u65B0\u5728\u7EBF\u6C47\u7387";
+    const rateStatus = document.createElement("span");
+    rateStatus.textContent = this.settings.onlineRates ? `${this.settings.onlineRates.source} \xB7 ${this.settings.onlineRates.date}` : "\u5C1A\u672A\u66F4\u65B0";
+    refreshButton.addEventListener("click", async () => {
+      refreshButton.disabled = true;
+      rateStatus.textContent = "\u6B63\u5728\u66F4\u65B0\u2026";
+      try {
+        const rates = await this.refreshOnlineRates();
+        rateStatus.textContent = `${rates.source} \xB7 ${rates.date}`;
+      } catch (error) {
+        rateStatus.textContent = "\u66F4\u65B0\u5931\u8D25\uFF1A" + error.message;
+      } finally {
+        refreshButton.disabled = false;
+      }
+    });
+    const rateRow = document.createElement("div");
+    rateRow.className = "fn__flex plugin-calc__row";
+    rateRow.append(refreshButton, rateStatus);
+    this.setting.addItem({
+      title: "\u5728\u7EBF\u53C2\u8003\u6C47\u7387",
+      description: "\u6765\u81EA Frankfurter\uFF0C\u975E\u5B9E\u65F6\u4EA4\u6613\u62A5\u4EF7\uFF1B\u8F6C\u6362\u7ED3\u679C\u4EE5\u8BBE\u7F6E\u4E2D\u663E\u793A\u7684\u6C47\u7387\u65E5\u671F\u4E3A\u51C6",
+      actionElement: rateRow
+    });
+    const hint = document.createElement("div");
+    hint.className = "plugin-calc__hint";
+    hint.textContent = this.i18n.usageTip;
+    this.setting.addItem({ title: this.i18n.usageTitle, actionElement: hint });
+  }
+  /** 构造一个下拉框，并在值变化时回调 */
+  buildSelect(options, current, onChange) {
+    const select = document.createElement("select");
+    select.className = "b3-select fn__block";
+    options.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = item.value;
+      option.textContent = item.label;
+      select.append(option);
+    });
+    select.value = current;
+    select.addEventListener("change", () => onChange(select.value));
+    return select;
+  }
+  /** 传给计算层的精度设置 */
+  getPrecisionOptions() {
+    return {
+      roundMode: this.settings.roundMode,
+      roundDigits: this.settings.roundDigits
+    };
+  }
+  getCalculationOptions() {
+    let exchangeRates = {};
+    try {
+      exchangeRates = JSON.parse(this.settings.manualExchangeRates || "{}");
+    } catch {
+      exchangeRates = {};
+    }
+    return {
+      exchangeRates,
+      rates: this.settings.onlineRates,
+      holidays: this.settings.holidays.split(/[\s,，]+/).filter(Boolean),
+      extraWorkdays: this.settings.extraWorkdays.split(/[\s,，]+/).filter(Boolean)
+    };
+  }
+  async refreshOnlineRates() {
+    if (this.ratePromise) {
+      return this.ratePromise;
+    }
+    this.ratePromise = (async () => {
+      const response = await fetch("https://api.frankfurter.dev/v2/rates");
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+      const rows = await response.json();
+      if (!Array.isArray(rows) || rows.length === 0) {
+        throw new Error("\u6C47\u7387\u670D\u52A1\u8FD4\u56DE\u4E86\u7A7A\u6570\u636E");
+      }
+      const values = { EUR: 1 };
+      let date = "";
+      rows.forEach((row) => {
+        if (row && row.quote && Number.isFinite(row.rate)) {
+          values[row.quote] = row.rate;
+          date = row.date > date ? row.date : date;
+        }
+      });
+      this.settings.onlineRates = { base: "EUR", values, date, source: "Frankfurter" };
+      await this.saveSettings();
+      return this.settings.onlineRates;
+    })();
+    try {
+      return await this.ratePromise;
+    } finally {
+      this.ratePromise = null;
+    }
+  }
+  /* ---------------------------------------------------------------- *
+   * 键盘处理
+   * ---------------------------------------------------------------- */
+  onKeyDown(event) {
+    if (!this.settings.enabled) {
+      return;
+    }
+    if (event.isComposing || event.keyCode === 229) {
+      return;
+    }
+    const isEnter = event.key === "Enter";
+    const isSpace = event.key === " " || event.code === "Space";
+    if (!isEnter && !isSpace) {
+      return;
+    }
+    const withCtrl = event.ctrlKey || event.metaKey;
+    if (withCtrl) {
+      if (!isEnter || !this.settings.triggerOnCtrlEnter) {
+        return;
+      }
+    } else if (event.altKey || event.shiftKey) {
+      return;
+    } else if (isSpace) {
+      if (!this.settings.triggerOnSpace) {
+        return;
+      }
+    }
+    const target = event.target;
+    if (!target || typeof target.closest !== "function" || target.closest(".plugin-calc-notebook")) {
+      return;
+    }
+    const editorElement = target.closest(".protyle-wysiwyg");
+    if (!editorElement || editorElement.getAttribute("contenteditable") === "false") {
+      return;
+    }
+    if (!this.applyCalculation(editorElement)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  /**
+   * 尝试结算光标所在的块。
+   * @returns {boolean} 是否真的做了替换
+   */
+  applyCalculation(editorElement) {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) {
+      return false;
+    }
+    const range = selection.getRangeAt(0);
+    if (!range.collapsed || !editorElement.contains(range.startContainer)) {
+      return false;
+    }
+    const blockElement = this.findBlockElement(range.startContainer, editorElement);
+    if (!blockElement || blockElement.getAttribute("contenteditable") === "false") {
+      return false;
+    }
+    const editableElement = blockElement.querySelector('[contenteditable="true"]') || blockElement;
+    if (!editableElement.contains(range.startContainer)) {
+      return false;
+    }
+    const beforeRange = document.createRange();
+    beforeRange.setStart(editableElement, 0);
+    beforeRange.setEnd(range.startContainer, range.startOffset);
+    const textBeforeCaret = beforeRange.toString();
+    if (!textBeforeCaret) {
+      return false;
+    }
+    const settled = settleText(textBeforeCaret, this.getPrecisionOptions());
+    if (!settled.changed) {
+      return false;
+    }
+    const oldHTML = blockElement.outerHTML;
+    if (!this.replaceRangeText(editableElement, range, settled.text)) {
+      return false;
+    }
+    this.commitChange(blockElement, oldHTML);
+    this.restoreCaret(editableElement, settled.text.length);
+    return true;
+  }
+  /** 从光标位置往上找带 data-node-id 的块元素 */
+  findBlockElement(node, editorElement) {
+    let current = node;
+    while (current && current !== editorElement) {
+      if (current.nodeType === Node.ELEMENT_NODE && current.getAttribute("data-node-id")) {
+        return current;
+      }
+      current = current.parentNode;
+    }
+    return null;
+  }
+  /**
+   * 把可编辑元素里 [0, 光标) 这段文本整体换成 newText。
+   * 用 Range 处理，所以光标落在行内样式（加粗等）里面也能正常工作。
+   */
+  replaceRangeText(editableElement, caretRange, newText) {
+    try {
+      const startRange = document.createRange();
+      startRange.setStart(editableElement, 0);
+      startRange.setEnd(caretRange.startContainer, caretRange.startOffset);
+      startRange.deleteContents();
+      startRange.insertNode(document.createTextNode(newText));
+      return true;
+    } catch (error) {
+      console.error(`[${this.name}] \u66FF\u6362\u6587\u672C\u5931\u8D25`, error);
+      return false;
+    }
+  }
+  /** 提交块内容变更：优先用新 API，旧版本回退到 updateTransaction */
+  commitChange(blockElement, oldHTML) {
+    const id = blockElement.getAttribute("data-node-id");
+    const protyle = this.findProtyle(blockElement);
+    const instance = protyle && (typeof protyle.updateTransactionElement === "function" || typeof protyle.updateTransaction === "function") ? protyle : null;
+    if (!instance) {
+      console.warn(`[${this.name}] \u672A\u627E\u5230 Protyle \u5B9E\u4F8B\uFF0C\u672C\u6B21\u4FEE\u6539\u53EF\u80FD\u672A\u6301\u4E45\u5316`);
+      return;
+    }
+    if (typeof instance.updateTransactionElement === "function") {
+      instance.updateTransactionElement(blockElement, oldHTML);
+    } else if (typeof instance.updateTransaction === "function") {
+      instance.updateTransaction(id, blockElement.outerHTML, oldHTML);
+    }
+  }
+  /** 通过块元素反查所属 Protyle 实例 */
+  findProtyle(blockElement) {
+    const editorElement = blockElement.closest(".protyle-wysiwyg");
+    if (!editorElement) {
+      return null;
+    }
+    let current = editorElement.parentElement;
+    while (current) {
+      if (current.classList && current.classList.contains("protyle")) {
+        return this.findProtyleByElement(current);
+      }
+      current = current.parentElement;
+    }
+    return null;
+  }
+  /** 在已打开的编辑器里按 .protyle 元素匹配 Protyle 实例 */
+  findProtyleByElement(protyleElement) {
+    const editors = (0, import_siyuan.getAllEditor)() || [];
+    for (const protyle of editors) {
+      if (protyle && protyle.protyle && protyle.protyle.element === protyleElement) {
+        return protyle;
+      }
+    }
+    return null;
+  }
+  /** 把光标放回结算后的位置 */
+  restoreCaret(editableElement, offset) {
+    const range = document.createRange();
+    let remaining = offset;
+    const walker = document.createTreeWalker(editableElement, NodeFilter.SHOW_TEXT, null);
+    let node = walker.nextNode();
+    let lastNode = null;
+    while (node) {
+      const length = node.textContent.length;
+      if (remaining <= length) {
+        range.setStart(node, Math.max(0, remaining));
+        range.collapse(true);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return;
+      }
+      remaining -= length;
+      lastNode = node;
+      node = walker.nextNode();
+    }
+    if (lastNode) {
+      range.setStart(lastNode, lastNode.textContent.length);
+      range.collapse(true);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }
+};
 /*!
  * 等号计算 (Equals Calc) —— 十进制高精度算术
  *
@@ -52,494 +8962,6 @@
  *
  * 加减乘除都对「高位在前」的数组做右侧对齐运算，逻辑和手算一致。
  */
-
-const DIGIT_CHARS = "0123456789";
-const SCALE_MAX = 40; // 除法最多展开的小数位
-
-/* ------------------------------------------------------------------ *
- * 1. 十进制数字数组
- * ------------------------------------------------------------------ */
-
-/** 数字数组 -> 字符串（高位在前，直接拼接） */
-const digitsToString = (digits) => {
-    if (digits.length === 0) {
-        return "0";
-    }
-    let text = "";
-    for (let i = 0; i < digits.length; i++) {
-        text += DIGIT_CHARS[digits[i]];
-    }
-    return text;
-};
-
-/** 去掉前导 0；全为 0 时返回 [0] */
-const trimLeading = (digits) => {
-    let start = 0;
-    while (start < digits.length - 1 && digits[start] === 0) {
-        start++;
-    }
-    return digits.slice(start);
-};
-
-/** 左边补 0 到指定长度（高位在前，所以补在前面） */
-const padLeft = (digits, length) => {
-    const out = digits.slice();
-    while (out.length < length) {
-        out.unshift(0);
-    }
-    return out;
-};
-
-/** 比较大小 */
-const compareDigits = (a, b) => {
-    const left = trimLeading(a);
-    const right = trimLeading(b);
-    if (left.length !== right.length) {
-        return left.length > right.length ? 1 : -1;
-    }
-    for (let i = 0; i < left.length; i++) {
-        if (left[i] !== right[i]) {
-            return left[i] > right[i] ? 1 : -1;
-        }
-    }
-    return 0;
-};
-
-/** 加法 */
-const addDigits = (a, b) => {
-    const length = Math.max(a.length, b.length);
-    const left = padLeft(a, length);
-    const right = padLeft(b, length);
-    const out = new Array(length).fill(0);
-    let carry = 0;
-    for (let i = length - 1; i >= 0; i--) {
-        const sum = left[i] + right[i] + carry;
-        out[i] = sum % 10;
-        carry = sum >= 10 ? 1 : 0;
-    }
-    if (carry > 0) {
-        out.unshift(carry);
-    }
-    return trimLeading(out);
-};
-
-/** a - b，要求 a >= b */
-const subDigits = (a, b) => {
-    const length = Math.max(a.length, b.length);
-    const left = padLeft(a, length);
-    const right = padLeft(b, length);
-    const out = new Array(length).fill(0);
-    let borrow = 0;
-    for (let i = length - 1; i >= 0; i--) {
-        let diff = left[i] - right[i] - borrow;
-        if (diff < 0) {
-            diff += 10;
-            borrow = 1;
-        } else {
-            borrow = 0;
-        }
-        out[i] = diff;
-    }
-    return trimLeading(out);
-};
-
-/** 乘法 */
-const mulDigits = (a, b) => {
-    const left = trimLeading(a);
-    const right = trimLeading(b);
-    if (digitsToString(left) === "0" || digitsToString(right) === "0") {
-        return [0];
-    }
-    const out = new Array(left.length + right.length).fill(0);
-    for (let i = left.length - 1; i >= 0; i--) {
-        for (let j = right.length - 1; j >= 0; j--) {
-            const position = i + j + 1;
-            out[position] += left[i] * right[j];
-        }
-    }
-    for (let k = out.length - 1; k > 0; k--) {
-        const carry = Math.floor(out[k] / 10);
-        out[k] %= 10;
-        out[k - 1] += carry;
-    }
-    return trimLeading(out);
-};
-
-/** 乘以 10^k：末尾补 k 个 0 */
-const shiftLeft = (digits, k) => {
-    const base = trimLeading(digits);
-    if (digitsToString(base) === "0" || k <= 0) {
-        return base;
-    }
-    return base.concat(new Array(k).fill(0));
-};
-
-/** 10 的 k 次方 */
-const pow10 = (k) => (k <= 0 ? [1] : [1].concat(new Array(k).fill(0)));
-
-/** 取个位 */
-const units = (digits) => (digits.length === 0 ? 0 : digits[digits.length - 1]);
-
-/** 字符串 -> 数字数组（高位在前，直接拆字符） */
-const digitsOfString = (text) => {
-    const out = [];
-    for (let i = 0; i < text.length; i++) {
-        out.push(text.charCodeAt(i) - 48);
-    }
-    return trimLeading(out);
-};
-
-const isZeroDigits = (digits) => digitsToString(trimLeading(digits)) === "0";
-
-/**
- * 除法：返回 {quotient, remainder}。
- * 竖式长除法，从最高位开始逐位试商；每一步余数都小于「除数 × 10」，
- * 所以商只会是 0~9，用高位估商后向下修正一次即可。
- */
-const divMod = (a, b) => {
-    const divisor = trimLeading(b);
-    if (isZeroDigits(divisor)) {
-        throw new Error("divide by zero");
-    }
-    const dividend = trimLeading(a);
-    const quotient = [];
-    let remainder = [0];
-    for (let i = 0; i < dividend.length; i++) {
-        // 「余数 × 10 + 当前位」。
-        // 注意 shiftLeft 已经在末尾补了一个 0（那就是「×10」的个位），
-        // 所以直接把当前位放到数组最后，不能 concat 到末尾之外。
-        const shifted = shiftLeft(remainder, 1);
-        shifted[shifted.length - 1] = dividend[i];
-        remainder = trimLeading(shifted);
-        let digit = 0;
-        const cmp = compareDigits(remainder, divisor);
-        if (cmp > 0) {
-            const remainderText = digitsToString(remainder);
-            const divisorText = digitsToString(divisor);
-            const approx = Math.floor(
-                parseInt(remainderText.slice(0, 16), 10) / parseInt(divisorText.slice(0, 16), 10)
-            );
-            digit = isFinite(approx) && approx > 0 ? approx : 1;
-            if (digit > 9) {
-                digit = 9;
-            }
-            let product = mulDigits(divisor, [digit]);
-            if (compareDigits(product, remainder) > 0) {
-                digit--;
-                product = mulDigits(divisor, [digit]);
-            }
-            remainder = subDigits(padLeft(remainder, product.length), product);
-        } else if (cmp === 0) {
-            digit = 1;
-            remainder = [0];
-        }
-        quotient.push(digit);
-    }
-    return {quotient: trimLeading(quotient), remainder: trimLeading(remainder)};
-};
-
-/* ------------------------------------------------------------------ *
- * 2. 定点数：{int, scale, neg}，值 = ±int / 10^scale
- * ------------------------------------------------------------------ */
-
-const fixZero = () => ({int: [0], scale: 0, neg: false});
-const fixIsZero = (f) => isZeroDigits(f.int);
-const fixNorm = (int, scale, neg) => {
-    const trimmed = trimLeading(int);
-    if (isZeroDigits(trimmed)) {
-        return fixZero();
-    }
-    return {int: trimmed, scale: scale, neg: neg};
-};
-
-/** 取负：0 保持不带负号 */
-const fixNeg = (f) => (fixIsZero(f) ? fixZero() : fixNorm(f.int, f.scale, !f.neg));
-
-/** 定点数 -> 字符串 */
-const fixToString = (f) => {
-    if (fixIsZero(f)) {
-        return "0";
-    }
-    // 把 int 补到至少 scale+1 位，再按 scale 切开
-    const padded = padLeft(f.int, f.scale + 1);
-    const split = padded.length - f.scale;
-    const intPart = digitsToString(padded.slice(0, split));
-    const fracPart = digitsToString(padded.slice(split)).replace(/0+$/, "");
-    return (f.neg ? "-" : "") + (fracPart === "" ? intPart : intPart + "." + fracPart);
-};
-
-/** 定点数 -> JS number（用于 Math.* 入参） */
-const fixToNumber = (f) => {
-    const value = parseFloat(digitsToString(f.int)) / Math.pow(10, f.scale);
-    return f.neg ? -value : value;
-};
-
-/** 定点数 -> 有理数 {n, d, neg} */
-const fixToRat = (f) => ({n: trimLeading(f.int), d: pow10(f.scale), neg: f.neg});
-
-/* ------------------------------------------------------------------ *
- * 3. 有理数：{n, d, neg}，值 = ±n / d
- * ------------------------------------------------------------------ */
-
-const ratZero = () => ({n: [0], d: [1], neg: false});
-const ratIsZero = (r) => isZeroDigits(r.n);
-const ratNorm = (n, d, neg) => {
-    if (isZeroDigits(n)) {
-        return ratZero();
-    }
-    return {n: trimLeading(n), d: trimLeading(d), neg: neg};
-};
-
-const ratAdd = (a, b) => {
-    if (ratIsZero(a)) {
-        return b;
-    }
-    if (ratIsZero(b)) {
-        return a;
-    }
-    const na = mulDigits(a.n, b.d);
-    const nb = mulDigits(b.n, a.d);
-    const d = mulDigits(a.d, b.d);
-    if (a.neg === b.neg) {
-        return ratNorm(addDigits(na, nb), d, a.neg);
-    }
-    const cmp = compareDigits(na, nb);
-    if (cmp === 0) {
-        return ratZero();
-    }
-    return cmp > 0 ? ratNorm(subDigits(na, nb), d, a.neg) : ratNorm(subDigits(nb, na), d, b.neg);
-};
-
-const ratNeg = (r) => (ratIsZero(r) ? ratZero() : {n: r.n, d: r.d, neg: !r.neg});
-const ratSub = (a, b) => ratAdd(a, ratNeg(b));
-const ratMul = (a, b) => {
-    if (ratIsZero(a) || ratIsZero(b)) {
-        return ratZero();
-    }
-    return ratNorm(mulDigits(a.n, b.n), mulDigits(a.d, b.d), a.neg !== b.neg);
-};
-
-/** 精确除法；除不尽时四舍五入到 SCALE_MAX 位小数 */
-const ratDiv = (a, b) => {
-    if (ratIsZero(b)) {
-        throw new Error("divide by zero");
-    }
-    if (ratIsZero(a)) {
-        return ratZero();
-    }
-    const neg = a.neg !== b.neg;
-    const numerator = mulDigits(a.n, b.d);
-    const denominator = mulDigits(a.d, b.n);
-    const direct = divMod(numerator, denominator);
-    if (isZeroDigits(direct.remainder)) {
-        return ratNorm(direct.quotient, [1], neg);
-    }
-    const fracDigits = [];
-    let remainder = direct.remainder;
-    for (let i = 0; i < SCALE_MAX; i++) {
-        const step = divMod(shiftLeft(remainder, 1), denominator);
-        fracDigits.push(units(step.quotient));
-        remainder = step.remainder;
-        if (isZeroDigits(remainder)) {
-            break;
-        }
-    }
-    if (!isZeroDigits(remainder)) {
-        // 还有余数：四舍五入（末位进位）
-        const step = divMod(shiftLeft(remainder, 1), denominator);
-        if (units(step.quotient) >= 5) {
-            let carry = 1;
-            for (let i = fracDigits.length - 1; i >= 0 && carry > 0; i--) {
-                if (fracDigits[i] + carry >= 10) {
-                    fracDigits[i] = 0;
-                } else {
-                    fracDigits[i] += carry;
-                    carry = 0;
-                }
-            }
-            if (carry > 0) {
-                return ratNorm(addDigits(direct.quotient, [1]), [1], neg);
-            }
-        }
-    }
-    // 值 = 整数部分 + 小数部分 / 10^k，写成分数就是 (整数部分*10^k + 小数部分) / 10^k
-    const scale = fracDigits.length;
-    const combined = addDigits(shiftLeft(direct.quotient, scale), fracDigits);
-    return ratNorm(combined, pow10(scale), neg);
-};
-
-/** 有理数 -> 定点数 */
-const ratToFix = (r) => {
-    if (ratIsZero(r)) {
-        return fixZero();
-    }
-    const direct = divMod(r.n, r.d);
-    if (isZeroDigits(direct.remainder)) {
-        return fixNorm(direct.quotient, 0, r.neg);
-    }
-    const fracDigits = [];
-    let remainder = direct.remainder;
-    for (let i = 0; i < SCALE_MAX; i++) {
-        const step = divMod(shiftLeft(remainder, 1), r.d);
-        fracDigits.push(units(step.quotient));
-        remainder = step.remainder;
-        if (isZeroDigits(remainder)) {
-            break;
-        }
-    }
-    if (!isZeroDigits(remainder)) {
-        const step = divMod(shiftLeft(remainder, 1), r.d);
-        if (units(step.quotient) >= 5) {
-            let carry = 1;
-            for (let i = fracDigits.length - 1; i >= 0 && carry > 0; i--) {
-                if (fracDigits[i] + carry >= 10) {
-                    fracDigits[i] = 0;
-                } else {
-                    fracDigits[i] += carry;
-                    carry = 0;
-                }
-            }
-            if (carry > 0) {
-                return fixNorm(addDigits(direct.quotient, [1]), 0, r.neg);
-            }
-        }
-    }
-    const scale = fracDigits.length;
-    const combined = addDigits(shiftLeft(direct.quotient, scale), fracDigits);
-    return fixNorm(combined, scale, r.neg);
-};
-
-/** 字符串 -> 定点数 */
-const fixFromString = (text) => {
-    const negative = text.charAt(0) === "-";
-    const body = negative ? text.slice(1) : text;
-    const dot = body.indexOf(".");
-    const intText = dot === -1 ? body : body.slice(0, dot);
-    const fracText = dot === -1 ? "" : body.slice(dot + 1);
-    const combined = digitsOfString((intText === "" ? "0" : intText) + fracText);
-    return fixNorm(combined, fracText.length, negative);
-};
-
-/** JS number -> 定点数（最多 12 位小数） */
-const numberToFix = (value) => {
-    if (!isFinite(value) || isNaN(value)) {
-        throw new Error("not a finite number");
-    }
-    return fixFromString(value.toFixed(12).replace(/0+$/, "").replace(/\.$/, ""));
-};
-
-/* ------------------------------------------------------------------ *
- * 4. 复数：{re, im}
- * ------------------------------------------------------------------ */
-
-const cZero = () => ({re: fixZero(), im: fixZero()});
-const cFromFix = (f) => ({re: f, im: fixZero()});
-const cFromNumber = (value) => ({re: numberToFix(value), im: fixZero()});
-/** 由有理数构造复数，不经过定点数，避免多项式系数被截断 */
-const cFromRat = (rational) => ({re: ratToFix(rational), im: fixZero()});
-const cIsReal = (c) => fixIsZero(c.im);
-const cNeg = (c) => ({
-    re: ratToFix(ratNeg(fixToRat(c.re))),
-    im: ratToFix(ratNeg(fixToRat(c.im)))
-});
-/** 共轭：多项式求值需要 */
-const cConjugate = (c) => ({re: c.re, im: fixNeg(c.im)});
-const cAdd = (a, b) => ({
-    re: ratToFix(ratAdd(fixToRat(a.re), fixToRat(b.re))),
-    im: ratToFix(ratAdd(fixToRat(a.im), fixToRat(b.im)))
-});
-const cSub = (a, b) => ({
-    re: ratToFix(ratSub(fixToRat(a.re), fixToRat(b.re))),
-    im: ratToFix(ratSub(fixToRat(a.im), fixToRat(b.im)))
-});
-
-/** (a+bi)(c+di) = (ac-bd) + (ad+bc)i */
-const cMul = (a, b) => ({
-    re: ratToFix(ratSub(ratMul(fixToRat(a.re), fixToRat(b.re)), ratMul(fixToRat(a.im), fixToRat(b.im)))),
-    im: ratToFix(ratAdd(ratMul(fixToRat(a.re), fixToRat(b.im)), ratMul(fixToRat(a.im), fixToRat(b.re))))
-});
-
-/** (a+bi)/(c+di) = ((ac+bd) + (bc-ad)i) / (c²+d²) */
-const cDiv = (a, b) => {
-    const denominator = ratAdd(ratMul(fixToRat(b.re), fixToRat(b.re)), ratMul(fixToRat(b.im), fixToRat(b.im)));
-    if (ratIsZero(denominator)) {
-        throw new Error("divide by zero");
-    }
-    const ac = ratMul(fixToRat(a.re), fixToRat(b.re));
-    const bd = ratMul(fixToRat(a.im), fixToRat(b.im));
-    const bc = ratMul(fixToRat(a.im), fixToRat(b.re));
-    const ad = ratMul(fixToRat(a.re), fixToRat(b.im));
-    return {
-        re: ratToFix(ratDiv(ratAdd(ac, bd), denominator)),
-        im: ratToFix(ratDiv(ratSub(bc, ad), denominator))
-    };
-};
-
-/** 复数 -> 字符串；虚部为 0 时只显示实部 */
-const complexToString = (c) => {
-    if (fixIsZero(c.im)) {
-        return fixToString(c.re);
-    }
-    const imAbs = {int: c.im.int, scale: c.im.scale, neg: false};
-    const imText = fixToString(imAbs) === "1" ? "i" : fixToString(imAbs) + "i";
-    if (fixIsZero(c.re)) {
-        return (c.im.neg ? "-" : "") + imText;
-    }
-    return fixToString(c.re) + (c.im.neg ? "-" : "+") + imText;
-};
-
-
-
-    module.exports = {
-    "DIGIT_CHARS": DIGIT_CHARS,
-    "SCALE_MAX": SCALE_MAX,
-    "digitsToString": digitsToString,
-    "trimLeading": trimLeading,
-    "padLeft": padLeft,
-    "compareDigits": compareDigits,
-    "addDigits": addDigits,
-    "subDigits": subDigits,
-    "mulDigits": mulDigits,
-    "shiftLeft": shiftLeft,
-    "pow10": pow10,
-    "units": units,
-    "digitsOfString": digitsOfString,
-    "isZeroDigits": isZeroDigits,
-    "divMod": divMod,
-    "fixZero": fixZero,
-    "fixIsZero": fixIsZero,
-    "fixNeg": fixNeg,
-    "fixNorm": fixNorm,
-    "fixToString": fixToString,
-    "fixToNumber": fixToNumber,
-    "fixToRat": fixToRat,
-    "fixFromString": fixFromString,
-    "numberToFix": numberToFix,
-    "ratZero": ratZero,
-    "ratIsZero": ratIsZero,
-    "ratNorm": ratNorm,
-    "ratAdd": ratAdd,
-    "ratSub": ratSub,
-    "ratMul": ratMul,
-    "ratDiv": ratDiv,
-    "ratToFix": ratToFix,
-    "cZero": cZero,
-    "cFromFix": cFromFix,
-    "cFromNumber": cFromNumber,
-    "cFromRat": cFromRat,
-    "cIsReal": cIsReal,
-    "cNeg": cNeg,
-    "cConjugate": cConjugate,
-    "cAdd": cAdd,
-    "cSub": cSub,
-    "cMul": cMul,
-    "cDiv": cDiv,
-    "complexToString": complexToString
-    };
-    };
-
-    /* ---------------- src/lib/precision.mjs ---------------- */
-    __registry["lib/precision"] = function (module, exports, __require) {
 /*!
  * 等号计算 (Equals Calc) —— 结果显示精度
  *
@@ -557,147 +8979,6 @@ const complexToString = (c) => {
  *
  * 约定：所有数字数组都是「高位在前」，与 number.mjs 保持一致。
  */
-
-const {addDigits, compareDigits, divMod, isZeroDigits, ratDiv, ratMul, ratNorm, shiftLeft, trimLeading} = __require("lib/number");
-
-const ROUND_MODES = ["exact", "places", "digits"];
-
-/**
- * 规范化精度设置。
- * @param {{roundMode?: string, roundDigits?: number|string}} options
- */
-const normalizePolicy = (options) => {
-    const raw = options || {};
-    const mode = ROUND_MODES.includes(raw.roundMode) ? raw.roundMode : "exact";
-    let digits = Number.parseInt(raw.roundDigits, 10);
-    if (!Number.isFinite(digits)) {
-        digits = 6;
-    }
-    // 小数位 0~15；有效数字 1~15（再多也会被内部位数限制住）
-    digits = Math.max(mode === "digits" ? 1 : 0, Math.min(15, digits));
-    return {mode: mode, digits: digits};
-};
-
-/** 是否需要对结果做舍入 */
-const policyIsExact = (policy) => !policy || policy.mode === "exact";
-
-/** 数字数组当成整数（高位在前） */
-const ratFromArray = (digits) => ratNorm(trimLeading(digits), [1], false);
-
-/** 10^k 对应的有理数，k 可以为负 */
-const ratPow10 = (k) => (k >= 0 ?
-    ratFromArray([1].concat(new Array(k).fill(0))) :
-    ratNorm([1], [1].concat(new Array(-k).fill(0)), false));
-
-/**
- * 取有理数的十进制量级 exponent，使 10^exponent <= |value| < 10^(exponent+1)。
- * 例如 1234.5678 -> 3；0.001234 -> -3。
- */
-const magnitude = (rational) => {
-    const n = trimLeading(rational.n);
-    const d = trimLeading(rational.d);
-    if (isZeroDigits(n)) {
-        return 0;
-    }
-    let exponent = n.length - d.length;
-    if (exponent >= 0) {
-        if (compareDigits(n, shiftLeft(d, exponent)) < 0) {
-            exponent -= 1;
-        }
-    } else if (compareDigits(shiftLeft(n, -exponent), d) < 0) {
-        exponent -= 1;
-    }
-    return exponent;
-};
-
-/**
- * 量化：把 value 舍入到 quantum 的整数倍（quantum 必须是 10 的整数次幂）。
- * @param {{n:number[], d:number[], neg:boolean}} value 非负
- * @param {number} k 10 的指数
- */
-const quantize = (value, k) => {
-    // value / 10^k  ->  n / d
-    let scaledN = trimLeading(value.n);
-    let scaledD = trimLeading(value.d);
-    if (k >= 0) {
-        scaledD = shiftLeft(scaledD, k);
-    } else {
-        scaledN = shiftLeft(scaledN, -k);
-    }
-    const direct = divMod(scaledN, scaledD);
-    let quotient = direct.quotient;
-    if (!isZeroDigits(direct.remainder)) {
-        // 余数过半则进位：余数 × 2 >= 除数  <=>  余数 >= 除数 / 2
-        // （shiftLeft 是乘 10 而不是乘 2，所以和「除数的一半」比较）
-        const half = divMod(scaledD, [2]).quotient;
-        if (compareDigits(direct.remainder, half) >= 0) {
-            quotient = addDigits(quotient, [1]);
-        }
-    }
-    return ratMul(ratFromArray(quotient), ratPow10(k));
-};
-
-/**
- * 按精度设置舍入。
- * @param {{n:number[], d:number[], neg:boolean}} rational
- * @param {{mode:string, digits:number}} policy
- * @returns {{n:number[], d:number[], neg:boolean}}
- */
-const roundRational = (rational, policy) => {
-    const value = {n: trimLeading(rational.n), d: trimLeading(rational.d), neg: rational.neg};
-    if (policyIsExact(policy) || isZeroDigits(value.n)) {
-        return value;
-    }
-    if (policy.mode === "places") {
-        const rounded = quantize(value, -policy.digits);
-        return {n: rounded.n, d: rounded.d, neg: value.neg};
-    }
-
-    // 有效数字：量化到 10^(exponent - digits + 1)
-    //   1234.5678 取 2 位 -> exponent 3，量化到 100 -> 1200
-    //   9.99 取 3 位      -> exponent 0，量化到 0.01 -> 9.99
-    const exponent = magnitude(value);
-    let step = exponent - policy.digits + 1;
-    let rounded = quantize(value, step);
-    // 量化把量级抬高时（9.99 取 3 位，量化到 0.01 本身不成问题，
-    // 但例如 9.96 取 2 位会得到 10），用抬高后的量级再量化一次，
-    // 让量子与最终量级匹配。
-    while (magnitude(rounded) > exponent) {
-        const nextStep = magnitude(rounded) - policy.digits + 1;
-        if (nextStep <= step) {
-            break;
-        }
-        step = nextStep;
-        rounded = quantize(value, step);
-    }
-    return {n: rounded.n, d: rounded.d, neg: value.neg};
-};
-
-/** 便捷入口：接收 {n, d, neg}，返回舍入后的 {n, d, neg} */
-const applyPrecision = (rational, policy) => {
-    const rounded = roundRational(rational, policy);
-    return ratNorm(rounded.n, rounded.d, rounded.neg);
-};
-
-const __test__ = {
-    quantize: quantize,
-    ratPow10: ratPow10,
-    ratDiv: ratDiv
-};
-
-    module.exports = {
-    "ROUND_MODES": ROUND_MODES,
-    "normalizePolicy": normalizePolicy,
-    "policyIsExact": policyIsExact,
-    "magnitude": magnitude,
-    "roundRational": roundRational,
-    "applyPrecision": applyPrecision,
-    "__test__": __test__
-    };
-    };
-
-    /* ---------------- src/lib/polynomial.mjs ---------------- */
-    __registry["lib/polynomial"] = function (module, exports, __require) {
 /*!
  * 等号计算 (Equals Calc) —— 多项式与方程求解
  *
@@ -714,398 +8995,6 @@ const __test__ = {
  *   二次     -> 求根公式；判别式为负时给出共轭复根
  *   三次以上 -> 牛顿迭代求一个实根
  */
-
-const {cAdd, cDiv, cFromFix, cIsReal, cMul, cZero, fixIsZero, fixToNumber, fixToString, numberToFix, ratAdd, ratDiv, ratIsZero, ratMul, ratNorm, ratSub, ratToFix, trimLeading} = __require("lib/number");
-const {applyPrecision, normalizePolicy, policyIsExact} = __require("lib/precision");
-
-/** 牛顿迭代上限，防止病态方程卡住 */
-const NEWTON_MAX_ITERATIONS = 120;
-/** 数值解在没有精度设置时的显示位数 */
-const NUMERIC_DEFAULT_DIGITS = 10;
-
-const ratZeroValue = () => ({n: [0], d: [1], neg: false});
-const ratOneValue = () => ({n: [1], d: [1], neg: false});
-
-/** 小整数 -> 有理数（导出给测试与调用方使用） */
-const ratFromSmallInt = (value) => {
-    const text = String(Math.abs(Math.trunc(value)));
-    const digits = [];
-    for (let i = 0; i < text.length; i++) {
-        digits.push(text.charCodeAt(i) - 48);
-    }
-    return {n: trimLeading(digits), d: [1], neg: value < 0};
-};
-
-/* ------------------------------------------------------------------ *
- * 1. 多项式基本运算
- * ------------------------------------------------------------------ */
-
-const polyZero = () => ({coeffs: new Map()});
-
-const polyConst = (rational) => (ratIsZero(rational) ?
-    polyZero() : {coeffs: new Map([[0, rational]])});
-
-const polyVariable = () => ({coeffs: new Map([[1, ratOneValue()]])});
-
-const polyIsZero = (poly) => poly.coeffs.size === 0;
-
-/** 是否含未知量 */
-const polyHasVariable = (poly) => {
-    let found = false;
-    poly.coeffs.forEach((coefficient, degree) => {
-        if (degree > 0 && !ratIsZero(coefficient)) {
-            found = true;
-        }
-    });
-    return found;
-};
-
-/** 最高次数；零多项式返回 -1 */
-const polyDegree = (poly) => {
-    let degree = -1;
-    poly.coeffs.forEach((coefficient, power) => {
-        if (!ratIsZero(coefficient) && power > degree) {
-            degree = power;
-        }
-    });
-    return degree;
-};
-
-/** 按次数取系数（缺项为 0） */
-const polyCoefficient = (poly, power) => poly.coeffs.get(power) || ratZeroValue();
-
-const polyAdd = (a, b) => {
-    const coeffs = new Map(a.coeffs);
-    b.coeffs.forEach((coefficient, power) => {
-        const existing = coeffs.get(power);
-        const sum = existing ? ratAdd(existing, coefficient) : coefficient;
-        if (ratIsZero(sum)) {
-            coeffs.delete(power);
-        } else {
-            coeffs.set(power, sum);
-        }
-    });
-    return {coeffs: coeffs};
-};
-
-const polyNeg = (poly) => {
-    const coeffs = new Map();
-    poly.coeffs.forEach((coefficient, power) => {
-        coeffs.set(power, {n: coefficient.n, d: coefficient.d, neg: !coefficient.neg});
-    });
-    return {coeffs: coeffs};
-};
-
-const polySub = (a, b) => polyAdd(a, polyNeg(b));
-
-const polyMul = (a, b) => {
-    const coeffs = new Map();
-    a.coeffs.forEach((left, leftPower) => {
-        b.coeffs.forEach((right, rightPower) => {
-            const power = leftPower + rightPower;
-            const product = ratMul(left, right);
-            const existing = coeffs.get(power);
-            const sum = existing ? ratAdd(existing, product) : product;
-            if (ratIsZero(sum)) {
-                coeffs.delete(power);
-            } else {
-                coeffs.set(power, sum);
-            }
-        });
-    });
-    return {coeffs: coeffs};
-};
-
-/** 非负整数次幂 */
-const polyPow = (poly, exponent) => {
-    let result = polyConst(ratOneValue());
-    for (let i = 0; i < exponent; i++) {
-        result = polyMul(result, poly);
-    }
-    return result;
-};
-
-/** 求导 */
-const polyDerivative = (poly) => {
-    const coeffs = new Map();
-    poly.coeffs.forEach((coefficient, power) => {
-        if (power === 0) {
-            return;
-        }
-        const scaled = ratMul(coefficient, ratFromSmallInt(power));
-        if (!ratIsZero(scaled)) {
-            coeffs.set(power - 1, scaled);
-        }
-    });
-    return {coeffs: coeffs};
-};
-
-/** 代入求值（支持复数） */
-const polyEvaluate = (poly, value) => {
-    let total = cZero();
-    poly.coeffs.forEach((coefficient, power) => {
-        let term = cFromFix(ratToFix(coefficient));
-        for (let i = 0; i < power; i++) {
-            term = cMul(term, value);
-        }
-        total = cAdd(total, term);
-    });
-    return total;
-};
-
-/* ------------------------------------------------------------------ *
- * 2. 定点数 / 有理数互转
- * ------------------------------------------------------------------ */
-
-/** 定点数 -> 有理数（精确） */
-const fixToRatExact = (fix) => {
-    const digits = trimLeading(fix.int);
-    const d = [1].concat(new Array(fix.scale).fill(0));
-    return ratNorm(digits, d, fix.neg);
-};
-
-/** 双精度数字 -> 有理数（保留 12 位小数） */
-const numberToRat = (value) => fixToRatExact(numberToFix(value));
-
-/** 按精度策略把有理数转成显示字符串 */
-const ratToDisplayString = (rational, policy) =>
-    fixToString(ratToFix(applyPrecision(rational, policy)));
-
-/** 定点数按精度策略格式化（内部先转成有理数） */
-const fixToDisplayString = (fix, policy) =>
-    ratToDisplayString(fixToRatExact(fix), policy);
-
-/** 按精度策略格式化复数 */
-const complexToDisplayString = (value, policy) => {
-    const realText = fixToDisplayString(value.re, policy);
-    if (fixIsZero(value.im)) {
-        return realText;
-    }
-    const imagAbs = fixToDisplayString({int: value.im.int, scale: value.im.scale, neg: false}, policy);
-    const imagText = imagAbs === "1" ? "i" : imagAbs + "i";
-    // 实部舍入后可能变成 0（例如 0.0001 取 0 位小数），这时只显示虚部
-    if (realText === "0") {
-        return (value.im.neg ? "-" : "") + imagText;
-    }
-    return realText + (value.im.neg ? "-" : "+") + imagText;
-};
-
-/* ------------------------------------------------------------------ *
- * 3. 方程求解
- * ------------------------------------------------------------------ */
-
-/**
- * 解一元方程 left = right。
- *
- * @param {{coeffs: Map}} left 等号左边
- * @param {{coeffs: Map}} right 等号右边
- * @param {string} variableName 未知量名字，用于提示
- * @param {{mode:string, digits:number}} policy 显示精度
- * @returns {{ok:true, text:string, solutions:string[], note:string, variable:string}
- *          |{ok:false, error:string}}
- */
-const solveEquation = (left, right, variableName, policy) => {
-    const difference = polySub(left, right);
-    const degree = polyDegree(difference);
-    const variable = variableName || "x";
-
-    if (degree < 0) {
-        // 两边恒等
-        return {ok: true, text: "任意值", solutions: [], note: "identity", variable: variable};
-    }
-    if (degree === 0) {
-        return {ok: false, error: "方程无解"};
-    }
-
-    if (degree === 1) {
-        // ax + b = 0  ->  x = -b / a
-        const a = polyCoefficient(difference, 1);
-        const b = polyCoefficient(difference, 0);
-        const solution = ratDiv({n: b.n, d: b.d, neg: !b.neg}, a);
-        const text = ratToDisplayString(solution, policy);
-        return {ok: true, text: text, solutions: [text], note: "exact", variable: variable};
-    }
-
-    if (degree === 2) {
-        // ax^2 + bx + c = 0
-        const a = polyCoefficient(difference, 2);
-        const b = polyCoefficient(difference, 1);
-        const c = polyCoefficient(difference, 0);
-        const discriminant = ratSub(ratMul(b, b), ratMul(ratMul(ratFromSmallInt(4), a), c));
-        const twoA = ratMul(ratFromSmallInt(2), a);
-        const negativeB = {n: b.n, d: b.d, neg: !b.neg};
-
-        if (ratIsZero(discriminant)) {
-            const text = ratToDisplayString(ratDiv(negativeB, twoA), policy);
-            return {ok: true, text: text, solutions: [text], note: "exact", variable: variable};
-        }
-        if (discriminant.neg) {
-            // 共轭复根
-            const realPart = ratDiv(negativeB, twoA);
-            const absDiscriminant = {n: discriminant.n, d: discriminant.d, neg: false};
-            const imagPart = ratDiv(numberToRat(Math.sqrt(fixToNumber(ratToFix(absDiscriminant)))), twoA);
-            const realText = ratToDisplayString(realPart, policy);
-            const imagText = ratToDisplayString(imagPart, policy);
-            if (realText === "0") {
-                // 实部为 0 时不要写成 "0+2i"，直接给出 ±2i
-                const plus = imagText + "i";
-                return {ok: true, text: plus + " 或 -" + plus, solutions: [plus, "-" + plus],
-                    note: "complex", variable: variable};
-            }
-            const plus = realText + "+" + imagText + "i";
-            const minus = realText + "-" + imagText + "i";
-            return {ok: true, text: plus + " 或 " + minus, solutions: [plus, minus],
-                note: "complex", variable: variable};
-        }
-        const root = numberToRat(Math.sqrt(fixToNumber(ratToFix(discriminant))));
-        const first = ratDiv(ratSub(negativeB, root), twoA);
-        const second = ratDiv(ratAdd(negativeB, root), twoA);
-        const firstText = ratToDisplayString(first, policy);
-        const secondText = ratToDisplayString(second, policy);
-        const solutions = firstText === secondText ? [firstText] : [firstText, secondText];
-        return {ok: true, text: solutions.join(" 或 "), solutions: solutions,
-            note: "exact", variable: variable};
-    }
-
-    // 三次及以上：牛顿迭代求一个实根
-    const realRoot = newtonRealRoot(difference);
-    if (realRoot === null) {
-        return {ok: false, error: "无法求解该方程"};
-    }
-    // 数值解默认只显示 10 位有效数字，避免一长串无意义的尾数
-    const effective = policyIsExact(policy) ?
-        normalizePolicy({roundMode: "digits", roundDigits: NUMERIC_DEFAULT_DIGITS}) : policy;
-    const text = ratToDisplayString(realRoot, effective);
-    return {ok: true, text: text, solutions: [text], note: "numeric", variable: variable};
-};
-
-/**
- * 牛顿迭代求一个实根。
- *
- * 这里刻意用双精度做迭代：牛顿法本就是数值方法，若每步都用精确有理数，
- * 分母会指数级膨胀（实测三次方程要 80 秒以上）。迭代收敛后再把结果
- * 转回有理数，并对接近整数 / 简单有理数的解做「吸附」，
- * 这样 x^4=16 会显示 2 而不是 2.0000000000001。
- */
-const newtonRealRoot = (poly) => {
-    const coefficients = polyToDoubleCoefficients(poly);
-    const degree = coefficients.length - 1;
-    if (degree < 1) {
-        return null;
-    }
-    const evaluate = (x) => {
-        let total = 0;
-        for (let i = coefficients.length - 1; i >= 0; i--) {
-            total = total * x + coefficients[i];
-        }
-        return total;
-    };
-    const evaluateDerivative = (x) => {
-        let total = 0;
-        for (let i = coefficients.length - 1; i >= 1; i--) {
-            total = total * x + i * coefficients[i];
-        }
-        return total;
-    };
-
-    const starts = [0, 1, -1, 2, -2, 7, -7, 0.5, -0.5];
-    for (const start of starts) {
-        let x = start;
-        for (let i = 0; i < NEWTON_MAX_ITERATIONS; i++) {
-            const value = evaluate(x);
-            if (!isFinite(value)) {
-                break;
-            }
-            if (Math.abs(value) < 1e-14) {
-                return doubleToCleanRat(x);
-            }
-            const slope = evaluateDerivative(x);
-            if (!isFinite(slope) || Math.abs(slope) < 1e-300) {
-                break;
-            }
-            const delta = value / slope;
-            x -= delta;
-            if (!isFinite(x)) {
-                break;
-            }
-            if (Math.abs(delta) < 1e-15 * Math.max(1, Math.abs(x))) {
-                break;
-            }
-        }
-        if (isFinite(x) && Math.abs(evaluate(x)) < 1e-9) {
-            return doubleToCleanRat(x);
-        }
-    }
-    return null;
-};
-
-/** 把多项式系数转成双精度数组（下标即次数） */
-const polyToDoubleCoefficients = (poly) => {
-    const degree = polyDegree(poly);
-    if (degree < 0) {
-        return [0];
-    }
-    const out = new Array(degree + 1).fill(0);
-    poly.coeffs.forEach((coefficient, power) => {
-        out[power] = fixToNumber(ratToFix(coefficient));
-    });
-    return out;
-};
-
-/**
- * 双精度结果 -> 有理数。
- * 优先吸附到附近的三位以内小数（含整数），否则保留 12 位小数。
- */
-const doubleToCleanRat = (value) => {
-    if (!isFinite(value)) {
-        return null;
-    }
-    const rounded = Math.round(value);
-    if (rounded !== 0 && Math.abs(value - rounded) <= Math.abs(value) * 1e-12) {
-        return ratFromSmallInt(rounded);
-    }
-    if (rounded === 0 && Math.abs(value) < 1e-12) {
-        return ratZeroValue();
-    }
-    return numberToRat(value);
-};
-
-const __test__ = {
-    fixToRatExact: fixToRatExact,
-    numberToRat: numberToRat,
-    ratFromSmallInt: ratFromSmallInt,
-    ratToDisplayString: ratToDisplayString,
-    polyEvaluate: polyEvaluate,
-    polyDerivative: polyDerivative
-};
-
-    module.exports = {
-    "ratFromSmallInt": ratFromSmallInt,
-    "polyZero": polyZero,
-    "polyConst": polyConst,
-    "polyVariable": polyVariable,
-    "polyIsZero": polyIsZero,
-    "polyHasVariable": polyHasVariable,
-    "polyDegree": polyDegree,
-    "polyCoefficient": polyCoefficient,
-    "polyAdd": polyAdd,
-    "polyNeg": polyNeg,
-    "polySub": polySub,
-    "polyMul": polyMul,
-    "polyPow": polyPow,
-    "polyDerivative": polyDerivative,
-    "polyEvaluate": polyEvaluate,
-    "fixToRatExact": fixToRatExact,
-    "fixToDisplayString": fixToDisplayString,
-    "complexToDisplayString": complexToDisplayString,
-    "solveEquation": solveEquation,
-    "newtonRealRoot": newtonRealRoot,
-    "__test__": __test__
-    };
-    };
-
-    /* ---------------- src/lib/expr.mjs ---------------- */
-    __registry["lib/expr"] = function (module, exports, __require) {
 /*!
  * 等号计算 (Equals Calc) —— 表达式解析与求值
  *
@@ -1121,7 +9010,7 @@ const __test__ = {
  *   statement := name "=" expr | expr
  *   expr    := term ("=" term)*          链式结算 / 方程
  *   term    := factor (("+"|"-") factor)*
- *   factor  := unary (("*"|"/") unary | 隐含乘法)*
+ *   factor  := unary (("*"|"/") unary)*
  *   unary   := ("+"|"-") unary | power
  *   power   := postfix ("^" unary)?
  *   postfix := base ("%")*
@@ -1130,1647 +9019,6 @@ const __test__ = {
  * 括号里的优先级遵循常规算式习惯（先乘除后加减）。
  * 表达式里出现未知量且带等号时，交给 polynomial.mjs 当作一元方程求解。
  */
-
-const {cAdd, cDiv, cFromFix, cFromNumber, cIsReal, cMul, cNeg, cSub, cZero, complexToString, digitsToString, fixFromString, fixIsZero, fixToNumber, fixToRat, numberToFix, ratDiv, ratToFix} = __require("lib/number");
-const {normalizePolicy} = __require("lib/precision");
-const {complexToDisplayString, polyAdd, polyConst, polyEvaluate, polyHasVariable, polyMul, polyNeg, polyPow, polySub, polyVariable, polyZero, solveEquation} = __require("lib/polynomial");
-
-/* ------------------------------------------------------------------ *
- * 1. 字符规范化：全角符号、× ÷ 、π 等
- * ------------------------------------------------------------------ */
-
-const FULLWIDTH_MAP = {
-    "０": "0", "１": "1", "２": "2", "３": "3", "４": "4",
-    "５": "5", "６": "6", "７": "7", "８": "8", "９": "9",
-    "＋": "+", "－": "-", "＊": "*", "／": "/", "（": "(", "）": ")",
-    "％": "%", "＾": "^", "．": ".", "，": ",", "；": ";", "＿": "_",
-    "＝": "=", "　": " "
-};
-
-const OPERATOR_ALIAS = {
-    "×": "*", "✕": "*", "✖": "*", "·": "*", "⋅": "*", "∙": "*", "∗": "*",
-    "÷": "/", "∕": "/", "⁄": "/",
-    "−": "-", "–": "-", "—": "-", "ー": "-",
-    "π": "pi", "Π": "pi", "𝜋": "pi", "τ": "tau"
-};
-
-/**
- * 这个字符可以出现在待计算表达式里吗。
- * 等号也算在内，否则行内赋值 "a=3;a*2=" 往前收集时会在第一个等号处断开。
- */
-const isNameStart = (ch) => /^[\p{L}_]$/u.test(ch || "");
-const isNameChar = (ch) => /^[\p{L}\p{N}_]$/u.test(ch || "");
-
-const isExprChar = (ch) => {
-    if (isNameChar(ch)) {
-        return true;
-    }
-    if ("+-*/%^().,;_ \t\u00a0=".indexOf(ch) > -1) {
-        return true;
-    }
-    return FULLWIDTH_MAP[ch] !== undefined || OPERATOR_ALIAS[ch] !== undefined;
-};
-
-const isEqualsChar = (ch) => ch === "=" || ch === "＝";
-
-/** 统一成 ASCII，供分词使用 */
-const normalizeExpression = (source) => {
-    let out = "";
-    for (let i = 0; i < source.length; i++) {
-        const ch = source[i];
-        out += OPERATOR_ALIAS[ch] !== undefined ? OPERATOR_ALIAS[ch] :
-            FULLWIDTH_MAP[ch] !== undefined ? FULLWIDTH_MAP[ch] : ch;
-    }
-    return out;
-};
-
-/* ------------------------------------------------------------------ *
- * 2. 词法分析
- * ------------------------------------------------------------------ */
-
-const T_NUM = "num";
-const T_NAME = "name";
-const T_OP = "op";
-const T_LP = "(";
-const T_RP = ")";
-const T_SEP = ",";
-const T_END = "end";
-
-const calcError = (message, position) => {
-    const error = new Error(message);
-    error.name = "CalcError";
-    error.position = position;
-    return error;
-};
-
-const tokenize = (source) => {
-    const tokens = [];
-    let i = 0;
-    while (i < source.length) {
-        const ch = source[i];
-        if (ch === " " || ch === "\t" || ch === "\u00a0") {
-            i++;
-            continue;
-        }
-        const start = i;
-        if (/[0-9]/.test(ch) || (ch === "." && /[0-9]/.test(source[i + 1] || ""))) {
-            let text = "";
-            if (ch === ".") {
-                text = "0.";
-                i++;
-                while (i < source.length && /[0-9]/.test(source[i])) {
-                    text += source[i];
-                    i++;
-                }
-            } else {
-                while (i < source.length && /[0-9]/.test(source[i])) {
-                    text += source[i];
-                    i++;
-                    // 千分位分隔符：只有「数字,三位数字」才吃掉，
-                    // 这样 max(3,7,5) 的逗号仍然被当作参数分隔符
-                    if (source[i] === "," && /^[0-9]{3}(?![0-9])/.test(source.slice(i + 1))) {
-                        i++;
-                    }
-                }
-                if (source[i] === ".") {
-                    text += ".";
-                    i++;
-                    while (i < source.length && /[0-9]/.test(source[i])) {
-                        text += source[i];
-                        i++;
-                    }
-                }
-            }
-            tokens.push({type: T_NUM, text: text, start: start, end: i});
-            continue;
-        }
-        if (isNameStart(ch)) {
-            let text = "";
-            while (i < source.length && isNameChar(source[i])) {
-                text += source[i];
-                i++;
-            }
-            tokens.push({type: T_NAME, text: text, start: start, end: i});
-            continue;
-        }
-        if (ch === "(" || ch === ")") {
-            tokens.push({type: ch === "(" ? T_LP : T_RP, text: ch, start: start, end: start + 1});
-            i++;
-            continue;
-        }
-        if (ch === "," || ch === ";") {
-            tokens.push({type: T_SEP, text: ch, start: start, end: start + 1});
-            i++;
-            continue;
-        }
-        if ("+-*/%^=".indexOf(ch) > -1) {
-            if (ch === "*" && source[i + 1] === "*") {
-                tokens.push({type: T_OP, text: "^", start: start, end: start + 2});
-                i += 2;
-                continue;
-            }
-            tokens.push({type: T_OP, text: ch, start: start, end: start + 1});
-            i++;
-            continue;
-        }
-        throw calcError("unexpected token", start);
-    }
-    tokens.push({type: T_END, text: "", start: source.length, end: source.length});
-    return tokens;
-};
-
-/* ------------------------------------------------------------------ *
- * 3. 语法分析（按书写顺序，不实现乘除优先）
- * ------------------------------------------------------------------ */
-
-const parse = (tokens) => {
-    let pos = 0;
-    const peek = (offset) => tokens[Math.min(pos + (offset || 0), tokens.length - 1)];
-    const next = () => tokens[pos++];
-    const isOp = (token, text) => token.type === T_OP && token.text === text;
-    /** 结尾的 % 既能当取模也能当百分比：后面还有操作数就是取模 */
-    const isModulo = (token) => isOp(token, "%") &&
-        (peek(1).type === T_NUM || peek(1).type === T_NAME || peek(1).type === T_LP);
-
-    /** 表达式末尾位置（用于行内赋值的写回边界） */
-    const endOf = (node) => (node && node.end !== undefined ? node.end : pos);
-
-    /**
-     * 链式结算：segments[0] = segments[1] = …
-     * 语义见 calculate()：最终结果取自最后一段。
-     */
-    const parseChain = () => {
-        const first = parseTerm();
-        const segments = [first];
-        while (isOp(peek(), "=")) {
-            next();
-            segments.push(parseTerm());
-        }
-        if (segments.length === 1) {
-            return first;
-        }
-        return {kind: "chain", segments: segments, start: first.start, end: endOf(segments[segments.length - 1])};
-    };
-
-    /**
-     * 单个表达式。
-     * 分隔符（, ;）只由语句序列和函数参数列表处理，这里不消费，
-     * 否则 "a=3;a*2" 会被当成 a 赋值为 "3;a*2"。
-     */
-    const parseExpression = () => parseChain();
-
-    const parseTerm = () => {
-        let node = parseFactor();
-        while (true) {
-            const token = peek();
-            if (isOp(token, "+") || isOp(token, "-") || isModulo(token)) {
-                next();
-                const right = parseFactor();
-                node = {kind: "binary", op: isOp(token, "%") ? "mod" : token.text, left: node, right: right,
-                    start: node.start, end: endOf(right)};
-                continue;
-            }
-            break;
-        }
-        return node;
-    };
-
-    /** 下一个 token 是不是一个操作数（用于识别隐含乘法） */    /**
-     * 隐含乘法的右操作数：
-     *   2x、2pi、2(x+1)、(x+1)(x-1) 都成立；
-     *   但 (1+2)3、2 3 这种「数字紧跟在后面」不成立，
-     *   否则 "(1+2)3=" 会被算成 9 而不是报错。
-     */
-    const startsImplicitOperand = (token) => token.type === T_NAME || token.type === T_LP;
-
-    const parseFactor = () => {
-        let node = parseUnary();
-        while (true) {
-            const token = peek();
-            if (isOp(token, "*") || isOp(token, "/") || isModulo(token)) {
-                next();
-                const right = parseUnary();
-                node = {kind: "binary", op: isOp(token, "%") ? "mod" : token.text, left: node, right: right,
-                    start: node.start, end: endOf(right)};
-                continue;
-            }
-            // 隐含乘法：2x、2(x+1)、(x+1)(x-1)、2pi
-            // parsePrimary 已把「名字 + (」当作函数调用，所以这里不会误伤 max(1,2)。
-            if (startsImplicitOperand(token)) {
-                const right = parseUnary();
-                node = {kind: "binary", op: "*", left: node, right: right,
-                    start: node.start, end: endOf(right), implicit: true};
-                continue;
-            }
-            break;
-        }
-        return node;
-    };
-
-    const parseUnary = () => {
-        const token = peek();
-        if (isOp(token, "-") || isOp(token, "+")) {
-            next();
-            const operand = parseUnary();
-            return {kind: "unary", op: token.text, operand: operand, start: token.start, end: endOf(operand)};
-        }
-        return parsePower();
-    };
-
-    /** 幂运算，右结合：2^3^2 = 2^9 */
-    const parsePower = () => {
-        const base = parsePostfix();
-        if (isOp(peek(), "^")) {
-            next();
-            const right = parseUnary();
-            return {kind: "binary", op: "^", left: base, right: right, start: base.start, end: endOf(right)};
-        }
-        return base;
-    };
-
-    const parsePostfix = () => {
-        let node = parsePrimary();
-        while (peek().type === T_OP && peek().text === "%" && !isModulo(peek())) {
-            next();
-            node = {kind: "percent", operand: node, start: node.start, end: endOf(node)};
-        }
-        return node;
-    };
-
-    const parsePrimary = () => {
-        const token = next();
-        if (token.type === T_NUM) {
-            return {kind: "num", text: token.text, start: token.start, end: token.end};
-        }
-        if (token.type === T_NAME) {
-            const args = [];
-            let isCall = false;
-            let callEnd = token.end;
-            if (peek().type === T_LP) {
-                next();
-                isCall = true;
-                if (peek().type !== T_RP) {
-                    args.push(parseExpression());
-                    while (peek().type === T_SEP) {
-                        next();
-                        args.push(parseExpression());
-                    }
-                }
-                if (peek().type !== T_RP) {
-                    throw calcError("missing )", peek().start);
-                }
-                callEnd = next().end;
-            }
-            return {kind: "name", text: token.text, args: args, isCall: isCall, start: token.start, end: callEnd};
-        }
-        if (token.type === T_LP) {
-            const inner = parseExpression();
-            if (peek().type !== T_RP) {
-                throw calcError("missing )", peek().start);
-            }
-            next();
-            return inner;
-        }
-        throw calcError("unexpected token", token.start);
-    };
-
-    /**
-     * 程序：由分隔符连接的若干语句，取最后一条语句的值。
-     *   "a=3;a*2" -> 先把 a 赋值为 3，再算 a*2
-     */
-    const parseStatement = () => {
-        if (peek().type === T_NAME && isOp(peek(1), "=")) {
-            const nameToken = next();
-            next();
-            return {
-                kind: "assign",
-                name: nameToken.text,
-                value: parseExpression(),
-                start: nameToken.start,
-                end: nameToken.end
-            };
-        }
-        return {kind: "expr", value: parseExpression()};
-    };
-
-    const statements = [parseStatement()];
-    while (peek().type === T_SEP) {
-        next();
-        statements.push(parseStatement());
-    }
-    if (peek().type !== T_END) {
-        throw calcError("unexpected token", peek().start);
-    }
-    return {kind: "program", statements: statements};
-};
-
-/* ------------------------------------------------------------------ *
- * 4. 求值
- * ------------------------------------------------------------------ */
-
-const CONSTANTS = {
-    pi: () => fixFromString("3.14159265358979323846"),
-    e: () => fixFromString("2.718281828459045"),
-    tau: () => fixFromString("6.283185307179586")
-};
-
-const isConstantName = (name) => Object.prototype.hasOwnProperty.call(CONSTANTS, name);
-
-/**
- * 数学函数与幂运算的实现。
- * 抽出来是因为「数值求值」和「多项式求值」都要用同一份实现：
- * 前者整个表达式是数字，后者只在参数是常量时（如 sqrt(3)、cos(2)）用到。
- */
-const createMathEnvironment = () => {
-    /** 幂运算：非负整数指数精确计算，其余走 Math.pow */
-    const complexPow = (base, exponent) => {
-        if (!cIsReal(exponent)) {
-            throw new Error("unsupported exponent");
-        }
-        const exponentFix = exponent.re;
-        if (exponentFix.scale === 0 && !exponentFix.neg) {
-            const times = parseInt(digitsToString(exponentFix.int), 10);
-            if (isFinite(times) && times <= 64) {
-                let result = cFromFix(fixFromString("1"));
-                for (let i = 0; i < times; i++) {
-                    result = cMul(result, base);
-                }
-                return result;
-            }
-        }
-        if (!cIsReal(base)) {
-            throw new Error("unsupported power");
-        }
-        const value = Math.pow(fixToNumber(base.re), fixToNumber(exponentFix));
-        if (!isFinite(value)) {
-            throw new Error("result is out of range");
-        }
-        return cFromNumber(value);
-    };
-
-    const callFunction = (name, args) => {
-        const realArg = (index) => {
-            if (index >= args.length) {
-                throw new Error(name + "() missing argument");
-            }
-            if (!cIsReal(args[index])) {
-                throw new Error(name + "() does not accept complex numbers");
-            }
-            return args[index].re;
-        };
-        const finite = (value) => {
-            if (!isFinite(value)) {
-                throw new Error("result is out of range");
-            }
-            return value;
-        };
-        /** 取整类函数：借用 Math.* 的结果重新构造定点数 */
-        const roundViaMath = (fix, fn) => {
-            const value = fn(fixToNumber(fix));
-            if (!isFinite(value)) {
-                throw new Error("result is out of range");
-            }
-            return numberToFix(value);
-        };
-        switch (name) {
-            case "sqrt": {
-                const value = realArg(0);
-                if (value.neg) {
-                    return {re: fixFromString("0"), im: numberToFix(Math.sqrt(-fixToNumber(value)))};
-                }
-                return cFromNumber(Math.sqrt(fixToNumber(value)));
-            }
-            case "abs":
-                return cFromFix({int: realArg(0).int, scale: realArg(0).scale, neg: false});
-            case "floor":
-                return cFromFix(roundViaMath(realArg(0), Math.floor));
-            case "ceil":
-                return cFromFix(roundViaMath(realArg(0), Math.ceil));
-            case "round":
-                return cFromFix(roundViaMath(realArg(0), Math.round));
-            case "trunc":
-            case "int":
-                return cFromFix(roundViaMath(realArg(0), Math.trunc));
-            case "min": {
-                let best = realArg(0);
-                for (let i = 1; i < args.length; i++) {
-                    const candidate = realArg(i);
-                    if (fixToNumber(candidate) < fixToNumber(best)) {
-                        best = candidate;
-                    }
-                }
-                return cFromFix(best);
-            }
-            case "max": {
-                let best = realArg(0);
-                for (let i = 1; i < args.length; i++) {
-                    const candidate = realArg(i);
-                    if (fixToNumber(candidate) > fixToNumber(best)) {
-                        best = candidate;
-                    }
-                }
-                return cFromFix(best);
-            }
-            case "sum": {
-                let total = cZero();
-                args.forEach((item) => {
-                    total = cAdd(total, item);
-                });
-                return total;
-            }
-            case "avg":
-            case "mean": {
-                if (args.length === 0) {
-                    throw new Error("avg() missing argument");
-                }
-                let total = cZero();
-                args.forEach((item) => {
-                    total = cAdd(total, item);
-                });
-                return cDiv(total, cFromNumber(args.length));
-            }
-            case "log": {
-                const value = realArg(0);
-                if (value.neg || fixIsZero(value)) {
-                    throw new Error("log() domain error");
-                }
-                if (args.length > 1) {
-                    return cFromNumber(finite(Math.log(fixToNumber(value)) / Math.log(fixToNumber(realArg(1)))));
-                }
-                return cFromNumber(Math.log10(fixToNumber(value)));
-            }
-            case "ln": {
-                const value = realArg(0);
-                if (value.neg || fixIsZero(value)) {
-                    throw new Error("ln() domain error");
-                }
-                return cFromNumber(Math.log(fixToNumber(value)));
-            }
-            case "exp":
-                return cFromNumber(finite(Math.exp(fixToNumber(realArg(0)))));
-            case "sin":
-            case "cos":
-            case "tan":
-            case "asin":
-            case "acos":
-            case "atan":
-                return cFromNumber(Math[name](fixToNumber(realArg(0))));
-            case "pow":
-                if (args.length < 2) {
-                    throw new Error("pow() missing argument");
-                }
-                return complexPow(args[0], args[1]);
-            default:
-                throw new Error("unknown function: " + name);
-        }
-    };
-
-    return {complexPow: complexPow, callFunction: callFunction};
-};
-
-/** 数值求值：返回复数结果，以及行内赋值产生的副作用 */
-const evaluate = (statement) => {
-    const variables = {};
-    const effects = [];
-    const environment = createMathEnvironment();
-    const {complexPow, callFunction} = environment;
-
-    const getVariable = (name) => {
-        if (Object.prototype.hasOwnProperty.call(variables, name)) {
-            return variables[name];
-        }
-        throw new Error("undefined variable: " + name);
-    };
-
-    /**
-     * 链式结算：segments[0] = segments[1] = …
-     *
-     * 等号在书写里是「这里算出来了」的记号，链式写法中每一段都会把上一段的结果
-     * 再计入一次（例如 12*5=60*3，第二段里的 60 就是第一段的结果），
-     * 所以最终结果就是最后一段按常规优先级求出来的值。
-     */
-    const evalChain = (segments) => evalNode(segments[segments.length - 1]);
-
-    const evalNode = (node) => {
-        switch (node.kind) {
-            case "num":
-                return cFromFix(fixFromString(node.text));
-            case "seq":
-                evalNode(node.left);
-                return evalNode(node.right);
-            case "unary": {
-                const operand = evalNode(node.operand);
-                return node.op === "-" ? cNeg(operand) : operand;
-            }
-            case "percent":
-                return cMul(cFromFix(fixFromString("0.01")), evalNode(node.operand));
-            case "binary": {
-                const left = evalNode(node.left);
-                const right = evalNode(node.right);
-                switch (node.op) {
-                    case "+":
-                        return cAdd(left, right);
-                    case "-":
-                        return cSub(left, right);
-                    case "*":
-                        return cMul(left, right);
-                    case "/":
-                        return cDiv(left, right);
-                    case "mod": {
-                        if (!cIsReal(left) || !cIsReal(right)) {
-                            throw new Error("unsupported modulo");
-                        }
-                        const divisor = fixToNumber(right.re);
-                        if (divisor === 0) {
-                            throw new Error("divide by zero");
-                        }
-                        return cFromNumber(fixToNumber(left.re) % divisor);
-                    }
-                    case "^":
-                        return complexPow(left, right);
-                    default:
-                        throw new Error("unsupported operator: " + node.op);
-                }
-            }
-            case "chain":
-                return evalChain(node.segments);
-            case "name": {
-                const lower = node.text.toLowerCase();
-                if (!node.isCall) {
-                    if (Object.prototype.hasOwnProperty.call(CONSTANTS, lower)) {
-                        return cFromFix(CONSTANTS[lower]());
-                    }
-                    return getVariable(node.text);
-                }
-                return callFunction(lower, node.args.map(evalNode));
-            }
-            default:
-                throw new Error("unsupported node: " + node.kind);
-        }
-    };
-
-    const run = (node) => {
-        if (node.kind === "program") {
-            let value = cZero();
-            let lastAssigned = null;
-            node.statements.forEach((statement) => {
-                value = run(statement);
-                lastAssigned = statement.kind === "assign" ? statement.name : lastAssigned;
-            });
-            // "a=" 解析成「赋值 a，然后写变量名 a」；此时用刚赋进去的值作为结果
-            if (lastAssigned !== null && node.statements[node.statements.length - 1].kind === "expr") {
-                const lastValue = node.statements[node.statements.length - 1].value;
-                if (lastValue && lastValue.kind === "name" && !lastValue.isCall &&
-                    Object.prototype.hasOwnProperty.call(variables, lastValue.text)) {
-                    return variables[lastValue.text];
-                }
-            }
-            return value;
-        }
-        if (node.kind === "assign") {
-            const value = evalNode(node.value);
-            if (!cIsReal(value)) {
-                throw new Error("assignment requires a real value");
-            }
-            variables[node.name] = value;
-            effects.push({
-                name: node.name,
-                value: value,
-                start: node.start,
-                end: node.end
-            });
-            return value;
-        }
-        if (node.kind === "name" && !node.isCall &&
-            Object.prototype.hasOwnProperty.call(variables, node.text)) {
-            // 行内赋值后只写变量名的情形
-            return variables[node.text];
-        }
-        return evalNode(node.value);
-    };
-
-    return {value: run(statement), effects: effects};
-};
-
-/* ------------------------------------------------------------------ *
- * 5. 对外接口
- * ------------------------------------------------------------------ */
-/* ------------------------------------------------------------------ *
- * 6. 多项式求解（支持 a+3=5;a= 这类一元方程）
- *
- * 思路：等号两边各自求成「关于未知量的多项式」，移项后求解。
- * 只有在一元一次 / 一元二次 / 更高次的一元方程上才走这条路，
- * 其余情况仍是普通的链式结算。
- * ------------------------------------------------------------------ */
-
-/** 复数 -> 多项式（虚部为 0 才可精确表示） */
-const complexToPoly = (value) => {
-    if (!cIsReal(value)) {
-        throw new Error("结果不是实数，无法作为方程系数");
-    }
-    return polyConst(fixToRat(value.re));
-};
-
-/** 把节点求值成复数（用于 mod、以及函数参数） */
-const complexOf = (node, context) => {
-    const value = polyOf(node, context);
-    if (polyHasVariable(value)) {
-        throw new Error("这里不能含未知量");
-    }
-    return polyEvaluate(value, cZero());
-};
-
-/** 赋值语句的右值：必须是实数常量 */
-const evalAssignmentValue = (node, context) => {
-    const value = polyOf(node, context);
-    if (polyHasVariable(value)) {
-        throw new Error("赋值右值里不能含未知量");
-    }
-    const evaluated = polyEvaluate(value, cZero());
-    if (!cIsReal(evaluated)) {
-        throw new Error("赋值右值必须是实数");
-    }
-    return fixToRat(evaluated.re);
-};
-
-/** 收集 AST 里出现的变量名（不含函数名与内置常量） */
-const collectVariableNames = (node, out) => {
-    if (!node) {
-        return out;
-    }
-    switch (node.kind) {
-        case "program":
-            node.statements.forEach((item) => collectVariableNames(item, out));
-            break;
-        case "assign":
-            // 赋值左值不是未知量，但右值里可能有
-            collectVariableNames(node.value, out);
-            break;
-        case "chain":
-            node.segments.forEach((item) => collectVariableNames(item, out));
-            break;
-        case "unary":
-            collectVariableNames(node.operand, out);
-            break;
-        case "percent":
-            collectVariableNames(node.operand, out);
-            break;
-        case "binary":
-            collectVariableNames(node.left, out);
-            collectVariableNames(node.right, out);
-            break;
-        case "name":
-            if (node.isCall) {
-                node.args.forEach((item) => collectVariableNames(item, out));
-            } else if (!isConstantName(node.text.toLowerCase())) {
-                out.add(node.text);
-            }
-            break;
-        default:
-            break;
-    }
-    return out;
-};
-
-/** 记录方程解算结果，供 calculate 取用 */
-const setEquationResult = (context, chainNode) => {
-    const segments = chainNode.segments;
-    if (segments.length !== 2) {
-        throw new Error("暂不支持多重等号的方程");
-    }
-    const names = collectVariableNames(chainNode, new Set());
-    // 已经赋过值的当常量，其余的才是未知量
-    const unknowns = Array.from(names).filter((name) => !context.variables.has(name));
-    if (unknowns.length === 0) {
-        throw new Error("no unknown");
-    }
-    if (unknowns.length > 1) {
-        throw new Error("方程里出现了多个未知量: " + unknowns.join(" 和 "));
-    }
-    const variable = unknowns[0];
-    context.targetVariable = variable;
-    const left = polyOf(segments[0], context);
-    const right = polyOf(segments[1], context);
-    const solution = solveEquation(left, right, variable, context.policy);
-    if (!solution.ok) {
-        throw new Error(solution.error);
-    }
-    context.equation = solution;
-    return polyZero();
-};
-
-/** 求值：把 AST 节点变成多项式 */
-const polyOf = (node, context) => {
-    switch (node.kind) {
-        case "num":
-            return polyConst(fixToRat(fixFromString(node.text)));
-        case "expr":
-            // 语句包装节点（"expr" 里面才是真正的表达式）
-            return polyOf(node.value, context);
-        case "program": {
-            let value = polyZero();
-            node.statements.forEach((statement) => {
-                value = polyOf(statement, context);
-            });
-            return value;
-        }
-        case "assign":
-            // 方程里的赋值（如 "a=3;a*2="）先把右值记进符号表
-            context.variables.set(node.name, evalAssignmentValue(node.value, context));
-            return polyZero();
-        case "chain":
-            return setEquationResult(context, node);
-        case "unary": {
-            const operand = polyOf(node.operand, context);
-            return node.op === "-" ? polyNeg(operand) : operand;
-        }
-        case "percent":
-            return polyMul(polyConst(fixToRat(fixFromString("0.01"))), polyOf(node.operand, context));
-        case "binary": {
-            const left = polyOf(node.left, context);
-            const right = polyOf(node.right, context);
-            switch (node.op) {
-                case "+":
-                    return polyAdd(left, right);
-                case "-":
-                    return polySub(left, right);
-                case "*":
-                    return polyMul(left, right);
-                case "/": {
-                    if (polyHasVariable(right)) {
-                        throw new Error("暂不支持除以含未知量的式子");
-                    }
-                    const divisor = polyEvaluate(right, cZero());
-                    if (!cIsReal(divisor) || fixIsZero(divisor.re)) {
-                        throw new Error("divide by zero");
-                    }
-                    const inverse = ratDiv(fixToRat(fixFromString("1")), fixToRat(divisor.re));
-                    return polyMul(left, polyConst(inverse));
-                }
-                case "mod": {
-                    const leftValue = complexOf(node.left, context);
-                    const rightValue = complexOf(node.right, context);
-                    if (!cIsReal(leftValue) || !cIsReal(rightValue)) {
-                        throw new Error("unsupported modulo");
-                    }
-                    const divisor = fixToNumber(rightValue.re);
-                    if (divisor === 0) {
-                        throw new Error("divide by zero");
-                    }
-                    return polyConst(numberToRat(fixToNumber(leftValue.re) % divisor));
-                }
-                case "^": {
-                    if (polyHasVariable(right)) {
-                        throw new Error("指数里不能含未知量");
-                    }
-                    const exponentValue = polyEvaluate(right, cZero());
-                    if (!cIsReal(exponentValue)) {
-                        throw new Error("方程的幂指数必须是实数");
-                    }
-                    const exponentFix = exponentValue.re;
-                    if (exponentFix.scale !== 0 || exponentFix.neg) {
-                        throw new Error("方程的幂指数必须是非负整数");
-                    }
-                    const times = Number.parseInt(digitsToString(exponentFix.int), 10);
-                    if (!Number.isFinite(times) || times > 16) {
-                        throw new Error("幂次过大");
-                    }
-                    return polyPow(left, times);
-                }
-                default:
-                    throw new Error("不支持的运算符: " + node.op);
-            }
-        }
-        case "name": {
-            const lower = node.text.toLowerCase();
-            if (!node.isCall) {
-                if (isConstantName(lower)) {
-                    return polyConst(fixToRat(CONSTANTS[lower]()));
-                }
-                // 赋过值的变量当常量；否则它就是待求解的未知量
-                if (context.variables.has(node.text)) {
-                    return polyConst(context.variables.get(node.text));
-                }
-                if (node.text === context.targetVariable) {
-                    return polyVariable();
-                }
-                throw new Error("undefined variable: " + node.text);
-            }
-            const args = node.args.map((argument) => complexOf(argument, context));
-            return complexToPoly(context.callFunction(lower, args));
-        }
-        default:
-            throw new Error("不支持的节点: " + node.kind);
-    }
-};
-
-/** 双精度数字 -> 有理数（保留 12 位小数） */
-const numberToRat = (value) => fixToRat(numberToFix(value));
-
-/**
- * 计算一个不含结尾等号的表达式。
- *
- * @param {string} source 例如 "12×5"、"a=3;a*2"、"a+3=5;a"
- * @param {{roundMode?:string, roundDigits?:number|string, maxLength?:number}} [options] 结果显示精度与长度限制
- * @returns {{ok:true, text:string, assignments:Array}|{ok:false, error:string, position:number}}
- */
-const calculate = (source, options) => {
-    try {
-        const maxLength = options && Number.isFinite(options.maxLength) ? options.maxLength : 500;
-        if (typeof source !== "string" || source.length > maxLength) {
-            throw new Error("expression too long");
-        }
-        // "a=" 这类只剩变量名的写法还没有可计算的内容（等号后面还没输入数值），不结算
-        const trimmed = source.trim();
-        if (isNameStart(trimmed[0]) && Array.from(trimmed).every(isNameChar) && !isConstantName(trimmed.toLowerCase())) {
-            return {ok: false, error: "incomplete assignment", position: -1};
-        }
-        const policy = normalizePolicy(options);
-        const statement = parse(tokenize(normalizeExpression(source)));
-
-        // 先按多项式路径试一次：能解出方程就返回解
-        const context = {
-            variables: new Map(),
-            targetVariable: null,
-            equation: null,
-            policy: policy,
-            callFunction: createMathEnvironment().callFunction
-        };
-        try {
-            const value = polyOf(statement, context);
-            if (context.equation) {
-                return {
-                    ok: true,
-                    text: context.equation.text,
-                    assignments: [],
-                    equation: context.equation
-                };
-            }
-            // 多项式路径成功但没有方程：说明整个式子都能算，
-            // 且不涉及未知量（否则会抛「多个未知量」或走到下面）
-            if (!polyHasVariable(value)) {
-                const evaluated = polyEvaluate(value, cZero());
-                return {
-                    ok: true,
-                    text: complexToDisplayString(evaluated, policy),
-                    assignments: buildAssignments(context, statement)
-                };
-            }
-        } catch (error) {
-            // 多项式路径走不通（比如含未知量但不是方程），
-            // 若是「方程无解」这类明确结论则直接返回，否则退回数值求值
-            if (error && (error.message === "方程无解")) {
-                return {ok: false, error: error.message, position: -1};
-            }
-        }
-
-        const {value, effects} = evaluate(statement);
-        const lastByName = new Map();
-        effects.forEach((effect) => {
-            lastByName.set(effect.name, effect);
-        });
-        return {
-            ok: true,
-            text: complexToDisplayString(value, policy),
-            assignments: Array.from(lastByName.values())
-        };
-    } catch (error) {
-        return {
-            ok: false,
-            error: error && error.message ? error.message : String(error),
-            position: error && typeof error.position === "number" ? error.position : -1
-        };
-    }
-};
-
-/**
- * 把多项式路径里记录的赋值整理成与数值路径一致的 effects，
- * 让 "a=3;a*2=" 也能正常写回。
- */
-const buildAssignments = (context, statement) => {
-    const statements = statement.statements || [];
-    return statements
-        .filter((item) => item.kind === "assign" && context.variables.has(item.name))
-        .map((item) => ({
-            name: item.name,
-            value: context.variables.get(item.name),
-            start: item.start,
-            end: item.end
-        }));
-};
-
-
-
-/** 合法表达式的首字符：字母、数字、点、下划线、左括号，或一元正负号 */
-const isExprStartChar = (ch) => {
-    if (ch === undefined || ch === "") {
-        return false;
-    }
-    if (/[0-9_(.+-]/.test(ch) || isNameStart(ch)) {
-        return true;
-    }
-    if (ch === "（") {
-        return true;
-    }
-    // 全角数字
-    return FULLWIDTH_MAP[ch] !== undefined && /[0-9]/.test(FULLWIDTH_MAP[ch]);
-};
-
-/** 表达式结束位置的下一个字符不能是比较符，否则 "5>=3=" 会被算成 "3" */
-const isComparisonBefore = (ch) => ch === "=" || ch === ">" || ch === "<" || ch === "!" || ch === "＝";
-
-const isDigitsOrNameChar = (ch) => /[0-9.]/.test(ch) || isNameChar(ch) ||
-    (FULLWIDTH_MAP[ch] !== undefined && /[0-9.]/.test(FULLWIDTH_MAP[ch]));
-
-/**
- * 在一段「以等号结尾」的文本里找出可计算的表达式。
- *
- * 先扫一遍前缀，记录所有「可以作为一个表达式起点」的位置：
- *   - 前面是表达式边界（行首、等号、分号、运算符或左括号）时，可以另起一个表达式
- *   - 左右括号里的内容不算独立表达式（除非正好在左括号后面）
- * 然后从最长的候选开始解析，第一个能算出结果的就是答案。
- *
- * 这样同时覆盖：
- *   12×5=60*3=      链式：60 是前一段的结果
- *   1+1=2*2=        链式，按常规优先级
- *   a=3;a*2=        行内赋值
- *   -5+3=           一元负号
- *   测试12*5=        前面有中文
- *   (1+2=           括号不配平，不结算
- *
- * @param {string} text 光标前的整段文本
- * @param {{roundMode?:string, roundDigits?:number|string}} [options] 结果显示精度
- * @returns {null|{start:number, end:number, source:string, text:string, assignments:Array}}
- */
-const findCalculation = (text, options) => {
-    if (typeof text !== "string" || text.length === 0) {
-        return null;
-    }
-    if (!isEqualsChar(text[text.length - 1])) {
-        return null;
-    }
-    // 结尾等号前的字符必须是操作数（数字/字母/右括号/百分号），否则只是敲了个符号
-    const before = text[text.length - 2];
-    const beforeIsOperand = before !== undefined && (/[0-9_)）.．%]/.test(before) || isNameChar(before) ||
-        (FULLWIDTH_MAP[before] !== undefined && /[0-9%]/.test(FULLWIDTH_MAP[before])));
-    if (!beforeIsOperand) {
-        return null;
-    }
-
-    const prefix = text.slice(0, -1);
-    const starts = [];
-    for (let i = 0; i < prefix.length; i++) {
-        const ch = prefix[i];
-        const prev = i > 0 ? prefix[i - 1] : "";
-        if (isDigitsOrNameChar(ch)) {
-            // 字母和数字连写（abc12）时，数字处也可以作为表达式起点
-            const prevIsName = isNameStart(prev);
-            const chIsDigit = /[0-9]/.test(ch) ||
-                (FULLWIDTH_MAP[ch] !== undefined && /[0-9]/.test(FULLWIDTH_MAP[ch]));
-            if (i === 0 || !isDigitsOrNameChar(prev) || (prevIsName && chIsDigit)) {
-                starts.push(i);
-            }
-            continue;
-        }
-        starts.push(i);
-    }
-
-    // 从最长的候选（也就是最早的起点）开始尝试
-    for (let k = 0; k < starts.length; k++) {
-        const start = starts[k];
-        if (start >= prefix.length) {
-            continue;
-        }
-        if (start > 0) {
-            const prev = prefix[start - 1];
-            // 前面是等号或比较符时不能另起一段
-            if (isComparisonBefore(prev)) {
-                continue;
-            }
-            // 只有「前置运算符（含左括号）」才允许另起一段；
-            // 前面是普通操作符（+ - * / ^ %）说明截取点落在表达式中途，跳过。
-            const isPrefixContext = prev === "(" || prev === "（" || prev === ";" || prev === ";";
-            if (!isPrefixContext && "+-*/^%".indexOf(prev) > -1) {
-                continue;
-            }
-            // 前面是左括号时，整段前缀的括号必须配平，否则 "(1+2=" 会被算成 "1+2"
-            if ((prev === "(" || prev === "（") && !hasBalancedParens(prefix)) {
-                continue;
-            }
-        }
-        if (!isExprStartChar(prefix[start])) {
-            continue;
-        }
-        // 一元正负号只能出现在行首、分隔符或左括号之后
-        if ((prefix[start] === "+" || prefix[start] === "-") && start > 0) {
-            const beforeSign = prefix[start - 1];
-            if ("=;,(（".indexOf(beforeSign) === -1) {
-                continue;
-            }
-        }
-        const body = prefix.slice(start);
-        if (!hasBalancedParens(body) || hasTopLevelEqualsInsideParens(body)) {
-            continue;
-        }
-        const result = calculate(body, options);
-        if (!result.ok) {
-            continue;
-        }
-        return {
-            start: start,
-            end: text.length,
-            source: body,
-            text: result.text,
-            assignments: result.assignments
-        };
-    }
-    return null;
-};
-
-/** 括号里出现等号时不当表达式处理，例如 "12*(5=3)=" */
-const hasTopLevelEqualsInsideParens = (body) => {
-    let depth = 0;
-    for (let i = 0; i < body.length; i++) {
-        const ch = body[i];
-        if (ch === "(" || ch === "（") {
-            depth++;
-        } else if (ch === ")" || ch === "）") {
-            depth = Math.max(0, depth - 1);
-        } else if (depth > 0 && (ch === "=" || ch === "＝")) {
-            return true;
-        }
-    }
-    return false;
-};
-
-/** 左右括号是否配平（从左往右读，中途不能出现多余的右括号） */
-const hasBalancedParens = (body) => {
-    let depth = 0;
-    for (let i = 0; i < body.length; i++) {
-        if (body[i] === "(" || body[i] === "（") {
-            depth++;
-        } else if (body[i] === ")" || body[i] === "）") {
-            depth--;
-            if (depth < 0) {
-                return false;
-            }
-        }
-    }
-    return depth === 0;
-};
-
-/**
- * 结算一段文本，返回 {text, changed, calculation}。
- *
- * 写回规则很简单：
- *   - 表达式里本来就有等号（链式 "12×5=60*3" 或行内赋值 "a=3;a*2"）：
- *     这些等号是「已经算出来了」的记号，保留原文，只把结尾那个等号换成 "=结果"
- *     （结尾等号就是用户刚敲下的那一个）。
- *   - 表达式里没有等号（如 "12*5"）：同样把结尾等号换成 "=结果"。
- * 两种情形在文本层面是同一个替换，所以直接拼接即可。
- *
- * @param {string} text 光标前的整段文本
- * @param {{roundMode?:string, roundDigits?:number|string}} [options] 结果显示精度
- */
-const settleText = (text, options) => {
-    const calculation = findCalculation(text, options);
-    if (!calculation) {
-        return {text: text, changed: false, calculation: null};
-    }
-    const result = text.slice(0, calculation.start) + calculation.source + "=" +
-        calculation.text + text.slice(calculation.end);
-    return {text: result, changed: result !== text, calculation: calculation};
-};
-
-/** 兼容旧调用：定位 + 结算 */
-const applyCalculation = (text, calculation) => {
-    if (!calculation) {
-        return {text: text, caret: text.length};
-    }
-    const result = text.slice(0, calculation.start) + calculation.source + "=" +
-        calculation.text + text.slice(calculation.end);
-    return {text: result, caret: result.length};
-};
-
-const __test__ = {
-    tokenize: tokenize,
-    parse: parse,
-    evaluate: evaluate,
-    normalizeExpression: normalizeExpression,
-    isExprChar: isExprChar,
-    isExprStartChar: isExprStartChar,
-    hasBalancedParens: hasBalancedParens,
-    isComparisonBefore: isComparisonBefore,
-    hasTopLevelEqualsInsideParens: hasTopLevelEqualsInsideParens,
-    buildStarts: (prefix) => {
-        const starts = [];
-        for (let i = 0; i < prefix.length; i++) {
-            const ch = prefix[i];
-            const prev = i > 0 ? prefix[i - 1] : "";
-            if (isDigitsOrNameChar(ch)) {
-                const prevIsName = isNameStart(prev);
-                const chIsDigit = /[0-9]/.test(ch) ||
-                    (FULLWIDTH_MAP[ch] !== undefined && /[0-9]/.test(FULLWIDTH_MAP[ch]));
-                if (i === 0 || !isDigitsOrNameChar(prev) || (prevIsName && chIsDigit)) {
-                    starts.push(i);
-                }
-                continue;
-            }
-            starts.push(i);
-        }
-        return starts;
-    }
-};
-
-    module.exports = {
-    "calculate": calculate,
-    "findCalculation": findCalculation,
-    "settleText": settleText,
-    "applyCalculation": applyCalculation,
-    "__test__": __test__
-    };
-    };
-
-    /* ---------------- src/lib/notebook.mjs ---------------- */
-    __registry["lib/notebook"] = function (module, exports, __require) {
-const {calculate} = __require("lib/expr");
-
-const DEFINITION_PATTERN = /^([\p{L}_][\p{L}\p{N}_]*)\s*=\s*(.*)$/u;
-const NAME_PATTERN = /^[\p{L}_][\p{L}\p{N}_]*$/u;
-const CALC_OPTIONS = {maxLength: 10000};
-
-const evaluate = (expression, definitions, options) => {
-    const source = definitions.concat(expression).join(";");
-    return calculate(source, Object.assign({}, options, CALC_OPTIONS));
-};
-
-const resultOf = (expression, definitions, options) => {
-    const result = evaluate(expression, definitions, options);
-    return result.ok ? {ok: true, value: result.text} : {ok: false, error: result.error};
-};
-
-const parseInline = (line, definitions, options) => {
-    const parts = [];
-    let cursor = 0;
-    const appendText = end => {
-        if (end > cursor) {
-            parts.push({kind: "text", text: line.slice(cursor, end)});
-        }
-    };
-    while (cursor < line.length) {
-        const open = line.indexOf("{{", cursor);
-        const close = line.indexOf("}}", cursor);
-        if (close > -1 && (open === -1 || close < open)) {
-            appendText(close);
-            parts.push({kind: "error", error: "缺少 {{"});
-            cursor = close + 2;
-            continue;
-        }
-        if (open === -1) {
-            appendText(line.length);
-            break;
-        }
-        appendText(open);
-        const end = line.indexOf("}}", open + 2);
-        if (end === -1) {
-            parts.push({kind: "error", error: "缺少 }}"});
-            break;
-        }
-        const expression = line.slice(open + 2, end).trim();
-        parts.push(Object.assign({kind: "calculation", source: line.slice(open, end + 2), expression},
-            expression ? resultOf(expression, definitions, options) : {ok: false, error: "公式为空"}));
-        cursor = end + 2;
-    }
-    return parts;
-};
-
-const looksLikeFormula = (line, definitions) => {
-    if (/^[0-9./*^%()]/.test(line) || (/^[+-]/.test(line) && !/^[+-]\s/.test(line)) ||
-        (/\d/.test(line) && /[+\-*/^%]/.test(line)) ||
-        /^[A-Za-z_][A-Za-z0-9_]*\s*\(/.test(line) ||
-        /^[A-Za-z_][A-Za-z0-9_]*(?:\s*[+\-*/^%]\s*[A-Za-z_][A-Za-z0-9_]*)+$/.test(line)) {
-        return true;
-    }
-    return definitions.some(definition => {
-        const name = definition.slice(0, definition.indexOf("=")).trim();
-        return new RegExp("(?<![\\p{L}\\p{N}_])" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
-            "(?![\\p{L}\\p{N}_])", "u").test(line);
-    });
-};
-
-const evaluateNotebook = (source, options = {}) => {
-    const lines = String(source || "").replace(/\r\n?/g, "\n").split("\n");
-    const definitions = [];
-    return lines.map(line => {
-        const trimmed = line.trim();
-        if (!trimmed) {
-            return {kind: "blank", source: line};
-        }
-        const definition = trimmed.match(DEFINITION_PATTERN);
-        if (definition) {
-            const name = definition[1];
-            const expression = definition[2].trim();
-            const result = expression ? resultOf(expression, definitions, options) :
-                {ok: false, error: "缺少变量值或公式"};
-            if (result.ok) {
-                definitions.push(name + "=" + expression);
-            }
-            return {kind: "definition", source: line, name, expression, result};
-        }
-        if (trimmed.includes("{{") || trimmed.includes("}}")) {
-            const parts = parseInline(line, definitions, options);
-            if (parts) {
-                return {kind: "inline", source: line, parts};
-            }
-            return {kind: "inline", source: line, parts: [
-                {kind: "text", text: line},
-                {kind: "error", error: "缺少 }}"}
-            ]};
-        }
-        let expression = trimmed;
-        if (NAME_PATTERN.test(trimmed) && definitions.some(item => item.startsWith(trimmed + "="))) {
-            expression = trimmed + "*1";
-        }
-        const result = resultOf(expression, definitions, options);
-        if (result.ok || looksLikeFormula(trimmed, definitions)) {
-            return {kind: "formula", source: line, expression: trimmed, result};
-        }
-        return {kind: "text", source: line};
-    });
-};
-
-    module.exports = {
-    "evaluateNotebook": evaluateNotebook
-    };
-    };
-
-    /* ---------------- src/notebook-view.js ---------------- */
-    __registry["lib/notebook-view"] = function (module, exports, __require) {
-const {evaluateNotebook} = __require("lib/notebook");
-
-const viewStates = new WeakMap();
-const VIEW_ATTRIBUTE = "custom-plugin-calc-view";
-const VIEW_MODES = [
-    {id: "vertical", label: "上下"},
-    {id: "horizontal", label: "左右"},
-    {id: "live", label: "逐行"}
-];
-
-const renderCalcNotebook = (options, precisionOptions) => {
-    const document = options.element.ownerDocument;
-    const blockElement = options.element.closest("[data-type=\"NodeCustomBlock\"]");
-    const stateElement = blockElement || options.element;
-    const state = viewStates.get(stateElement) || {showFormula: true, mode: "horizontal", activeLine: null};
-    const savedMode = blockElement?.getAttribute(VIEW_ATTRIBUTE);
-    if (VIEW_MODES.some(item => item.id === savedMode)) {
-        state.mode = savedMode;
-    }
-    viewStates.set(stateElement, state);
-    let source = options.content;
-    let saveTimer = null;
-    let disposed = false;
-    let activeLine = Number.isInteger(state.activeLine) ? state.activeLine : null;
-    let root;
-    let status;
-
-    const updateStatus = text => {
-        if (status) {
-            status.textContent = text;
-        }
-    };
-    const appendFormula = (row, expression) => {
-        if (!state.showFormula || !expression) {
-            return;
-        }
-        const formula = document.createElement("span");
-        formula.className = "plugin-calc-notebook__formula";
-        formula.textContent = "(" + expression + ")";
-        row.append(formula);
-    };
-    const appendResult = (row, expression, result, definition = false) => {
-        if (!result.ok) {
-            const error = document.createElement("span");
-            error.className = "plugin-calc-notebook__error";
-            error.textContent = "错误：" + result.error;
-            row.append(error);
-            return;
-        }
-        const value = document.createElement("strong");
-        value.className = "plugin-calc-notebook__result";
-        value.textContent = result.value;
-        row.append(value);
-        if (!definition || expression !== result.value) {
-            appendFormula(row, expression);
-        }
-    };
-    const renderLine = (row, line) => {
-        row.className = "plugin-calc-notebook__line plugin-calc-notebook__line--" + line.kind;
-        if (line.kind === "blank" || line.kind === "text") {
-            row.textContent = line.kind === "blank" ? "" : line.source;
-            return;
-        }
-        if (line.kind === "definition") {
-            const name = document.createElement("span");
-            name.className = "plugin-calc-notebook__name";
-            name.textContent = line.name + " = ";
-            row.append(name);
-            appendResult(row, line.expression, line.result, true);
-            return;
-        }
-        if (line.kind === "formula") {
-            appendResult(row, line.expression, line.result);
-            return;
-        }
-        line.parts.forEach(part => {
-            if (part.kind === "text") {
-                row.append(document.createTextNode(part.text));
-            } else if (part.kind === "error") {
-                const error = document.createElement("span");
-                error.className = "plugin-calc-notebook__error";
-                error.textContent = "错误：" + part.error;
-                row.append(error);
-            } else {
-                appendResult(row, part.expression, part);
-            }
-        });
-    };
-    const currentEditor = () => root.querySelector("textarea");
-    const focusEditor = (editor, caret) => {
-        if (!editor) {
-            return;
-        }
-        editor.focus();
-        const position = Math.min(caret ?? editor.value.length, editor.value.length);
-        editor.setSelectionRange(position, position);
-    };
-    const scheduleSave = () => {
-        updateStatus("");
-        if (saveTimer) {
-            clearTimeout(saveTimer);
-        }
-        saveTimer = setTimeout(() => {
-            if (disposed) {
-                return;
-            }
-            const editor = currentEditor();
-            const active = document.activeElement === editor;
-            const selectionStart = editor ? editor.selectionStart : 0;
-            state.activeLine = activeLine;
-            state.saving = true;
-            if (!options.setContent(source)) {
-                state.saving = false;
-                updateStatus("内容暂未保存，请检查只读状态或输入内容");
-                return;
-            }
-            if (active) {
-                queueMicrotask(() => {
-                    const nextEditor = (blockElement || options.element).querySelector("textarea");
-                    focusEditor(nextEditor, selectionStart);
-                    state.saving = false;
-                });
-            } else {
-                state.saving = false;
-            }
-        }, 300);
-    };
-    const resize = editor => {
-        editor.style.height = "auto";
-        editor.style.height = Math.max(120, editor.scrollHeight) + "px";
-    };
-    const createPreview = () => {
-        const preview = document.createElement("div");
-        preview.className = "plugin-calc-notebook__preview";
-        evaluateNotebook(source, precisionOptions).forEach(line => {
-            const row = document.createElement("div");
-            renderLine(row, line);
-            preview.append(row);
-        });
-        return preview;
-    };
-    const persistMode = () => {
-        if (!blockElement) {
-            return;
-        }
-        const id = blockElement.getAttribute("data-node-id");
-        blockElement.setAttribute(VIEW_ATTRIBUTE, state.mode);
-        fetch("/api/attr/setBlockAttrs", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({id, attrs: {[VIEW_ATTRIBUTE]: state.mode}})
-        }).then(response => response.json()).then(result => {
-            if (result.code !== 0) {
-                throw new Error(result.msg || "setBlockAttrs failed");
-            }
-        }).catch(error => {
-            console.error("[plugin-calc] 保存视图模式失败", error);
-            updateStatus("视图选择暂未保存");
-        });
-    };
-    const setActiveLine = (index, caret) => {
-        activeLine = index;
-        state.activeLine = index;
-        renderLive();
-        focusEditor(currentEditor(), caret);
-    };
-    const updateLiveSource = (lines, index, caret) => {
-        source = lines.join("\n");
-        activeLine = index;
-        state.activeLine = index;
-        renderLive();
-        focusEditor(currentEditor(), caret);
-        scheduleSave();
-    };
-    const bindLiveEditor = (editor, index) => {
-        editor.addEventListener("input", () => {
-            const chunks = editor.value.split("\n");
-            if (chunks.length > 1) {
-                const lines = source.split("\n");
-                lines.splice(index, 1, ...chunks);
-                updateLiveSource(lines, index + chunks.length - 1, chunks[chunks.length - 1].length);
-                return;
-            }
-            const lines = source.split("\n");
-            lines[index] = editor.value;
-            source = lines.join("\n");
-            const evaluated = evaluateNotebook(source, precisionOptions);
-            [...root.querySelectorAll(".plugin-calc-notebook__live > .plugin-calc-notebook__line")].forEach((row, rowIndex) => {
-                if (rowIndex !== activeLine && evaluated[rowIndex]) {
-                    row.replaceChildren();
-                    renderLine(row, evaluated[rowIndex]);
-                }
-            });
-            editor.style.height = "auto";
-            editor.style.height = Math.max(30, editor.scrollHeight) + "px";
-            scheduleSave();
-        });
-        editor.addEventListener("keydown", event => {
-            if (event.isComposing) {
-                return;
-            }
-            const lines = source.split("\n");
-            const start = editor.selectionStart;
-            const end = editor.selectionEnd;
-            if (event.key === "Enter") {
-                event.preventDefault();
-                const before = editor.value.slice(0, start);
-                const after = editor.value.slice(end);
-                lines[index] = before;
-                lines.splice(index + 1, 0, after);
-                updateLiveSource(lines, index + 1, 0);
-            } else if (event.key === "ArrowUp" && index > 0) {
-                event.preventDefault();
-                setActiveLine(index - 1, Math.min(start, lines[index - 1].length));
-            } else if (event.key === "ArrowDown" && index < lines.length - 1) {
-                event.preventDefault();
-                setActiveLine(index + 1, Math.min(start, lines[index + 1].length));
-            } else if (event.key === "Backspace" && start === 0 && end === 0 && index > 0) {
-                event.preventDefault();
-                const caret = lines[index - 1].length;
-                lines[index - 1] += lines[index];
-                lines.splice(index, 1);
-                updateLiveSource(lines, index - 1, caret);
-            } else if (event.key === "Delete" && start === editor.value.length && end === start && index < lines.length - 1) {
-                event.preventDefault();
-                const caret = lines[index].length;
-                lines[index] += lines[index + 1];
-                lines.splice(index + 1, 1);
-                updateLiveSource(lines, index, caret);
-            } else if (event.key === "Escape") {
-                event.preventDefault();
-                activeLine = null;
-                state.activeLine = null;
-                renderLive();
-            }
-        });
-        editor.addEventListener("blur", () => {
-            setTimeout(() => {
-                if (disposed || state.saving || !root.isConnected || root.contains(document.activeElement)) {
-                    return;
-                }
-                activeLine = null;
-                state.activeLine = null;
-                renderLive();
-            }, 0);
-        });
-    };
-    function renderLive() {
-        const live = root.querySelector(".plugin-calc-notebook__live");
-        const evaluated = evaluateNotebook(source, precisionOptions);
-        if (activeLine !== null) {
-            activeLine = Math.max(0, Math.min(activeLine, evaluated.length - 1));
-            state.activeLine = activeLine;
-        }
-        live.replaceChildren();
-        evaluated.forEach((line, index) => {
-            const row = document.createElement("div");
-            renderLine(row, line);
-            row.dataset.lineIndex = String(index);
-            if (index === activeLine) {
-                row.classList.add("plugin-calc-notebook__line--editing");
-                row.replaceChildren();
-                const editor = document.createElement("textarea");
-                editor.className = "plugin-calc-notebook__live-editor";
-                editor.setAttribute("aria-label", `计算笔记本第 ${index + 1} 行原文`);
-                editor.spellcheck = false;
-                editor.rows = 1;
-                editor.value = line.source;
-                row.append(editor);
-                bindLiveEditor(editor, index);
-            } else {
-                row.addEventListener("click", () => setActiveLine(index, line.source.length));
-            }
-            live.append(row);
-        });
-        const editor = currentEditor();
-        if (editor) {
-            editor.style.height = "auto";
-            editor.style.height = Math.max(30, editor.scrollHeight) + "px";
-        }
-    }
-    const renderShell = () => {
-        root.replaceChildren();
-        root.className = `plugin-calc-notebook plugin-calc-notebook--${state.mode}`;
-        root.dataset.view = state.mode;
-        const header = document.createElement("div");
-        header.className = "plugin-calc-notebook__header";
-        const title = document.createElement("strong");
-        title.textContent = "计算笔记本";
-        const controls = document.createElement("div");
-        controls.className = "plugin-calc-notebook__controls";
-        VIEW_MODES.forEach(item => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "b3-button b3-button--text plugin-calc-notebook__view-button";
-            button.textContent = item.label;
-            button.dataset.view = item.id;
-            button.setAttribute("aria-pressed", String(state.mode === item.id));
-            button.title = {vertical: "上下编辑与预览", horizontal: "左右编辑与预览", live: "仅编辑光标所在行"}[item.id];
-            button.addEventListener("click", () => {
-                state.mode = item.id;
-                activeLine = null;
-                state.activeLine = null;
-                persistMode();
-                renderShell();
-            });
-            controls.append(button);
-        });
-        const toggle = document.createElement("button");
-        toggle.type = "button";
-        toggle.className = "b3-button b3-button--text";
-        toggle.textContent = state.showFormula ? "隐藏公式" : "显示公式";
-        toggle.setAttribute("aria-pressed", String(state.showFormula));
-        toggle.addEventListener("click", () => {
-            state.showFormula = !state.showFormula;
-            renderShell();
-        });
-        controls.append(toggle);
-        header.append(title, controls);
-        root.append(header);
-        status = document.createElement("div");
-        status.className = "plugin-calc-notebook__status";
-        status.setAttribute("role", "status");
-        if (state.mode === "live") {
-            const live = document.createElement("div");
-            live.className = "plugin-calc-notebook__live";
-            root.append(live, status);
-            renderLive();
-            return;
-        }
-        const body = document.createElement("div");
-        body.className = "plugin-calc-notebook__body";
-        const editor = document.createElement("textarea");
-        editor.className = "plugin-calc-notebook__editor";
-        editor.setAttribute("aria-label", "计算笔记本原文");
-        editor.spellcheck = false;
-        editor.value = source;
-        editor.addEventListener("input", () => {
-            source = editor.value;
-            body.querySelector(".plugin-calc-notebook__preview").replaceWith(createPreview());
-            resize(editor);
-            scheduleSave();
-        });
-        body.append(editor, createPreview());
-        root.append(body, status);
-        resize(editor);
-    };
-    root = document.createElement("section");
-    options.element.replaceChildren(root);
-    renderShell();
-    return () => {
-        disposed = true;
-        if (saveTimer) {
-            clearTimeout(saveTimer);
-        }
-    };
-};
-
-    module.exports = {
-    "renderCalcNotebook": renderCalcNotebook
-    };
-    };
-
-    /* ---------------- src/index.js ---------------- */
-    __registry["index"] = function (module, exports, __require) {
 /*!
  * 等号计算 (Equals Calc) —— 思源笔记插件
  *
@@ -2786,402 +9034,4 @@ const renderCalcNotebook = (options, precisionOptions) => {
  *      这样内核里的块内容和撤销栈都会同步，避免只改 DOM 导致数据不一致；
  *   3. 计算过程不使用 eval / new Function，表达式解析和十进制运算都在本地实现。
  */
-
-const {Plugin, getAllEditor, Setting, showMessage} = __require("siyuan");
-const {settleText} = __require("lib/expr");
-const {renderCalcNotebook} = __require("lib/notebook-view");
-
-/** 设置存储文件名 */
-const STORAGE_NAME = "settings";
-const NOTEBOOK_MARKDOWN = `;;;plugin-calc/notebook
-单价=68
-数量=2
-运费=10
-
-商品金额：{{单价*数量}}
-含运费总价：{{单价*数量+运费}}
-;;;`;
-
-const DEFAULT_SETTINGS = {
-    enabled: true,
-    triggerOnSpace: false,
-    triggerOnCtrlEnter: true,
-    /** 结果精度：exact（精确）/ places（小数位）/ digits（有效数字） */
-    roundMode: "exact",
-    /** places 模式是小数位数；digits 模式是有效数字位数 */
-    roundDigits: 6
-};
-
-class EqualsCalcPlugin extends Plugin {
-
-    constructor(options) {
-        super(options);
-        this.settings = Object.assign({}, DEFAULT_SETTINGS);
-        /** 绑在 document 上的 keydown 处理器（捕获阶段） */
-        this.onKeyDownBindThis = this.onKeyDown.bind(this);
-    }
-
-    async onload() {
-        await this.loadSettings();
-        this.customBlockRenders.notebook = {
-            render: options => renderCalcNotebook(options, this.getPrecisionOptions())
-        };
-        this.protyleSlash.push({
-            id: "calc-notebook",
-            filter: ["计算", "计算笔记本", "算式", "calc", "calc notebook", "js"],
-            html: "<span class=\"plugin-calc-slash\">∑<span>计算笔记本</span></span>",
-            callback: protyle => {
-                protyle.insert(NOTEBOOK_MARKDOWN, true, true);
-            }
-        });
-
-        // 捕获阶段监听：Protyle 自身的 keydown 在冒泡阶段，
-        // 放在捕获阶段才能保证「回车」先经过本插件。
-        //
-        // 插件不注册顶栏图标：设置统一从顶栏右侧的插件菜单进入
-        // （插件图标 →「等号计算」），那里由思源根据 openSetting 自动生成入口。
-        document.addEventListener("keydown", this.onKeyDownBindThis, true);
-    }
-
-    onunload() {
-        document.removeEventListener("keydown", this.onKeyDownBindThis, true);
-    }
-
-    /* ---------------------------------------------------------------- *
-     * 设置
-     * ---------------------------------------------------------------- */
-
-    async loadSettings() {
-        let saved = {};
-        try {
-            saved = (await this.loadData(STORAGE_NAME)) || {};
-        } catch (error) {
-            console.warn(`[${this.name}] 读取设置失败，使用默认值`, error);
-        }
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
-        this.createSetting();
-    }
-
-    async saveSettings() {
-        await this.saveData(STORAGE_NAME, this.settings);
-    }
-
-    /**
-     * 构建设置面板。
-     *
-     * 注意：必须给 Setting 传 confirmCallback。思源内部实现是
-     *   const btnsElement = dialog.element.querySelectorAll(".b3-dialog__action .b3-button");
-     *   btnsElement[0].addEventListener(...)
-     * 没有 confirmCallback 时那一行虽然带 fn__none，但按钮仍然会被创建，
-     * 问题在于按钮容器被隐藏时 querySelectorAll 取不到按钮，于是 btnsElement[0] 为 undefined，
-     * 抛出 TypeError 导致对话框根本显示不出来（表现为「点击设置没反应」）。
-     */
-    createSetting() {
-        this.setting = new Setting({
-            confirmCallback: () => {
-                this.saveSettings();
-                showMessage(this.i18n.savedMessage);
-            }
-        });
-        this.renderSettings();
-    }
-
-    renderSettings() {
-        if (!this.setting) {
-            return;
-        }
-        const addSwitch = (title, description, key) => {
-            const select = this.buildSelect([
-                {value: "true", label: this.i18n.on},
-                {value: "false", label: this.i18n.off}
-            ], this.settings[key] ? "true" : "false", (value) => {
-                this.settings[key] = value === "true";
-                this.saveSettings();
-            });
-            this.setting.addItem({title: title, description: description, actionElement: select});
-        };
-
-        addSwitch(this.i18n.enabledTitle, this.i18n.enabledTip, "enabled");
-        addSwitch(this.i18n.spaceTitle, this.i18n.spaceTip, "triggerOnSpace");
-        addSwitch(this.i18n.ctrlEnterTitle, this.i18n.ctrlEnterTip, "triggerOnCtrlEnter");
-
-        // 结果精度：模式 + 位数。位数输入框只在 places / digits 模式下可用。
-        const modeSelect = this.buildSelect([
-            {value: "exact", label: this.i18n.roundExact},
-            {value: "places", label: this.i18n.roundPlaces},
-            {value: "digits", label: this.i18n.roundDigits}
-        ], this.settings.roundMode, (value) => {
-            this.settings.roundMode = value;
-            this.saveSettings();
-            digitsInput.disabled = value === "exact";
-            digitsInput.classList.toggle("plugin-calc__disabled", value === "exact");
-        });
-
-        const digitsInput = document.createElement("input");
-        digitsInput.type = "number";
-        digitsInput.min = "0";
-        digitsInput.max = "15";
-        digitsInput.step = "1";
-        digitsInput.className = "b3-text-field fn__size200";
-        digitsInput.value = String(this.settings.roundDigits);
-        digitsInput.disabled = this.settings.roundMode === "exact";
-        digitsInput.classList.toggle("plugin-calc__disabled", digitsInput.disabled);
-        digitsInput.addEventListener("change", () => {
-            const parsed = Number.parseInt(digitsInput.value, 10);
-            this.settings.roundDigits = Number.isFinite(parsed) ? parsed : 6;
-            digitsInput.value = String(this.settings.roundDigits);
-            this.saveSettings();
-        });
-
-        const precisionRow = document.createElement("div");
-        precisionRow.className = "fn__flex plugin-calc__row";
-        precisionRow.append(modeSelect, digitsInput);
-        this.setting.addItem({
-            title: this.i18n.precisionTitle,
-            description: this.i18n.precisionTip,
-            actionElement: precisionRow
-        });
-
-        const hint = document.createElement("div");
-        hint.className = "plugin-calc__hint";
-        hint.textContent = this.i18n.usageTip;
-        this.setting.addItem({title: this.i18n.usageTitle, actionElement: hint});
-    }
-
-    /** 构造一个下拉框，并在值变化时回调 */
-    buildSelect(options, current, onChange) {
-        const select = document.createElement("select");
-        select.className = "b3-select fn__block";
-        options.forEach((item) => {
-            const option = document.createElement("option");
-            option.value = item.value;
-            option.textContent = item.label;
-            select.append(option);
-        });
-        select.value = current;
-        select.addEventListener("change", () => onChange(select.value));
-        return select;
-    }
-
-    /** 传给计算层的精度设置 */
-    getPrecisionOptions() {
-        return {
-            roundMode: this.settings.roundMode,
-            roundDigits: this.settings.roundDigits
-        };
-    }
-
-    /* ---------------------------------------------------------------- *
-     * 键盘处理
-     * ---------------------------------------------------------------- */
-
-    onKeyDown(event) {
-        if (!this.settings.enabled) {
-            return;
-        }
-        if (event.isComposing || event.keyCode === 229) {
-            return;
-        }
-        const isEnter = event.key === "Enter";
-        const isSpace = event.key === " " || event.code === "Space";
-        if (!isEnter && !isSpace) {
-            return;
-        }
-        const withCtrl = event.ctrlKey || event.metaKey;
-        if (withCtrl) {
-            // Ctrl/Cmd + 回车：强制结算（即使设置里关掉了自动结算）
-            if (!isEnter || !this.settings.triggerOnCtrlEnter) {
-                return;
-            }
-        } else if (event.altKey || event.shiftKey) {
-            // Alt/Shift + 回车属于换行等其它编辑操作，不拦截
-            return;
-        } else if (isSpace) {
-            if (!this.settings.triggerOnSpace) {
-                return;
-            }
-        }
-
-        const target = event.target;
-        if (!target || typeof target.closest !== "function" || target.closest(".plugin-calc-notebook")) {
-            return;
-        }
-        const editorElement = target.closest(".protyle-wysiwyg");
-        if (!editorElement || editorElement.getAttribute("contenteditable") === "false") {
-            return;
-        }
-
-        if (!this.applyCalculation(editorElement)) {
-            return;
-        }
-        // 结算成功：吃掉这次按键，避免 Protyle 再插入新块或空格
-        event.preventDefault();
-        event.stopPropagation();
-    }
-
-    /**
-     * 尝试结算光标所在的块。
-     * @returns {boolean} 是否真的做了替换
-     */
-    applyCalculation(editorElement) {
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) {
-            return false;
-        }
-        const range = selection.getRangeAt(0);
-        if (!range.collapsed || !editorElement.contains(range.startContainer)) {
-            return false;
-        }
-        const blockElement = this.findBlockElement(range.startContainer, editorElement);
-        if (!blockElement || blockElement.getAttribute("contenteditable") === "false") {
-            return false;
-        }
-        const editableElement = blockElement.querySelector("[contenteditable=\"true\"]") || blockElement;
-        if (!editableElement.contains(range.startContainer)) {
-            return false;
-        }
-
-        // 只取光标以前的文本参与结算
-        const beforeRange = document.createRange();
-        beforeRange.setStart(editableElement, 0);
-        beforeRange.setEnd(range.startContainer, range.startOffset);
-        const textBeforeCaret = beforeRange.toString();
-        if (!textBeforeCaret) {
-            return false;
-        }
-
-        const settled = settleText(textBeforeCaret, this.getPrecisionOptions());
-        if (!settled.changed) {
-            return false;
-        }
-
-        // 先改 DOM，再提交事务；这样 updateTransactionElement 记录到的
-        // oldHTML 是修改前的、内核收到的是修改后的内容。
-        const oldHTML = blockElement.outerHTML;
-        if (!this.replaceRangeText(editableElement, range, settled.text)) {
-            return false;
-        }
-        this.commitChange(blockElement, oldHTML);
-        // 光标落到替换后文本的末尾
-        this.restoreCaret(editableElement, settled.text.length);
-        return true;
-    }
-
-    /** 从光标位置往上找带 data-node-id 的块元素 */
-    findBlockElement(node, editorElement) {
-        let current = node;
-        while (current && current !== editorElement) {
-            if (current.nodeType === Node.ELEMENT_NODE && current.getAttribute("data-node-id")) {
-                return current;
-            }
-            current = current.parentNode;
-        }
-        return null;
-    }
-
-    /**
-     * 把可编辑元素里 [0, 光标) 这段文本整体换成 newText。
-     * 用 Range 处理，所以光标落在行内样式（加粗等）里面也能正常工作。
-     */
-    replaceRangeText(editableElement, caretRange, newText) {
-        try {
-            const startRange = document.createRange();
-            startRange.setStart(editableElement, 0);
-            startRange.setEnd(caretRange.startContainer, caretRange.startOffset);
-            startRange.deleteContents();
-            startRange.insertNode(document.createTextNode(newText));
-            return true;
-        } catch (error) {
-            console.error(`[${this.name}] 替换文本失败`, error);
-            return false;
-        }
-    }
-
-    /** 提交块内容变更：优先用新 API，旧版本回退到 updateTransaction */
-    commitChange(blockElement, oldHTML) {
-        const id = blockElement.getAttribute("data-node-id");
-        const protyle = this.findProtyle(blockElement);
-        const instance = protyle && (typeof protyle.updateTransactionElement === "function" ||
-            typeof protyle.updateTransaction === "function") ? protyle : null;
-        if (!instance) {
-            // 找不到编辑器实例时至少保证 DOM 是对的，下次输入会同步
-            console.warn(`[${this.name}] 未找到 Protyle 实例，本次修改可能未持久化`);
-            return;
-        }
-        if (typeof instance.updateTransactionElement === "function") {
-            instance.updateTransactionElement(blockElement, oldHTML);
-        } else if (typeof instance.updateTransaction === "function") {
-            instance.updateTransaction(id, blockElement.outerHTML, oldHTML);
-        }
-    }
-
-    /** 通过块元素反查所属 Protyle 实例 */
-    findProtyle(blockElement) {
-        const editorElement = blockElement.closest(".protyle-wysiwyg");
-        if (!editorElement) {
-            return null;
-        }
-        let current = editorElement.parentElement;
-        while (current) {
-            if (current.classList && current.classList.contains("protyle")) {
-                return this.findProtyleByElement(current);
-            }
-            current = current.parentElement;
-        }
-        return null;
-    }
-
-    /** 在已打开的编辑器里按 .protyle 元素匹配 Protyle 实例 */
-    findProtyleByElement(protyleElement) {
-        const editors = getAllEditor() || [];
-        for (const protyle of editors) {
-            if (protyle && protyle.protyle && protyle.protyle.element === protyleElement) {
-                return protyle;
-            }
-        }
-        return null;
-    }
-
-    /** 把光标放回结算后的位置 */
-    restoreCaret(editableElement, offset) {
-        const range = document.createRange();
-        let remaining = offset;
-        const walker = document.createTreeWalker(editableElement, NodeFilter.SHOW_TEXT, null);
-        let node = walker.nextNode();
-        let lastNode = null;
-        while (node) {
-            const length = node.textContent.length;
-            if (remaining <= length) {
-                range.setStart(node, Math.max(0, remaining));
-                range.collapse(true);
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(range);
-                return;
-            }
-            remaining -= length;
-            lastNode = node;
-            node = walker.nextNode();
-        }
-        if (lastNode) {
-            range.setStart(lastNode, lastNode.textContent.length);
-            range.collapse(true);
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-        }
-    }
-}
-
-    module.exports = {
-    "default": EqualsCalcPlugin
-    };
-    };
-
-    const plugin = __require("index").default;
-    if (typeof module !== "undefined" && module.exports) {
-        module.exports = plugin;
-    } else if (typeof window !== "undefined") {
-        window.EqualsCalcPlugin = plugin;
-    }
-})();
+if (module.exports && module.exports.default) module.exports = module.exports.default;

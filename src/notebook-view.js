@@ -8,7 +8,7 @@ const VIEW_MODES = [
     {id: "live", label: "逐行"}
 ];
 
-export const renderCalcNotebook = (options, precisionOptions) => {
+export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
     const document = options.element.ownerDocument;
     const blockElement = options.element.closest("[data-type=\"NodeCustomBlock\"]");
     const stateElement = blockElement || options.element;
@@ -132,12 +132,40 @@ export const renderCalcNotebook = (options, precisionOptions) => {
     const createPreview = () => {
         const preview = document.createElement("div");
         preview.className = "plugin-calc-notebook__preview";
-        evaluateNotebook(source, precisionOptions).forEach(line => {
+        evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions)).forEach(line => {
             const row = document.createElement("div");
             renderLine(row, line);
             preview.append(row);
         });
         return preview;
+    };
+    let refreshingRates = false;
+    const maybeRefreshRates = () => {
+        if (refreshingRates || calcOptions.rates || typeof calcOptions.refreshRates !== "function" ||
+            !/(?:\d\s*[A-Z]{3}\b|\bto\s+[A-Z]{3}\b)/.test(source)) {
+            return;
+        }
+        refreshingRates = true;
+        updateStatus("正在更新在线汇率…");
+        calcOptions.refreshRates().then(() => {
+            if (disposed || !root.isConnected) {
+                return;
+            }
+            if (state.mode === "live") {
+                renderLive();
+            } else {
+                const preview = root.querySelector(".plugin-calc-notebook__preview");
+                if (preview) {
+                    preview.replaceWith(createPreview());
+                }
+            }
+            updateStatus(calcOptions.rates && calcOptions.rates.date ?
+                `汇率：Frankfurter · ${calcOptions.rates.date}` : "汇率已更新");
+        }).catch(error => {
+            updateStatus("在线汇率更新失败，可用手工汇率：" + error.message);
+        }).finally(() => {
+            refreshingRates = false;
+        });
     };
     const persistMode = () => {
         if (!blockElement) {
@@ -184,7 +212,7 @@ export const renderCalcNotebook = (options, precisionOptions) => {
             const lines = source.split("\n");
             lines[index] = editor.value;
             source = lines.join("\n");
-            const evaluated = evaluateNotebook(source, precisionOptions);
+            const evaluated = evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions));
             [...root.querySelectorAll(".plugin-calc-notebook__live > .plugin-calc-notebook__line")].forEach((row, rowIndex) => {
                 if (rowIndex !== activeLine && evaluated[rowIndex]) {
                     row.replaceChildren();
@@ -247,7 +275,7 @@ export const renderCalcNotebook = (options, precisionOptions) => {
     };
     function renderLive() {
         const live = root.querySelector(".plugin-calc-notebook__live");
-        const evaluated = evaluateNotebook(source, precisionOptions);
+        const evaluated = evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions));
         if (activeLine !== null) {
             activeLine = Math.max(0, Math.min(activeLine, evaluated.length - 1));
             state.activeLine = activeLine;
@@ -326,6 +354,7 @@ export const renderCalcNotebook = (options, precisionOptions) => {
             live.className = "plugin-calc-notebook__live";
             root.append(live, status);
             renderLive();
+            maybeRefreshRates();
             return;
         }
         const body = document.createElement("div");
@@ -344,6 +373,7 @@ export const renderCalcNotebook = (options, precisionOptions) => {
         body.append(editor, createPreview());
         root.append(body, status);
         resize(editor);
+        maybeRefreshRates();
     };
     root = document.createElement("section");
     options.element.replaceChildren(root);
