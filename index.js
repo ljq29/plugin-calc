@@ -8108,6 +8108,48 @@ var VIEW_MODES = [
   { id: "horizontal", label: "\u5DE6\u53F3" },
   { id: "live", label: "\u9010\u884C" }
 ];
+var DEMO_MARKER = "\u3010plugin-calc \u5B66\u4E60\u793A\u4F8B\u3011";
+var DEMO_SOURCE = `${DEMO_MARKER}
+
+\u3010\u57FA\u7840\u8BA1\u7B97\u3011
+\u793A\u4F8B\u5355\u4EF7=68
+\u793A\u4F8B\u6570\u91CF=2
+\u793A\u4F8B\u603B\u4EF7\uFF1A{{\u793A\u4F8B\u5355\u4EF7*\u793A\u4F8B\u6570\u91CF}}
+
+\u3010\u65F6\u95F4\u3011
+\u793A\u4F8B\u5F00\u59CB=08:30
+\u793A\u4F8B\u8017\u65F6=90min
+\u7ED3\u675F\uFF1A{{\u793A\u4F8B\u5F00\u59CB+\u793A\u4F8B\u8017\u65F6}}
+
+\u3010\u65E5\u671F\u3011
+\u793A\u4F8B\u65E5\u671F=date("2026-11-26")
+\u4E00\u5468\u540E\uFF1A{{dateAdd(\u793A\u4F8B\u65E5\u671F,1,"week")}}
+\u4E2D\u6587\u65E5\u671F\uFF1A{{formatDate(\u793A\u4F8B\u65E5\u671F,"YYYY\u5E74M\u6708D\u65E5")}}
+
+\u3010\u5355\u4F4D\u3011
+\u793A\u4F8B\u8DDD\u79BB=5km
+\u6362\u7B97\uFF1A{{\u793A\u4F8B\u8DDD\u79BB to m}}
+\u901F\u5EA6\uFF1A{{100km/2h}}
+\u9762\u79EF\uFF1A{{2m^2 to cm^2}}
+
+\u3010\u81EA\u5B9A\u4E49\u5355\u4F4D\u3011
+unit \u793A\u4F8B\u6253 = 12 \u793A\u4F8B\u4E2A
+unit \u793A\u4F8B\u76D2 = 6 \u793A\u4F8B\u6253
+\u4E24\u76D2\uFF1A{{2\u793A\u4F8B\u76D2 to \u793A\u4F8B\u4E2A}}
+
+\u3010\u65F6\u533A\u3011
+\u793A\u4F8B\u4F1A\u8BAE=zoned("2026-11-26 15:00","Asia/Shanghai")
+\u4E1C\u4EAC\u65F6\u95F4\uFF1A{{inZone(\u793A\u4F8B\u4F1A\u8BAE,"Asia/Tokyo")}}
+
+\u3010\u5206\u7EC4\u6C47\u603B\u3011
+\u5348\u9910\uFF1A{{35}}
+\u4EA4\u901A\uFF1A{{12}}
+\u5496\u5561\uFF1A{{18}}
+\u5408\u8BA1\uFF1A{{total}}
+\u5E73\u5747\uFF1A{{average}}
+
+\u3010\u8D27\u5E01\u3011
+\u5728\u63D2\u4EF6\u8BBE\u7F6E\u4E2D\u914D\u7F6E\u624B\u5DE5\u6216\u5728\u7EBF\u6C47\u7387\u540E\uFF0C\u4F7F\u7528\u201C\u91D1\u989D to \u5E01\u79CD\u201D\u8BED\u6CD5\uFF0C\u4F8B\u5982 100USD to CNY\u3002`;
 var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
   const document2 = options.element.ownerDocument;
   const blockElement = options.element.closest('[data-type="NodeCustomBlock"]');
@@ -8404,6 +8446,33 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
       editor.style.height = Math.max(30, editor.scrollHeight) + "px";
     }
   }
+  const appendOrLocateDemo = () => {
+    const existing = source.indexOf(DEMO_MARKER);
+    if (existing >= 0) {
+      if (state.mode === "live") {
+        const index = source.slice(0, existing).split("\n").length - 1;
+        setActiveLine(index, 0);
+      } else {
+        const editor2 = currentEditor();
+        focusEditor(editor2, existing + DEMO_MARKER.length);
+        editor2.setSelectionRange(existing, existing + DEMO_MARKER.length);
+      }
+      updateStatus("\u793A\u4F8B\u5DF2\u5B58\u5728\uFF0C\u5DF2\u5B9A\u4F4D\u5230\u793A\u4F8B\uFF1B\u4E0D\u4F1A\u91CD\u590D\u8FFD\u52A0");
+      return;
+    }
+    const separator = !source ? "" : source.endsWith("\n\n") ? "" : source.endsWith("\n") ? "\n" : "\n\n";
+    source += separator + DEMO_SOURCE;
+    if (state.mode === "live") {
+      activeLine = source.split("\n").length - 1;
+      state.activeLine = activeLine;
+    }
+    renderShell();
+    const editor = currentEditor();
+    if (editor) {
+      focusEditor(editor, editor.value.length);
+    }
+    scheduleSave();
+  };
   const renderShell = () => {
     root.replaceChildren();
     root.className = `plugin-calc-notebook plugin-calc-notebook--${state.mode}`;
@@ -8431,6 +8500,14 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
       });
       controls.append(button);
     });
+    const demo = document2.createElement("button");
+    demo.type = "button";
+    demo.className = "b3-button b3-button--text";
+    demo.textContent = "\u793A\u4F8B";
+    demo.dataset.action = "demo";
+    demo.title = "\u5728\u672B\u5C3E\u8FFD\u52A0\u5B66\u4E60\u793A\u4F8B\uFF1B\u5DF2\u6709\u793A\u4F8B\u65F6\u5B9A\u4F4D\u5230\u793A\u4F8B";
+    demo.addEventListener("click", appendOrLocateDemo);
+    controls.append(demo);
     const toggle = document2.createElement("button");
     toggle.type = "button";
     toggle.className = "b3-button b3-button--text";

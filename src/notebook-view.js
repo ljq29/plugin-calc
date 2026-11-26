@@ -7,6 +7,48 @@ const VIEW_MODES = [
     {id: "horizontal", label: "左右"},
     {id: "live", label: "逐行"}
 ];
+const DEMO_MARKER = "【plugin-calc 学习示例】";
+const DEMO_SOURCE = `${DEMO_MARKER}
+
+【基础计算】
+示例单价=68
+示例数量=2
+示例总价：{{示例单价*示例数量}}
+
+【时间】
+示例开始=08:30
+示例耗时=90min
+结束：{{示例开始+示例耗时}}
+
+【日期】
+示例日期=date("2026-11-26")
+一周后：{{dateAdd(示例日期,1,"week")}}
+中文日期：{{formatDate(示例日期,"YYYY年M月D日")}}
+
+【单位】
+示例距离=5km
+换算：{{示例距离 to m}}
+速度：{{100km/2h}}
+面积：{{2m^2 to cm^2}}
+
+【自定义单位】
+unit 示例打 = 12 示例个
+unit 示例盒 = 6 示例打
+两盒：{{2示例盒 to 示例个}}
+
+【时区】
+示例会议=zoned("2026-11-26 15:00","Asia/Shanghai")
+东京时间：{{inZone(示例会议,"Asia/Tokyo")}}
+
+【分组汇总】
+午餐：{{35}}
+交通：{{12}}
+咖啡：{{18}}
+合计：{{total}}
+平均：{{average}}
+
+【货币】
+在插件设置中配置手工或在线汇率后，使用“金额 to 币种”语法，例如 100USD to CNY。`;
 
 export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
     const document = options.element.ownerDocument;
@@ -307,6 +349,33 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
             editor.style.height = Math.max(30, editor.scrollHeight) + "px";
         }
     }
+    const appendOrLocateDemo = () => {
+        const existing = source.indexOf(DEMO_MARKER);
+        if (existing >= 0) {
+            if (state.mode === "live") {
+                const index = source.slice(0, existing).split("\n").length - 1;
+                setActiveLine(index, 0);
+            } else {
+                const editor = currentEditor();
+                focusEditor(editor, existing + DEMO_MARKER.length);
+                editor.setSelectionRange(existing, existing + DEMO_MARKER.length);
+            }
+            updateStatus("示例已存在，已定位到示例；不会重复追加");
+            return;
+        }
+        const separator = !source ? "" : source.endsWith("\n\n") ? "" : source.endsWith("\n") ? "\n" : "\n\n";
+        source += separator + DEMO_SOURCE;
+        if (state.mode === "live") {
+            activeLine = source.split("\n").length - 1;
+            state.activeLine = activeLine;
+        }
+        renderShell();
+        const editor = currentEditor();
+        if (editor) {
+            focusEditor(editor, editor.value.length);
+        }
+        scheduleSave();
+    };
     const renderShell = () => {
         root.replaceChildren();
         root.className = `plugin-calc-notebook plugin-calc-notebook--${state.mode}`;
@@ -334,6 +403,14 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
             });
             controls.append(button);
         });
+        const demo = document.createElement("button");
+        demo.type = "button";
+        demo.className = "b3-button b3-button--text";
+        demo.textContent = "示例";
+        demo.dataset.action = "demo";
+        demo.title = "在末尾追加学习示例；已有示例时定位到示例";
+        demo.addEventListener("click", appendOrLocateDemo);
+        controls.append(demo);
         const toggle = document.createElement("button");
         toggle.type = "button";
         toggle.className = "b3-button b3-button--text";

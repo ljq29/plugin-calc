@@ -209,6 +209,20 @@ eq(root.dataset.view, "vertical", "切换回上下视图");
 eq(root.querySelector("textarea").value.split("\n").length, 7, "切换视图不丢失原文");
 eq(requests.at(-1).body.attrs["custom-plugin-calc-view"], "vertical", "上下视图也按块保存");
 
+const demoButton = all(root, "b3-button").find(item => item.dataset.action === "demo");
+click(demoButton);
+const demoEditor = root.querySelector("textarea");
+eq(demoEditor.value.startsWith("单价=70\n"), true, "追加示例保留用户原文");
+eq(demoEditor.value.includes("【plugin-calc 学习示例】"), true, "追加学习示例标记");
+eq(demoEditor.value.includes("结束：{{示例开始+示例耗时}}"), true, "示例使用独立变量名");
+eq(root.querySelector(".plugin-calc-notebook__preview").textContent.includes("结束：10:00"), true, "示例时间公式即时求值");
+eq(root.querySelector(".plugin-calc-notebook__preview").textContent.includes("两盒：144示例个"), true, "示例自定义单位即时求值");
+click(demoButton);
+eq(demoEditor.value.split("【plugin-calc 学习示例】").length, 2, "重复点击不重复追加");
+eq(root.querySelector(".plugin-calc-notebook__status").textContent.includes("不会重复追加"), true, "重复点击显示定位提示");
+await new Promise(resolve => setTimeout(resolve, 360));
+eq(saved.at(-1).includes("【plugin-calc 学习示例】"), true, "示例通过现有逻辑自动保存");
+
 const savedContainer = document.createElement("div");
 const savedBlock = document.createElement("div");
 savedBlock.setAttribute("data-type", "NodeCustomBlock");
@@ -217,6 +231,24 @@ savedBlock.append(savedContainer);
 const disposeSaved = renderCalcNotebook({element: savedContainer, content: source, setContent: () => true}, {});
 eq(all(savedContainer, "plugin-calc-notebook")[0].dataset.view, "vertical", "重新渲染读取块级视图记忆");
 disposeSaved();
+
+const liveContainer = document.createElement("div");
+const liveBlock = document.createElement("div");
+liveBlock.setAttribute("data-type", "NodeCustomBlock");
+liveBlock.setAttribute("custom-plugin-calc-view", "live");
+liveBlock.append(liveContainer);
+const liveSaved = [];
+renderCalcNotebook({element: liveContainer, content: "a=1", setContent: content => {
+    liveSaved.push(content);
+    return true;
+}}, {});
+const liveDemoButton = all(liveContainer, "b3-button").find(item => item.dataset.action === "demo");
+click(liveDemoButton);
+eq(liveContainer.querySelector("textarea").value.includes("100USD to CNY"), true, "逐行视图追加后编辑示例末行");
+click(liveDemoButton);
+eq(liveContainer.querySelector("textarea").value, "【plugin-calc 学习示例】", "逐行视图重复点击定位示例标记");
+await new Promise(resolve => setTimeout(resolve, 360));
+eq(liveSaved.at(-1).split("【plugin-calc 学习示例】").length, 2, "逐行视图示例只保存一份");
 dispose();
 
 console.log(`\n视图交互: ${passed} passed, ${failed} failed`);

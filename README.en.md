@@ -9,7 +9,7 @@ appended right after the equals sign.
 
 Download `plugin-calc.zip` from [this fork's Releases](https://github.com/ljq29/plugin-calc/releases/latest), extract it into the workspace's `data/plugins/`, and confirm that `data/plugins/plugin-calc/plugin.json` exists. Reload SiYuan and enable **Equals Calc** under **Settings → Bazaar → Downloaded**.
 
-For Docker, the container path is usually `/siyuan/workspace/data/plugins/plugin-calc/`. Install once on the server; browsers connecting to that instance do not need separate copies.
+For the official Docker image, the workspace is usually `/workspace`, so the plugin path is `/workspace/data/plugins/plugin-calc/`. A custom `--workspace` or volume mapping takes precedence. Install once on the server; browsers connecting to that instance do not need separate copies.
 
 The official Bazaar already lists `pisceswb/plugin-calc`. Enhancements in this fork are contributed through an upstream pull request rather than a duplicate Bazaar entry.
 
@@ -54,6 +54,18 @@ The selected view is stored in the block's `custom-plugin-calc-view` attribute. 
 
 In line-by-line mode, every line shows results until clicked. Only the active line exposes its source; all other results update while typing. Enter splits a line, Backspace/Delete at the edges merge lines, Arrow Up/Down changes the active line, and Escape returns to results. Focus and caret survive autosave.
 
+### One-click learning demo
+
+Use the **示例** button in the notebook header to append a runnable learning template to the current block. It covers arithmetic, time, dates, units, custom units, time zones and grouped aggregation.
+
+- Existing source is preserved; the demo is appended and autosaved
+- All demo variables and custom units use an `示例` prefix to avoid changing existing formulas
+- Results render immediately in every view, without changing the selected view
+- Repeated clicks locate the existing `【plugin-calc 学习示例】` marker instead of inserting duplicates
+- Currency is shown as a setup hint rather than an offline-failing formula
+
+For a first run, insert `/计算`, click **示例**, then edit the demo values and watch the preview update.
+
 ## Time, dates, units and currency
 
 Types are inferred from values; variables do not need declarations.
@@ -76,6 +88,22 @@ Days between: {{dateBetween(day,date("2026-12-03"),"days")}}
 - Compound units: `100km/2h` → `50km/h`; `50km/h*2h` → `100km`; `25USD/h*14h` → `350USD`
 - Explicit construction: `unit(2,"m")`; `2m^2` means two square metres while `(2m)^2` means four
 - Block-scoped custom units: `unit 打 = 12 个`, then `unit 盒 = 6 打`, so `2盒 to 个` → `144个`
+
+### Function and unit reference
+
+| Function | Purpose |
+| --- | --- |
+| `date(text)` / `datetime(text)` | Construct a date or date-time without a zone |
+| `zoned(text,zone)` / `inZone(value,zone)` | Construct and convert an IANA-zoned date-time |
+| `dateAdd` / `dateSubtract` | Add or subtract calendar years, months, weeks, days, hours, minutes or seconds |
+| `dateBetween(start,end,unit)` | Difference between two values in the requested unit |
+| `formatDate(value,format)` | Format a date, for example `YYYY-MM-DD` or `YYYY年M月D日` |
+| `workdays` / `addWorkdays` | Count or add workdays using configured holidays and extra workdays |
+| `today()` / `now()` | Current date or zoned date-time; results may change when reopened |
+
+Common units include `s`, `min`, `h`, `d`, `week`; `mm`, `cm`, `m`, `km`, `inch`, `ft`, `mi`; `mg`, `g`, `kg`, `lb`, `oz`; `m^2`, `hectare`, `亩`; `m^3`, `L`, `mL`; `bit`, `B`, `KB`, `GB`, `KiB`, `GiB`; `K`, `degC`, `degF`; and `rad`, `deg`. Common Chinese aliases are supported too. `min` means minutes while `m` means metres, and decimal `MB` differs from binary `MiB`.
+
+Values are typed automatically. Incompatible dimensions and mixed currencies are rejected instead of being silently coerced. Source templates are saved in the custom block; calculated results remain previews. Use fixed dates or manual rates when reproducible accounting output matters. Implicit multiplication is not supported.
 
 `prev` returns the nearest previous result. `total` and `average` aggregate standalone and inline results in the current blank-line-delimited group; variable definitions are excluded. Compatible units are converted automatically, while incompatible dimensions and mixed currencies report errors.
 
