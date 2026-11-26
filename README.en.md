@@ -34,17 +34,66 @@ Requires SiYuan **3.8.10 or later**. Type `/计算` (or filter with `/calc`) to 
 数量=2
 运费=10
 
-商品金额：{{单价*数量}}
+商品金额：单价*数量
 含运费总价：{{单价*数量+运费}}
 单价*数量*0.8
 ```
 
-- Define variables with `name=formula`. Unicode names, including Chinese, are supported; later lines can use earlier definitions
+- Define variables with `name=formula`. Unicode names, including Chinese, and names beginning with digits are supported; later lines can use earlier definitions
 - Variables are scoped to the current block. Editing a definition recalculates every dependent result
 - A standalone formula appears as `result (formula)`; ordinary text and blank lines stay unchanged
-- Use `{{formula}}` inside ordinary text. Undefined variables, division by zero, empty formulas and unclosed delimiters show errors
+- Use `Label: formula` or `说明文字：公式` for a labelled bare formula; labels may contain spaces
+- Use `{{formula}}` inside ordinary text, including multiple formulas in one line. Undefined variables, division by zero, empty formulas and unclosed delimiters show errors
 - Toggle **隐藏公式 / 显示公式** to hide or show formulas while keeping results
 - Only the source template is stored in the custom block. Results are rendered live, and the source remains readable if the plugin is disabled or uninstalled
+
+### Number-prefixed variables and labelled formulas
+
+A variable may begin with digits when its name also contains a letter, Chinese character or underscore:
+
+```text
+1st=10
+2nd=20
+2026revenue=5000
+Numbered total: 1st+2nd
+Next year: 2026revenue*2
+```
+
+Purely numeric names are rejected. Names that collide with a number plus a registered unit, such as `1m`, `2h` or `5kg`, are also rejected so unit expressions keep one fixed meaning. Names cannot contain spaces or operators, and definitions must precede references.
+
+Both labelled bare formulas and inline formulas are available:
+
+```text
+AA=5
+BB=7
+CC=8
+A B C: AA + BB + CC
+Another result: {{AA*BB}}
+```
+
+The first form evaluates the expression after the colon. The second embeds one or more results in prose. Colons in ordinary text, URLs and times are not mistaken for label separators.
+
+### Sum variables by prefix or suffix
+
+In addition to `sum(1,2,3)` and `sum(AA,BB)`, one leading or trailing wildcard selects variables defined before the current line:
+
+```text
+expense_food=30
+expense_transport=20
+income_food=100
+
+expenses=sum("expense_*")
+foodTotal=sum("*_food")
+noMatch=sum("missing_*")
+```
+
+The results are `50`, `130` and `0`. `sum("*")` includes every earlier variable.
+
+- Only successfully defined variables before the current line participate; standalone formula results and later definitions do not
+- A redefined name contributes its latest value once. Aggregate variables are variables too, so a later `sum("*")` includes them
+- Matching is case-sensitive. Only `prefix*`, `*suffix` and `*` are accepted, not embedded or multiple wildcards
+- Numbers, durations and compatible units can be aggregated; mixed currencies and incompatible types report errors
+- This is controlled by the existing **Aggregation / 分组汇总** feature switch
 
 ### Three views
 
@@ -56,7 +105,7 @@ In line-by-line mode, every line shows results until clicked. Only the active li
 
 ### One-click learning demo
 
-Use the **示例** button in the notebook header to append a runnable learning template to the current block. It covers arithmetic, time, dates, units, custom units, time zones and grouped aggregation.
+Use the **示例** button in the notebook header to append a runnable learning template to the current block. It covers arithmetic, number-prefixed variables, labelled formulas, prefix/suffix sums, time, dates, units, custom units, time zones and grouped aggregation.
 
 - Existing source is preserved; the demo is appended and autosaved
 - All demo variables and custom units use an `示例` prefix to avoid changing existing formulas

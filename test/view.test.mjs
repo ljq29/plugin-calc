@@ -217,6 +217,10 @@ eq(demoEditor.value.startsWith("单价=70\n"), true, "追加示例保留用户�
 eq(demoEditor.value.includes("【plugin-calc 学习示例】"), true, "追加学习示例标记");
 eq(demoEditor.value.includes("结束：{{示例开始+示例耗时}}"), true, "示例使用独立变量名");
 eq(root.querySelector(".plugin-calc-notebook__preview").textContent.includes("结束：10:00"), true, "示例时间公式即时求值");
+eq(root.querySelector(".plugin-calc-notebook__preview").textContent.includes("编号合计：30"), true, "示例数字变量与冒号公式即时求值");
+eq(root.querySelector(".plugin-calc-notebook__preview").textContent.includes("A B C ： 20"), true, "示例带空格文字公式即时求值");
+eq(root.querySelector(".plugin-calc-notebook__preview").textContent.includes("示例支出合计 = 30"), true, "示例前缀求和即时求值");
+eq(root.querySelector(".plugin-calc-notebook__preview").textContent.includes("示例1号合计 = 110"), true, "示例后缀求和即时求值");
 eq(root.querySelector(".plugin-calc-notebook__preview").textContent.includes("两盒：144示例个"), true, "示例自定义单位即时求值");
 eq(all(root, "plugin-calc-notebook__error").length, 0, "整份示例没有求值错误");
 click(demoButton);

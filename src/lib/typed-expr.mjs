@@ -56,8 +56,9 @@ const isNameChar = ch => /^[\p{L}\p{N}_°℃℉]$/u.test(ch || "");
 
 const normalize = source => Array.from(source).map(ch => ALIAS[ch] || FULLWIDTH[ch] || ch).join("");
 
-const tokenize = source => {
+const tokenize = (source, variableNames = []) => {
     const tokens = [];
+    const numericNames = Array.from(variableNames).filter(name => /^\d/.test(name)).sort((a, b) => b.length - a.length);
     let i = 0;
     while (i < source.length) {
         const ch = source[i];
@@ -95,6 +96,12 @@ const tokenize = source => {
                 throw new Error("字符串缺少结束引号");
             }
             tokens.push({type: T_STRING, text, start, end: i});
+            continue;
+        }
+        const numericName = numericNames.find(name => source.startsWith(name, i));
+        if (numericName) {
+            i += numericName.length;
+            tokens.push({type: T_NAME, text: numericName, start, end: i});
             continue;
         }
         if (/[0-9]/.test(ch) || (ch === "." && /[0-9]/.test(source[i + 1] || ""))) {
@@ -329,6 +336,17 @@ const realArg = (args, index, name) => {
 
 const stringArg = (args, index, name) => stringArgument(args[index], name);
 
+const sumMatchingVariables = (pattern, variables) => {
+    const stars = Array.from(pattern).filter(ch => ch === "*").length;
+    if (stars !== 1 || (pattern[0] !== "*" && pattern[pattern.length - 1] !== "*")) {
+        throw new Error("sum() 变量筛选只支持 \"前缀*\"、\"*后缀\" 或 \"*\"");
+    }
+    const matches = pattern === "*" ? () => true : pattern[0] === "*" ?
+        name => name.endsWith(pattern.slice(1)) : name => name.startsWith(pattern.slice(0, -1));
+    const values = Array.from(variables || []).filter(([name]) => matches(name)).map(([, value]) => value);
+    return sumValues(values);
+};
+
 const callNumeric = (name, args) => {
     const values = args.map(arg => fixToNumber(numericArgument(arg, name)));
     switch (name) {
@@ -369,6 +387,10 @@ const evaluate = (program, options) => {
         } else if (["time", "date", "datetime", "today", "now", "dateadd", "datesubtract", "datebetween",
             "formatdate", "workdays", "addworkdays", "year", "month", "day", "hour", "minute"].includes(lower)) {
             requireFeature(options, "timeDate", "时间与日期功能");
+        }
+        if (lower === "sum" && args.length === 1 && args[0]?.kind === "string") {
+            requireFeature(options, "aggregation", "分组汇总功能");
+            return sumMatchingVariables(args[0].value, options.variableHistory);
         }
         if (lower === "unit") {
             return literalValue(numericArgument(args[0], "unit"), stringArg(args, 1, "unit"), options);
@@ -470,7 +492,11 @@ export const calculateTyped = (source, options = {}) => {
         if (typeof source !== "string" || !source.trim() || source.length > (options.maxLength || 10000)) {
             throw new Error("表达式为空或过长");
         }
-        const value = evaluate(parse(tokenize(normalize(source))), options);
+        const variableNames = new Set(Array.from(options.variables || [], ([name]) => name));
+        for (const match of source.matchAll(/(?:^|[,;])\s*(\d+[\p{L}_][\p{L}\p{N}_]*)\s*=/gu)) {
+            variableNames.add(match[1]);
+        }
+        const value = evaluate(parse(tokenize(normalize(source), variableNames)), options);
         return {ok: true, value, text: formatValue(value, options), assignments: []};
     } catch (error) {
         return {ok: false, error: error && error.message ? error.message : String(error), position: -1};

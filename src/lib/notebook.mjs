@@ -4,7 +4,7 @@ import {averageValues, fromLegacyValue, sumValues} from "./value.mjs";
 import {isExtendedExpression} from "./typed-expr.mjs";
 import {featureEnabled, requireFeature} from "./features.mjs";
 
-const DEFINITION_PATTERN = /^([\p{L}_][\p{L}\p{N}_]*)\s*=\s*(.*)$/u;
+const DEFINITION_PATTERN = /^((?:[\p{L}_]|\d+(?=[\p{L}_]))[\p{L}\p{N}_]*)\s*=\s*(.*)$/u;
 const UNIT_PATTERN = /^unit\s+([\p{L}_][\p{L}\p{N}_]*)\s*=\s*([0-9]+(?:\.[0-9]+)?)\s+([\p{L}_][\p{L}\p{N}_]*)$/u;
 const CALC_OPTIONS = {maxLength: 10000};
 
@@ -44,6 +44,7 @@ const createEvaluator = options => {
             unitRegistry,
             specials,
             variables: useTyped ? typedVariables : legacyVariables,
+            variableHistory: typedVariables,
             forceTyped: useTyped
         }));
         if (!result.ok) {
@@ -119,6 +120,40 @@ const createEvaluator = options => {
         });
     };
 
+    const parseLabelled = line => {
+        for (let i = 0; i < line.length; i++) {
+            if (line[i] !== "：" && line[i] !== ":") {
+                continue;
+            }
+            if (line[i] === ":" && /\d/.test(line[i - 1] || "") && /\d/.test(line[i + 1] || "")) {
+                continue;
+            }
+            let expressionStart = i + 1;
+            while (/\s/.test(line[expressionStart] || "")) {
+                expressionStart++;
+            }
+            const label = line.slice(0, expressionStart);
+            const expression = line.slice(expressionStart).trim();
+            if (!label.trim().replace(/[：:]\s*$/, "") || !expression) {
+                continue;
+            }
+            const result = resultOf(expression);
+            if (!result.ok && !looksLikeFormula(expression)) {
+                return null;
+            }
+            record(result, !/\b(?:total|average|prev)\b/.test(expression));
+            return {
+                kind: "inline",
+                source: line,
+                parts: [
+                    {kind: "text", text: label},
+                    Object.assign({kind: "calculation", source: line.slice(expressionStart), expression}, result)
+                ]
+            };
+        }
+        return null;
+    };
+
     const defineUnit = match => {
         const [, name, amount, baseName] = match;
         try {
@@ -150,10 +185,20 @@ const createEvaluator = options => {
         if (unit) {
             return Object.assign(defineUnit(unit), {source: line});
         }
+        const numericDefinition = trimmed.match(/^(\d+)\s*=\s*(.*)$/);
+        if (numericDefinition) {
+            return {kind: "definition", source: line, name: numericDefinition[1], expression: numericDefinition[2],
+                result: {ok: false, error: "变量名不能是纯数字"}};
+        }
         const definition = trimmed.match(DEFINITION_PATTERN);
         if (definition) {
             const name = definition[1];
             const expression = definition[2].trim();
+            const numericUnit = name.match(/^\d+(.+)$/u);
+            if (numericUnit && resolveUnit(numericUnit[1], unitRegistry)) {
+                return {kind: "definition", source: line, name, expression,
+                    result: {ok: false, error: "数字开头变量不能与数字+单位重名: " + name}};
+            }
             const result = expression ? resultOf(expression) : {ok: false, error: "缺少变量值或公式"};
             if (result.ok) {
                 definitionNames.push(name);
@@ -163,13 +208,17 @@ const createEvaluator = options => {
                 if (result.engineValue && result.engineValue.re) {
                     legacyVariables.set(name, result.engineValue);
                 }
-                hasExtendedDefinitions = hasExtendedDefinitions || isExtendedExpression(expression, options);
+                hasExtendedDefinitions = hasExtendedDefinitions || /^\d/.test(name) || isExtendedExpression(expression, options);
                 record(result, false);
             }
             return {kind: "definition", source: line, name, expression, result};
         }
         if (trimmed.includes("{{") || trimmed.includes("}}")) {
             return {kind: "inline", source: line, parts: parseInline(line)};
+        }
+        const labelled = parseLabelled(line);
+        if (labelled) {
+            return labelled;
         }
         const expression = trimmed;
         const result = resultOf(expression);

@@ -1,8 +1,8 @@
 {
   "name": "plugin-calc",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
-  "description": "思源笔记插件：等号结算与具有三种视图的计算笔记本",
+  "description": "思源笔记插件：等号结算、三视图计算笔记本、数字变量、文字公式与变量汇总",
   "license": "MIT",
   "type": "module",
   "scripts": {

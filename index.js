@@ -6363,8 +6363,9 @@ var ALIAS = { "\xD7": "*", "\u2715": "*", "\u2716": "*", "\xB7": "*", "\u22C5": 
 var isNameStart = (ch) => /^[\p{L}_°℃℉]$/u.test(ch || "");
 var isNameChar = (ch) => /^[\p{L}\p{N}_°℃℉]$/u.test(ch || "");
 var normalize = (source) => Array.from(source).map((ch) => ALIAS[ch] || FULLWIDTH[ch] || ch).join("");
-var tokenize = (source) => {
+var tokenize = (source, variableNames = []) => {
   const tokens = [];
+  const numericNames = Array.from(variableNames).filter((name) => /^\d/.test(name)).sort((a2, b2) => b2.length - a2.length);
   let i2 = 0;
   while (i2 < source.length) {
     const ch = source[i2];
@@ -6402,6 +6403,12 @@ var tokenize = (source) => {
         throw new Error("\u5B57\u7B26\u4E32\u7F3A\u5C11\u7ED3\u675F\u5F15\u53F7");
       }
       tokens.push({ type: T_STRING, text, start, end: i2 });
+      continue;
+    }
+    const numericName = numericNames.find((name) => source.startsWith(name, i2));
+    if (numericName) {
+      i2 += numericName.length;
+      tokens.push({ type: T_NAME, text: numericName, start, end: i2 });
       continue;
     }
     if (/[0-9]/.test(ch) || ch === "." && /[0-9]/.test(source[i2 + 1] || "")) {
@@ -6621,6 +6628,15 @@ var realArg = (args, index, name) => {
   return fixToNumber(numericArgument(args[index], name));
 };
 var stringArg = (args, index, name) => stringArgument(args[index], name);
+var sumMatchingVariables = (pattern, variables) => {
+  const stars = Array.from(pattern).filter((ch) => ch === "*").length;
+  if (stars !== 1 || pattern[0] !== "*" && pattern[pattern.length - 1] !== "*") {
+    throw new Error('sum() \u53D8\u91CF\u7B5B\u9009\u53EA\u652F\u6301 "\u524D\u7F00*"\u3001"*\u540E\u7F00" \u6216 "*"');
+  }
+  const matches = pattern === "*" ? () => true : pattern[0] === "*" ? (name) => name.endsWith(pattern.slice(1)) : (name) => name.startsWith(pattern.slice(0, -1));
+  const values = Array.from(variables || []).filter(([name]) => matches(name)).map(([, value]) => value);
+  return sumValues(values);
+};
 var callNumeric = (name, args) => {
   const values = args.map((arg) => fixToNumber(numericArgument(arg, name)));
   switch (name) {
@@ -6669,6 +6685,7 @@ var evaluate = (program, options) => {
   const variables = new Map(options.variables || []);
   const constants = { pi: numberValue("3.14159265358979323846"), e: numberValue("2.718281828459045") };
   const callFunction = (name, args) => {
+    var _a3;
     const lower = name.toLowerCase();
     if (["zoned", "inzone"].includes(lower)) {
       requireFeature(options, "timeZone", "\u65F6\u533A\u529F\u80FD");
@@ -6691,6 +6708,10 @@ var evaluate = (program, options) => {
       "minute"
     ].includes(lower)) {
       requireFeature(options, "timeDate", "\u65F6\u95F4\u4E0E\u65E5\u671F\u529F\u80FD");
+    }
+    if (lower === "sum" && args.length === 1 && ((_a3 = args[0]) == null ? void 0 : _a3.kind) === "string") {
+      requireFeature(options, "aggregation", "\u5206\u7EC4\u6C47\u603B\u529F\u80FD");
+      return sumMatchingVariables(args[0].value, options.variableHistory);
     }
     if (lower === "unit") {
       return literalValue(numericArgument(args[0], "unit"), stringArg(args, 1, "unit"), options);
@@ -6796,7 +6817,11 @@ var calculateTyped = (source, options = {}) => {
     if (typeof source !== "string" || !source.trim() || source.length > (options.maxLength || 1e4)) {
       throw new Error("\u8868\u8FBE\u5F0F\u4E3A\u7A7A\u6216\u8FC7\u957F");
     }
-    const value = evaluate(parse(tokenize(normalize(source))), options);
+    const variableNames = new Set(Array.from(options.variables || [], ([name]) => name));
+    for (const match of source.matchAll(/(?:^|[,;])\s*(\d+[\p{L}_][\p{L}\p{N}_]*)\s*=/gu)) {
+      variableNames.add(match[1]);
+    }
+    const value = evaluate(parse(tokenize(normalize(source), variableNames)), options);
     return { ok: true, value, text: formatValue(value, options), assignments: [] };
   } catch (error) {
     return { ok: false, error: error && error.message ? error.message : String(error), position: -1 };
@@ -8002,7 +8027,7 @@ var settleText = (text, options) => {
 };
 
 // src/lib/notebook.mjs
-var DEFINITION_PATTERN = /^([\p{L}_][\p{L}\p{N}_]*)\s*=\s*(.*)$/u;
+var DEFINITION_PATTERN = /^((?:[\p{L}_]|\d+(?=[\p{L}_]))[\p{L}\p{N}_]*)\s*=\s*(.*)$/u;
 var UNIT_PATTERN = /^unit\s+([\p{L}_][\p{L}\p{N}_]*)\s*=\s*([0-9]+(?:\.[0-9]+)?)\s+([\p{L}_][\p{L}\p{N}_]*)$/u;
 var CALC_OPTIONS = { maxLength: 1e4 };
 var createEvaluator = (options) => {
@@ -8040,6 +8065,7 @@ var createEvaluator = (options) => {
       unitRegistry,
       specials,
       variables: useTyped ? typedVariables : legacyVariables,
+      variableHistory: typedVariables,
       forceTyped: useTyped
     }));
     if (!result.ok) {
@@ -8107,6 +8133,39 @@ var createEvaluator = (options) => {
       return new RegExp("(?<![\\p{L}\\p{N}_])" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}\\p{N}_])", "u").test(line);
     });
   };
+  const parseLabelled = (line) => {
+    for (let i2 = 0; i2 < line.length; i2++) {
+      if (line[i2] !== "\uFF1A" && line[i2] !== ":") {
+        continue;
+      }
+      if (line[i2] === ":" && /\d/.test(line[i2 - 1] || "") && /\d/.test(line[i2 + 1] || "")) {
+        continue;
+      }
+      let expressionStart = i2 + 1;
+      while (/\s/.test(line[expressionStart] || "")) {
+        expressionStart++;
+      }
+      const label = line.slice(0, expressionStart);
+      const expression = line.slice(expressionStart).trim();
+      if (!label.trim().replace(/[：:]\s*$/, "") || !expression) {
+        continue;
+      }
+      const result = resultOf(expression);
+      if (!result.ok && !looksLikeFormula(expression)) {
+        return null;
+      }
+      record(result, !/\b(?:total|average|prev)\b/.test(expression));
+      return {
+        kind: "inline",
+        source: line,
+        parts: [
+          { kind: "text", text: label },
+          Object.assign({ kind: "calculation", source: line.slice(expressionStart), expression }, result)
+        ]
+      };
+    }
+    return null;
+  };
   const defineUnit = (match) => {
     const [, name, amount, baseName] = match;
     try {
@@ -8141,10 +8200,30 @@ var createEvaluator = (options) => {
     if (unit) {
       return Object.assign(defineUnit(unit), { source: line });
     }
+    const numericDefinition = trimmed.match(/^(\d+)\s*=\s*(.*)$/);
+    if (numericDefinition) {
+      return {
+        kind: "definition",
+        source: line,
+        name: numericDefinition[1],
+        expression: numericDefinition[2],
+        result: { ok: false, error: "\u53D8\u91CF\u540D\u4E0D\u80FD\u662F\u7EAF\u6570\u5B57" }
+      };
+    }
     const definition2 = trimmed.match(DEFINITION_PATTERN);
     if (definition2) {
       const name = definition2[1];
       const expression2 = definition2[2].trim();
+      const numericUnit = name.match(/^\d+(.+)$/u);
+      if (numericUnit && resolveUnit(numericUnit[1], unitRegistry)) {
+        return {
+          kind: "definition",
+          source: line,
+          name,
+          expression: expression2,
+          result: { ok: false, error: "\u6570\u5B57\u5F00\u5934\u53D8\u91CF\u4E0D\u80FD\u4E0E\u6570\u5B57+\u5355\u4F4D\u91CD\u540D: " + name }
+        };
+      }
       const result2 = expression2 ? resultOf(expression2) : { ok: false, error: "\u7F3A\u5C11\u53D8\u91CF\u503C\u6216\u516C\u5F0F" };
       if (result2.ok) {
         definitionNames.push(name);
@@ -8154,13 +8233,17 @@ var createEvaluator = (options) => {
         if (result2.engineValue && result2.engineValue.re) {
           legacyVariables.set(name, result2.engineValue);
         }
-        hasExtendedDefinitions = hasExtendedDefinitions || isExtendedExpression(expression2, options);
+        hasExtendedDefinitions = hasExtendedDefinitions || /^\d/.test(name) || isExtendedExpression(expression2, options);
         record(result2, false);
       }
       return { kind: "definition", source: line, name, expression: expression2, result: result2 };
     }
     if (trimmed.includes("{{") || trimmed.includes("}}")) {
       return { kind: "inline", source: line, parts: parseInline(line) };
+    }
+    const labelled = parseLabelled(line);
+    if (labelled) {
+      return labelled;
     }
     const expression = trimmed;
     const result = resultOf(expression);
@@ -8193,6 +8276,22 @@ var DEMO_SOURCE = `${DEMO_MARKER}
 \u793A\u4F8B\u5355\u4EF7=68
 \u793A\u4F8B\u6570\u91CF=2
 \u793A\u4F8B\u603B\u4EF7\uFF1A{{\u793A\u4F8B\u5355\u4EF7*\u793A\u4F8B\u6570\u91CF}}
+
+\u3010\u6570\u5B57\u53D8\u91CF\u4E0E\u6587\u5B57\u516C\u5F0F\u3011
+\u793A\u4F8B1\u53F7=10
+\u793A\u4F8B2\u53F7=20
+\u793A\u4F8BAA=5
+\u793A\u4F8BBB=7
+\u793A\u4F8BCC=8
+\u7F16\u53F7\u5408\u8BA1\uFF1A\u793A\u4F8B1\u53F7+\u793A\u4F8B2\u53F7
+A B C \uFF1A \u793A\u4F8BAA + \u793A\u4F8BBB + \u793A\u4F8BCC
+
+\u3010\u53D8\u91CF\u7B5B\u9009\u6C42\u548C\u3011
+\u793A\u4F8B\u652F\u51FA_\u793A\u4F8B1\u53F7=10
+\u793A\u4F8B\u652F\u51FA_\u793A\u4F8B2\u53F7=20
+\u793A\u4F8B\u6536\u5165_\u793A\u4F8B1\u53F7=100
+\u793A\u4F8B\u652F\u51FA\u5408\u8BA1=sum("\u793A\u4F8B\u652F\u51FA_*")
+\u793A\u4F8B1\u53F7\u5408\u8BA1=sum("*_\u793A\u4F8B1\u53F7")
 
 \u3010\u65F6\u95F4\u3011
 \u793A\u4F8B\u5F00\u59CB=08:30

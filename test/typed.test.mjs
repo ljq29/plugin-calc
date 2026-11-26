@@ -118,5 +118,10 @@ for (let i = 1; i <= 50; i++) sequential.push(`a${i}=a${i - 1}+1`);
 sequential.push("结果：{{a50}}");
 eq(text(sequential.join("\n")).at(-1), "结果：50", "50 层变量引用按顺序一次求值");
 
+eq(evaluateNotebook("路程_A=1km\n路程_B=500m\n总路程=sum(\"路程_*\")")[2].result.value, "1.5km", "变量筛选求和沿用可换算单位");
+eq(evaluateNotebook("a=1\nb=2m\nc=sum(\"*\")")[2].result.ok, false, "变量筛选求和拒绝不兼容类型");
+eq(evaluateNotebook("甲_A=100USD\n乙_A=20EUR\n合计=sum(\"*_A\")")[2].result.ok, false, "变量筛选求和拒绝混合货币");
+eq(evaluateNotebook("时长_A=1h\n时长_B=30min\n总时长=sum(\"时长_*\")")[2].result.value, "1h30min", "变量筛选求和支持时长");
+
 console.log(`\n时间日期与单位: ${passed} passed, ${failed} failed`);
 process.exit(failed === 0 ? 0 : 1);
