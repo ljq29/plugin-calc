@@ -33,6 +33,15 @@ const DEFAULT_SETTINGS = {
     enabled: true,
     triggerOnSpace: false,
     triggerOnCtrlEnter: true,
+    notebookAutoCalculate: true,
+    featureTimeDate: true,
+    featureTimeZone: true,
+    featureUnits: true,
+    featureCustomUnits: true,
+    featureAggregation: true,
+    featureCurrency: true,
+    onlineRatesEnabled: true,
+    showDemoButton: true,
     /** 结果精度：exact（精确）/ places（小数位）/ digits（有效数字） */
     roundMode: "exact",
     /** places 模式是小数位数；digits 模式是有效数字位数 */
@@ -50,6 +59,7 @@ export default class EqualsCalcPlugin extends Plugin {
         this.settings = Object.assign({}, DEFAULT_SETTINGS);
         /** 绑在 document 上的 keydown 处理器（捕获阶段） */
         this.onKeyDownBindThis = this.onKeyDown.bind(this);
+        this.calcNotebookRefreshes = new Set();
     }
 
     async onload() {
@@ -61,7 +71,16 @@ export default class EqualsCalcPlugin extends Plugin {
                     await this.refreshOnlineRates();
                     calcOptions.rates = this.settings.onlineRates;
                 };
-                return renderCalcNotebook(options, this.getPrecisionOptions(), calcOptions);
+                const dispose = renderCalcNotebook(options, this.getPrecisionOptions(), calcOptions);
+                const refresh = () => {
+                    Object.assign(calcOptions, this.getCalculationOptions());
+                    dispose.refresh();
+                };
+                this.calcNotebookRefreshes.add(refresh);
+                return () => {
+                    this.calcNotebookRefreshes.delete(refresh);
+                    dispose();
+                };
             }
         };
         this.protyleSlash.push({
@@ -83,6 +102,7 @@ export default class EqualsCalcPlugin extends Plugin {
 
     onunload() {
         document.removeEventListener("keydown", this.onKeyDownBindThis, true);
+        this.calcNotebookRefreshes.clear();
     }
 
     /* ---------------------------------------------------------------- *
@@ -102,6 +122,11 @@ export default class EqualsCalcPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(STORAGE_NAME, this.settings);
+    }
+
+    async saveSettingsAndRefresh() {
+        await this.saveSettings();
+        this.calcNotebookRefreshes.forEach(refresh => refresh());
     }
 
     /**
@@ -134,7 +159,7 @@ export default class EqualsCalcPlugin extends Plugin {
                 {value: "false", label: this.i18n.off}
             ], this.settings[key] ? "true" : "false", (value) => {
                 this.settings[key] = value === "true";
-                this.saveSettings();
+                this.saveSettingsAndRefresh();
             });
             this.setting.addItem({title: title, description: description, actionElement: select});
         };
@@ -142,6 +167,15 @@ export default class EqualsCalcPlugin extends Plugin {
         addSwitch(this.i18n.enabledTitle, this.i18n.enabledTip, "enabled");
         addSwitch(this.i18n.spaceTitle, this.i18n.spaceTip, "triggerOnSpace");
         addSwitch(this.i18n.ctrlEnterTitle, this.i18n.ctrlEnterTip, "triggerOnCtrlEnter");
+        addSwitch("计算笔记本自动重算", "类似 Excel 自动计算；关闭后只保存原文，点击“立即计算”刷新结果", "notebookAutoCalculate");
+        addSwitch("时间与日期", "时刻、时长、日期函数、工作日及日期格式化", "featureTimeDate");
+        addSwitch("时区", "zoned() 与 inZone() 时区日期时间", "featureTimeZone");
+        addSwitch("标准及复合单位", "单位识别、量纲运算、复合单位和单位换算", "featureUnits");
+        addSwitch("自定义单位", "允许使用 unit 声明块内自定义单位", "featureCustomUnits");
+        addSwitch("分组汇总", "prev、total 和 average", "featureAggregation");
+        addSwitch("货币换算", "金额类型及不同币种之间的转换", "featureCurrency");
+        addSwitch("在线汇率", "允许从 Frankfurter 更新汇率；手工和缓存汇率不受此开关影响", "onlineRatesEnabled");
+        addSwitch("示例按钮", "在计算笔记本右上角显示一键学习示例", "showDemoButton");
 
         // 结果精度：模式 + 位数。位数输入框只在 places / digits 模式下可用。
         const modeSelect = this.buildSelect([
@@ -150,7 +184,7 @@ export default class EqualsCalcPlugin extends Plugin {
             {value: "digits", label: this.i18n.roundDigits}
         ], this.settings.roundMode, (value) => {
             this.settings.roundMode = value;
-            this.saveSettings();
+            this.saveSettingsAndRefresh();
             digitsInput.disabled = value === "exact";
             digitsInput.classList.toggle("plugin-calc__disabled", value === "exact");
         });
@@ -168,7 +202,7 @@ export default class EqualsCalcPlugin extends Plugin {
             const parsed = Number.parseInt(digitsInput.value, 10);
             this.settings.roundDigits = Number.isFinite(parsed) ? parsed : 6;
             digitsInput.value = String(this.settings.roundDigits);
-            this.saveSettings();
+            this.saveSettingsAndRefresh();
         });
 
         const precisionRow = document.createElement("div");
@@ -189,7 +223,7 @@ export default class EqualsCalcPlugin extends Plugin {
             try {
                 JSON.parse(manualRates.value || "{}");
                 this.settings.manualExchangeRates = manualRates.value || "{}";
-                this.saveSettings();
+                this.saveSettingsAndRefresh();
                 manualRates.classList.remove("plugin-calc__invalid");
             } catch {
                 manualRates.classList.add("plugin-calc__invalid");
@@ -208,7 +242,7 @@ export default class EqualsCalcPlugin extends Plugin {
         holidays.placeholder = "2026-01-01, 2026-10-01";
         holidays.addEventListener("change", () => {
             this.settings.holidays = holidays.value;
-            this.saveSettings();
+            this.saveSettingsAndRefresh();
         });
         this.setting.addItem({
             title: "节假日",
@@ -223,7 +257,7 @@ export default class EqualsCalcPlugin extends Plugin {
         extraWorkdays.placeholder = "2026-11-29";
         extraWorkdays.addEventListener("change", () => {
             this.settings.extraWorkdays = extraWorkdays.value;
-            this.saveSettings();
+            this.saveSettingsAndRefresh();
         });
         this.setting.addItem({
             title: "调休工作日",
@@ -234,6 +268,7 @@ export default class EqualsCalcPlugin extends Plugin {
         const refreshButton = document.createElement("button");
         refreshButton.className = "b3-button";
         refreshButton.textContent = "更新在线汇率";
+        refreshButton.disabled = !this.settings.onlineRatesEnabled;
         const rateStatus = document.createElement("span");
         rateStatus.textContent = this.settings.onlineRates ?
             `${this.settings.onlineRates.source} · ${this.settings.onlineRates.date}` : "尚未更新";
@@ -298,11 +333,24 @@ export default class EqualsCalcPlugin extends Plugin {
             exchangeRates,
             rates: this.settings.onlineRates,
             holidays: this.settings.holidays.split(/[\s,，]+/).filter(Boolean),
-            extraWorkdays: this.settings.extraWorkdays.split(/[\s,，]+/).filter(Boolean)
+            extraWorkdays: this.settings.extraWorkdays.split(/[\s,，]+/).filter(Boolean),
+            notebookAutoCalculate: this.settings.notebookAutoCalculate,
+            showDemoButton: this.settings.showDemoButton,
+            features: {
+                timeDate: this.settings.featureTimeDate,
+                timeZone: this.settings.featureTimeZone,
+                units: this.settings.featureUnits,
+                customUnits: this.settings.featureCustomUnits,
+                aggregation: this.settings.featureAggregation,
+                currency: this.settings.featureCurrency
+            }
         };
     }
 
     async refreshOnlineRates() {
+        if (!this.settings.onlineRatesEnabled) {
+            throw new Error("在线汇率已在设置中禁用");
+        }
         if (this.ratePromise) {
             return this.ratePromise;
         }

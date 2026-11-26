@@ -66,6 +66,14 @@ Use the **示例** button in the notebook header to append a runnable learning t
 
 For a first run, insert `/计算`, click **示例**, then edit the demo values and watch the preview update.
 
+### Automatic and manual recalculation
+
+**计算笔记本自动重算** works like automatic calculation in Excel and is enabled by default. Automatic mode updates the preview after a 150 ms debounce. Manual mode computes once when a block opens, then saves edits without changing the previous preview. Use **立即计算** to recalculate explicitly. Source autosave always remains enabled.
+
+Changing a feature switch refreshes open blocks immediately. Online rates do not silently change a manual-mode preview in the background. During IME composition, preview calculation and autosave pause until composition ends, so intermediate pinyin such as `mi` does not repeatedly evaluate the whole notebook.
+
+Evaluation is sequential: each variable is computed once and later formulas reuse its typed value instead of reparsing every definition. Ordinary previews update changed rows only.
+
 ## Time, dates, units and currency
 
 Types are inferred from values; variables do not need declarations.
@@ -87,6 +95,7 @@ Days between: {{dateBetween(day,date("2026-12-03"),"days")}}
 - Units: `5km to m`, `1m+20cm`, `32degF to degC`, `1GiB to MiB`
 - Compound units: `100km/2h` → `50km/h`; `50km/h*2h` → `100km`; `25USD/h*14h` → `350USD`
 - Explicit construction: `unit(2,"m")`; `2m^2` means two square metres while `(2m)^2` means four
+- Bare names such as `mi`, `m`, and `h` do not become one-unit quantities. Units are recognized after numbers, in compound units and conversion targets, or through `unit()`, so `mi` and 明天 remain text while `5mi` is five miles
 - Block-scoped custom units: `unit 打 = 12 个`, then `unit 盒 = 6 打`, so `2盒 to 个` → `144个`
 
 ### Function and unit reference
@@ -173,7 +182,11 @@ The plugin never uses `eval` / `new Function`; it implements its own expression 
 The plugin does not occupy a top bar slot. Settings live in the plugin menu at the right end
 of the top bar: **plugin icon → 等号计算 (Equals Calc)**.
 
-- **Auto calculate** — master switch
+- **Auto-settle equals expressions** — master switch for ordinary editor settlement
+- **Notebook automatic recalculation** — manual mode saves edits and uses **立即计算** to refresh
+- **Time/date, time zone, standard/compound units, custom units, aggregation, and currency** — independent feature switches
+- **Online rates** — separate from currency conversion; manual and cached rates still work when disabled
+- **Demo button** — show or hide **示例**; all switches refresh open blocks immediately
 - **Also trigger on Space** — off by default (Space is a common typing key)
 - **Support Ctrl/Cmd + Enter** — on by default, for forcing a calculation while auto mode is off
 - **Result precision** — exact / decimal places / significant digits

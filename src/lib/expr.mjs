@@ -539,8 +539,8 @@ const createMathEnvironment = () => {
 };
 
 /** 数值求值：返回复数结果，以及行内赋值产生的副作用 */
-const evaluate = (statement) => {
-    const variables = {};
+const evaluate = (statement, options = {}) => {
+    const variables = Object.fromEntries(options.variables || []);
     const effects = [];
     const environment = createMathEnvironment();
     const {complexPow, callFunction} = environment;
@@ -892,7 +892,9 @@ const calculateLegacy = (source, options) => {
         }
         // "a=" 这类只剩变量名的写法还没有可计算的内容（等号后面还没输入数值），不结算
         const trimmed = source.trim();
-        if (isNameStart(trimmed[0]) && Array.from(trimmed).every(isNameChar) && !isConstantName(trimmed.toLowerCase())) {
+        const hasProvidedVariable = options && typeof options.variables?.has === "function" && options.variables.has(trimmed);
+        if (isNameStart(trimmed[0]) && Array.from(trimmed).every(isNameChar) &&
+            !isConstantName(trimmed.toLowerCase()) && !hasProvidedVariable) {
             return {ok: false, error: "incomplete assignment", position: -1};
         }
         const policy = normalizePolicy(options);
@@ -900,7 +902,8 @@ const calculateLegacy = (source, options) => {
 
         // 先按多项式路径试一次：能解出方程就返回解
         const context = {
-            variables: new Map(),
+            variables: new Map(Array.from(options && options.variables ? options.variables : [],
+                ([name, value]) => [name, value && value.re ? fixToRat(value.re) : value])),
             targetVariable: null,
             equation: null,
             policy: policy,
@@ -935,7 +938,7 @@ const calculateLegacy = (source, options) => {
             }
         }
 
-        const {value, effects} = evaluate(statement);
+        const {value, effects} = evaluate(statement, options);
         const lastByName = new Map();
         effects.forEach((effect) => {
             lastByName.set(effect.name, effect);

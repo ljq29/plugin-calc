@@ -49,6 +49,15 @@ unitCases.forEach(([source, expected]) => eq(calc(source), expected, source));
 eq(calculate("1m+1kg").ok, false, "不同量纲不能相加");
 eq(calculate("100USD+20EUR").ok, false, "不同币种不能直接相加");
 eq(calculate("2x").ok, false, "隐式乘法不再支持");
+eq(evaluateNotebook("距离=5km\nmi")[1].kind, "text", "裸 mi 不识别为英里");
+eq(evaluateNotebook("距离=5km\n明天")[1].kind, "text", "明天保持普通文本");
+eq(calc("5mi to km"), "8.04672km", "数字后的 mi 仍是英里");
+eq(calculate("5km", {features: {units: false}}).error.includes("单位功能"), true, "单位功能可禁用");
+eq(calculate("08:30", {features: {timeDate: false}}).error.includes("时间与日期"), true, "时间日期功能可禁用");
+eq(calculate("zoned(\"2026-11-26 15:00\",\"Asia/Shanghai\")", {features: {timeZone: false}}).error.includes("时区功能"), true, "时区功能可禁用");
+eq(calculate("100USD to CNY", {features: {currency: false}, exchangeRates: {"USD/CNY": 7.2}}).error.includes("货币功能"), true, "货币功能可禁用");
+eq(evaluateNotebook("unit 打 = 12 个", {features: {customUnits: false}})[0].result.error.includes("自定义单位"), true, "自定义单位可禁用");
+eq(evaluateNotebook("合计：{{total}}", {features: {aggregation: false}})[0].parts[1].error.includes("分组汇总"), true, "分组汇总可禁用");
 eq(calculate("2*x=10").text, "5", "显式乘法方程");
 
 eq(calc("100USD to CNY", {exchangeRates: {"USD/CNY": 7.2}}), "720CNY", "手工汇率");
@@ -103,6 +112,11 @@ eq(JSON.stringify(text(summary)), JSON.stringify([
     "平均：21.6666666666666666666666666666666666666667", "",
     "路程一：5km", "路程二：500m", "合计：5.5km"
 ]), "分组汇总、上一结果与单位汇总");
+
+const sequential = ["a0=0"];
+for (let i = 1; i <= 50; i++) sequential.push(`a${i}=a${i - 1}+1`);
+sequential.push("结果：{{a50}}");
+eq(text(sequential.join("\n")).at(-1), "结果：50", "50 层变量引用按顺序一次求值");
 
 console.log(`\n时间日期与单位: ${passed} passed, ${failed} failed`);
 process.exit(failed === 0 ? 0 : 1);

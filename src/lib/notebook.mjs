@@ -1,19 +1,26 @@
 import {calculate} from "./expr.mjs";
 import {createUnitRegistry, registerBaseUnit, registerScaledUnit, resolveUnit} from "./units.mjs";
 import {averageValues, fromLegacyValue, sumValues} from "./value.mjs";
+import {isExtendedExpression} from "./typed-expr.mjs";
+import {featureEnabled, requireFeature} from "./features.mjs";
 
 const DEFINITION_PATTERN = /^([\p{L}_][\p{L}\p{N}_]*)\s*=\s*(.*)$/u;
-const NAME_PATTERN = /^[\p{L}_][\p{L}\p{N}_]*$/u;
 const UNIT_PATTERN = /^unit\s+([\p{L}_][\p{L}\p{N}_]*)\s*=\s*([0-9]+(?:\.[0-9]+)?)\s+([\p{L}_][\p{L}\p{N}_]*)$/u;
 const CALC_OPTIONS = {maxLength: 10000};
 
 const createEvaluator = options => {
     const unitRegistry = createUnitRegistry();
-    const definitions = [];
+    const definitionNames = [];
+    const typedVariables = new Map();
+    const legacyVariables = new Map();
+    let hasExtendedDefinitions = false;
     let previous = null;
     let group = [];
 
     const resultOf = (expression, localOptions = {}) => {
+        if (!featureEnabled(options, "aggregation") && /\b(?:prev|total|average)\b/.test(expression)) {
+            return {ok: false, error: "分组汇总功能已在设置中禁用"};
+        }
         const specials = {};
         if (previous) {
             specials.prev = previous;
@@ -32,8 +39,13 @@ const createEvaluator = options => {
                 return {ok: false, error: error.message};
             }
         }
-        const source = definitions.concat(expression).join(";");
-        const result = calculate(source, Object.assign({}, options, CALC_OPTIONS, localOptions, {unitRegistry, specials}));
+        const useTyped = hasExtendedDefinitions || isExtendedExpression(expression, options);
+        const result = calculate(expression, Object.assign({}, options, CALC_OPTIONS, localOptions, {
+            unitRegistry,
+            specials,
+            variables: useTyped ? typedVariables : legacyVariables,
+            forceTyped: useTyped
+        }));
         if (!result.ok) {
             return {ok: false, error: result.error};
         }
@@ -45,7 +57,7 @@ const createEvaluator = options => {
                 value = null;
             }
         }
-        return {ok: true, value: result.text, rawValue: value};
+        return {ok: true, value: result.text, rawValue: value, engineValue: result.value};
     };
 
     const record = (result, includeInGroup = true) => {
@@ -101,8 +113,7 @@ const createEvaluator = options => {
             /^[A-Za-z_][A-Za-z0-9_]*(?:\s*[+\-*/^%]\s*[A-Za-z_][A-Za-z0-9_]*)+$/.test(line)) {
             return true;
         }
-        return definitions.some(definition => {
-            const name = definition.slice(0, definition.indexOf("=")).trim();
+        return definitionNames.some(name => {
             return new RegExp("(?<![\\p{L}\\p{N}_])" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
                 "(?![\\p{L}\\p{N}_])", "u").test(line);
         });
@@ -111,6 +122,7 @@ const createEvaluator = options => {
     const defineUnit = match => {
         const [, name, amount, baseName] = match;
         try {
+            requireFeature(options, "customUnits", "自定义单位功能");
             const base = resolveUnit(baseName, unitRegistry) || registerBaseUnit(unitRegistry, baseName);
             registerScaledUnit(unitRegistry, name, amount, base);
             return {
@@ -144,7 +156,14 @@ const createEvaluator = options => {
             const expression = definition[2].trim();
             const result = expression ? resultOf(expression) : {ok: false, error: "缺少变量值或公式"};
             if (result.ok) {
-                definitions.push(name + "=" + expression);
+                definitionNames.push(name);
+                if (result.rawValue) {
+                    typedVariables.set(name, result.rawValue);
+                }
+                if (result.engineValue && result.engineValue.re) {
+                    legacyVariables.set(name, result.engineValue);
+                }
+                hasExtendedDefinitions = hasExtendedDefinitions || isExtendedExpression(expression, options);
                 record(result, false);
             }
             return {kind: "definition", source: line, name, expression, result};

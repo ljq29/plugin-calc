@@ -2,7 +2,7 @@
   "name": "plugin-calc",
   "author": "pisceswb",
   "url": "https://github.com/pisceswb/plugin-calc",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "minAppVersion": "3.8.10",
   "backends": [
     "all"
@@ -16,8 +16,8 @@
     "zh-CN": "等号计算"
   },
   "description": {
-    "default": "Calc notebooks with one-click demos, three views, dates, time zones, units, aggregation and currency conversion",
-    "zh-CN": "等号结算与三视图计算笔记本，一键追加学习示例，支持时间日期、时区、复合及自定义单位、分组汇总和货币换算"
+    "default": "Calc notebooks with automatic/manual recalculation, feature switches, demos, dates, time zones, units, aggregation and currency conversion",
+    "zh-CN": "等号结算与三视图计算笔记本，支持自动/手动重算、独立功能开关、学习示例、时间日期、时区、单位、分组汇总和货币换算"
   },
   "readme": {
     "default": "README.md",

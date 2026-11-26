@@ -17,6 +17,7 @@ import {
     ratToFix
 } from "./number.mjs";
 import {applyPrecision, normalizePolicy} from "./precision.mjs";
+import {featureEnabled, requireFeature} from "./features.mjs";
 import {
     addQuantities,
     combineUnits,
@@ -66,6 +67,7 @@ export const fromLegacyValue = value => {
 
 export const literalValue = (amount, name, options = {}) => {
     if (isCurrency(name, options)) {
+        requireFeature(options, "currency", "货币功能");
         return moneyValue(amount, name);
     }
     const unit = resolveUnit(name, options.unitRegistry);
@@ -73,17 +75,19 @@ export const literalValue = (amount, name, options = {}) => {
         throw new Error("未知单位: " + name);
     }
     const time = timeUnit(unit.symbol) || (unit.dimensions.time === 1 ? unit : null);
-    if (time) {
+    if (time && (featureEnabled(options, "timeDate") || featureEnabled(options, "units"))) {
         return {
             kind: "duration",
             seconds: ratToFix(ratMul(fixToRat(amount), time.factor)),
             displayUnit: time
         };
     }
+    requireFeature(options, "units", "单位功能");
     return quantityFromAmount(amount, unit);
 };
 
 export const unitValue = (name, options = {}) => {
+    requireFeature(options, "units", "单位功能");
     const unit = resolveUnit(name, options.unitRegistry);
     if (!unit) {
         throw new Error("未知单位: " + name);
@@ -257,10 +261,14 @@ const exchangeRate = (from, to, options) => {
 
 export const convertValue = (value, targetName, options = {}) => {
     if (value.kind === "money" && isCurrency(targetName, options)) {
+        requireFeature(options, "currency", "货币功能");
         const amount = ratToFix(ratMul(fixToRat(value.amount), exchangeRate(value.currency, targetName, options)));
         return moneyValue(amount, targetName);
     }
     if (value.kind === "duration") {
+        if (!featureEnabled(options, "timeDate") && !featureEnabled(options, "units")) {
+            throw new Error("时间与单位功能均已禁用");
+        }
         const target = timeUnit(targetName) || (resolveUnit(targetName, options.unitRegistry) || {}).dimensions?.time === 1 ? resolveUnit(targetName, options.unitRegistry) : null;
         if (!target) {
             throw new Error("时长只能转换为秒、分钟、小时、天或周");
@@ -268,6 +276,7 @@ export const convertValue = (value, targetName, options = {}) => {
         return durationFromSeconds(value.seconds, target);
     }
     if (value.kind === "quantity" && isCurrency(targetName, options)) {
+        requireFeature(options, "currency", "货币功能");
         const keys = Object.keys(value.unit.dimensions);
         if (keys.length === 1 && keys[0].startsWith("currency_") && value.unit.dimensions[keys[0]] === 1) {
             const from = keys[0].slice(9);
@@ -276,6 +285,7 @@ export const convertValue = (value, targetName, options = {}) => {
         }
     }
     if (value.kind === "quantity") {
+        requireFeature(options, "units", "单位功能");
         const target = resolveUnit(targetName, options.unitRegistry);
         if (!target) {
             throw new Error("未知单位: " + targetName);
@@ -291,9 +301,13 @@ export const convertToValue = (value, target, options = {}) => {
     }
     if (target.kind === "quantity") {
         if (value.kind === "quantity") {
+            requireFeature(options, "units", "单位功能");
             return convertQuantity(value, target.unit);
         }
         if (value.kind === "duration" && target.unit.dimensions.time === 1) {
+            if (!featureEnabled(options, "timeDate") && !featureEnabled(options, "units")) {
+                throw new Error("时间与单位功能均已禁用");
+            }
             return durationFromSeconds(value.seconds, target.unit);
         }
     }

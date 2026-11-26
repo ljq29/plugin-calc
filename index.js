@@ -1518,6 +1518,14 @@ var applyPrecision = (rational, policy) => {
   return ratNorm(rounded2.n, rounded2.d, rounded2.neg);
 };
 
+// src/lib/features.mjs
+var featureEnabled = (options, name) => !options.features || options.features[name] !== false;
+var requireFeature = (options, name, label) => {
+  if (!featureEnabled(options, name)) {
+    throw new Error(label + "\u5DF2\u5728\u8BBE\u7F6E\u4E2D\u7981\u7528");
+  }
+};
+
 // node_modules/@js-temporal/polyfill/dist/index.esm.js
 var import_jsbi = __toESM(require_jsbi_umd(), 1);
 var t = import_jsbi.default.BigInt(0);
@@ -6010,6 +6018,7 @@ var fromLegacyValue = (value) => {
 };
 var literalValue = (amount, name, options = {}) => {
   if (isCurrency(name, options)) {
+    requireFeature(options, "currency", "\u8D27\u5E01\u529F\u80FD");
     return moneyValue(amount, name);
   }
   const unit = resolveUnit(name, options.unitRegistry);
@@ -6017,16 +6026,18 @@ var literalValue = (amount, name, options = {}) => {
     throw new Error("\u672A\u77E5\u5355\u4F4D: " + name);
   }
   const time = timeUnit(unit.symbol) || (unit.dimensions.time === 1 ? unit : null);
-  if (time) {
+  if (time && (featureEnabled(options, "timeDate") || featureEnabled(options, "units"))) {
     return {
       kind: "duration",
       seconds: ratToFix(ratMul(fixToRat(amount), time.factor)),
       displayUnit: time
     };
   }
+  requireFeature(options, "units", "\u5355\u4F4D\u529F\u80FD");
   return quantityFromAmount(amount, unit);
 };
 var unitValue = (name, options = {}) => {
+  requireFeature(options, "units", "\u5355\u4F4D\u529F\u80FD");
   const unit = resolveUnit(name, options.unitRegistry);
   if (!unit) {
     throw new Error("\u672A\u77E5\u5355\u4F4D: " + name);
@@ -6191,10 +6202,14 @@ var exchangeRate = (from, to2, options) => {
 var convertValue = (value, targetName, options = {}) => {
   var _a3;
   if (value.kind === "money" && isCurrency(targetName, options)) {
+    requireFeature(options, "currency", "\u8D27\u5E01\u529F\u80FD");
     const amount = ratToFix(ratMul(fixToRat(value.amount), exchangeRate(value.currency, targetName, options)));
     return moneyValue(amount, targetName);
   }
   if (value.kind === "duration") {
+    if (!featureEnabled(options, "timeDate") && !featureEnabled(options, "units")) {
+      throw new Error("\u65F6\u95F4\u4E0E\u5355\u4F4D\u529F\u80FD\u5747\u5DF2\u7981\u7528");
+    }
     const target = timeUnit(targetName) || ((_a3 = (resolveUnit(targetName, options.unitRegistry) || {}).dimensions) == null ? void 0 : _a3.time) === 1 ? resolveUnit(targetName, options.unitRegistry) : null;
     if (!target) {
       throw new Error("\u65F6\u957F\u53EA\u80FD\u8F6C\u6362\u4E3A\u79D2\u3001\u5206\u949F\u3001\u5C0F\u65F6\u3001\u5929\u6216\u5468");
@@ -6202,6 +6217,7 @@ var convertValue = (value, targetName, options = {}) => {
     return durationFromSeconds(value.seconds, target);
   }
   if (value.kind === "quantity" && isCurrency(targetName, options)) {
+    requireFeature(options, "currency", "\u8D27\u5E01\u529F\u80FD");
     const keys = Object.keys(value.unit.dimensions);
     if (keys.length === 1 && keys[0].startsWith("currency_") && value.unit.dimensions[keys[0]] === 1) {
       const from = keys[0].slice(9);
@@ -6210,6 +6226,7 @@ var convertValue = (value, targetName, options = {}) => {
     }
   }
   if (value.kind === "quantity") {
+    requireFeature(options, "units", "\u5355\u4F4D\u529F\u80FD");
     const target = resolveUnit(targetName, options.unitRegistry);
     if (!target) {
       throw new Error("\u672A\u77E5\u5355\u4F4D: " + targetName);
@@ -6224,9 +6241,13 @@ var convertToValue = (value, target, options = {}) => {
   }
   if (target.kind === "quantity") {
     if (value.kind === "quantity") {
+      requireFeature(options, "units", "\u5355\u4F4D\u529F\u80FD");
       return convertQuantity(value, target.unit);
     }
     if (value.kind === "duration" && target.unit.dimensions.time === 1) {
+      if (!featureEnabled(options, "timeDate") && !featureEnabled(options, "units")) {
+        throw new Error("\u65F6\u95F4\u4E0E\u5355\u4F4D\u529F\u80FD\u5747\u5DF2\u7981\u7528");
+      }
       return durationFromSeconds(value.seconds, target.unit);
     }
   }
@@ -6457,7 +6478,7 @@ var parse = (tokens) => {
     if (token.type !== T_NAME) {
       throw new Error("to \u540E\u9700\u8981\u76EE\u6807\u5355\u4F4D");
     }
-    let node = { kind: "name", text: token.text, args: [], isCall: false };
+    let node = { kind: "name", text: token.text, args: [], isCall: false, unitContext: true };
     while (isOp(peek(), "^") || isOp(peek(), "/") || isOp(peek(), "*")) {
       const operator = next().text;
       if (operator === "^") {
@@ -6471,7 +6492,7 @@ var parse = (tokens) => {
         if (name.type !== T_NAME) {
           throw new Error("\u590D\u5408\u5355\u4F4D\u5199\u6CD5\u4E0D\u6B63\u786E");
         }
-        node = { kind: "binary", op: operator, left: node, right: { kind: "name", text: name.text, args: [], isCall: false } };
+        node = { kind: "binary", op: operator, left: node, right: { kind: "name", text: name.text, args: [], isCall: false, unitContext: true } };
       }
     }
     return node;
@@ -6494,7 +6515,13 @@ var parse = (tokens) => {
     while (true) {
       if (isOp(peek(), "*") || isOp(peek(), "/") || isOp(peek(), "%")) {
         const op = next().text;
-        node = { kind: "binary", op, left: node, right: parseUnary() };
+        const right = parseUnary();
+        if ((op === "/" || op === "*") && right.kind === "name" && !right.isCall) {
+          right.unitContext = true;
+        } else if ((op === "/" || op === "*") && right.kind === "binary" && right.op === "^" && right.left.kind === "name" && !right.left.isCall) {
+          right.left.unitContext = true;
+        }
+        node = { kind: "binary", op, left: node, right };
         continue;
       }
       if (node.kind === "quantity" && peek().type === T_NUM && peek(1).type === T_NAME) {
@@ -6643,10 +6670,33 @@ var evaluate = (program, options) => {
   const constants = { pi: numberValue("3.14159265358979323846"), e: numberValue("2.718281828459045") };
   const callFunction = (name, args) => {
     const lower = name.toLowerCase();
+    if (["zoned", "inzone"].includes(lower)) {
+      requireFeature(options, "timeZone", "\u65F6\u533A\u529F\u80FD");
+    } else if ([
+      "time",
+      "date",
+      "datetime",
+      "today",
+      "now",
+      "dateadd",
+      "datesubtract",
+      "datebetween",
+      "formatdate",
+      "workdays",
+      "addworkdays",
+      "year",
+      "month",
+      "day",
+      "hour",
+      "minute"
+    ].includes(lower)) {
+      requireFeature(options, "timeDate", "\u65F6\u95F4\u4E0E\u65E5\u671F\u529F\u80FD");
+    }
     if (lower === "unit") {
       return literalValue(numericArgument(args[0], "unit"), stringArg(args, 1, "unit"), options);
     }
     if (lower === "money") {
+      requireFeature(options, "currency", "\u8D27\u5E01\u529F\u80FD");
       return moneyValue(numericArgument(args[0], "money"), stringArg(args, 1, "money").toUpperCase());
     }
     if (lower === "time") return timeValue(stringArg(args, 0, "time"));
@@ -6689,6 +6739,7 @@ var evaluate = (program, options) => {
       case "string":
         return { kind: "string", value: node.value };
       case "time":
+        requireFeature(options, "timeDate", "\u65F6\u95F4\u4E0E\u65E5\u671F\u529F\u80FD");
         return timeValue(node.value);
       case "quantity":
         return literalValue(evalNode(node.amount).value, node.unit, options);
@@ -6706,7 +6757,8 @@ var evaluate = (program, options) => {
         if (Object.prototype.hasOwnProperty.call(options.specials || {}, node.text)) return options.specials[node.text];
         if (constants[node.text]) return constants[node.text];
         if (isCurrency(node.text, options)) return moneyValue(fixFromString("1"), node.text);
-        return unitValue(node.text, options);
+        if (node.unitContext) return unitValue(node.text, options);
+        throw new Error("\u672A\u5B9A\u4E49\u53D8\u91CF: " + node.text);
       }
       case "negate":
         return negateValue(evalNode(node.value));
@@ -7453,8 +7505,8 @@ var createMathEnvironment = () => {
   };
   return { complexPow, callFunction };
 };
-var evaluate2 = (statement) => {
-  const variables = {};
+var evaluate2 = (statement, options = {}) => {
+  const variables = Object.fromEntries(options.variables || []);
   const effects = [];
   const environment = createMathEnvironment();
   const { complexPow, callFunction } = environment;
@@ -7745,19 +7797,24 @@ var polyOf = (node, context) => {
 };
 var numberToRat2 = (value) => fixToRat(numberToFix(value));
 var calculateLegacy = (source, options) => {
+  var _a3;
   try {
     const maxLength = options && Number.isFinite(options.maxLength) ? options.maxLength : 500;
     if (typeof source !== "string" || source.length > maxLength) {
       throw new Error("expression too long");
     }
     const trimmed = source.trim();
-    if (isNameStart2(trimmed[0]) && Array.from(trimmed).every(isNameChar2) && !isConstantName(trimmed.toLowerCase())) {
+    const hasProvidedVariable = options && typeof ((_a3 = options.variables) == null ? void 0 : _a3.has) === "function" && options.variables.has(trimmed);
+    if (isNameStart2(trimmed[0]) && Array.from(trimmed).every(isNameChar2) && !isConstantName(trimmed.toLowerCase()) && !hasProvidedVariable) {
       return { ok: false, error: "incomplete assignment", position: -1 };
     }
     const policy = normalizePolicy(options);
     const statement = parse2(tokenize2(normalizeExpression(source)));
     const context = {
-      variables: /* @__PURE__ */ new Map(),
+      variables: new Map(Array.from(
+        options && options.variables ? options.variables : [],
+        ([name, value2]) => [name, value2 && value2.re ? fixToRat(value2.re) : value2]
+      )),
       targetVariable: null,
       equation: null,
       policy,
@@ -7787,7 +7844,7 @@ var calculateLegacy = (source, options) => {
         return { ok: false, error: error.message, position: -1 };
       }
     }
-    const { value, effects } = evaluate2(statement);
+    const { value, effects } = evaluate2(statement, options);
     const lastByName = /* @__PURE__ */ new Map();
     effects.forEach((effect) => {
       lastByName.set(effect.name, effect);
@@ -7950,10 +8007,16 @@ var UNIT_PATTERN = /^unit\s+([\p{L}_][\p{L}\p{N}_]*)\s*=\s*([0-9]+(?:\.[0-9]+)?)
 var CALC_OPTIONS = { maxLength: 1e4 };
 var createEvaluator = (options) => {
   const unitRegistry = createUnitRegistry();
-  const definitions = [];
+  const definitionNames = [];
+  const typedVariables = /* @__PURE__ */ new Map();
+  const legacyVariables = /* @__PURE__ */ new Map();
+  let hasExtendedDefinitions = false;
   let previous = null;
   let group = [];
   const resultOf = (expression, localOptions = {}) => {
+    if (!featureEnabled(options, "aggregation") && /\b(?:prev|total|average)\b/.test(expression)) {
+      return { ok: false, error: "\u5206\u7EC4\u6C47\u603B\u529F\u80FD\u5DF2\u5728\u8BBE\u7F6E\u4E2D\u7981\u7528" };
+    }
     const specials = {};
     if (previous) {
       specials.prev = previous;
@@ -7972,8 +8035,13 @@ var createEvaluator = (options) => {
         return { ok: false, error: error.message };
       }
     }
-    const source = definitions.concat(expression).join(";");
-    const result = calculate(source, Object.assign({}, options, CALC_OPTIONS, localOptions, { unitRegistry, specials }));
+    const useTyped = hasExtendedDefinitions || isExtendedExpression(expression, options);
+    const result = calculate(expression, Object.assign({}, options, CALC_OPTIONS, localOptions, {
+      unitRegistry,
+      specials,
+      variables: useTyped ? typedVariables : legacyVariables,
+      forceTyped: useTyped
+    }));
     if (!result.ok) {
       return { ok: false, error: result.error };
     }
@@ -7985,7 +8053,7 @@ var createEvaluator = (options) => {
         value = null;
       }
     }
-    return { ok: true, value: result.text, rawValue: value };
+    return { ok: true, value: result.text, rawValue: value, engineValue: result.value };
   };
   const record = (result, includeInGroup = true) => {
     if (!result.ok || !result.rawValue) {
@@ -8035,14 +8103,14 @@ var createEvaluator = (options) => {
     if (/^[0-9./*^%()]/.test(line) || /^[+-]/.test(line) && !/^[+-]\s/.test(line) || /\d/.test(line) && /[+\-*/^%]/.test(line) || /^[A-Za-z_][A-Za-z0-9_]*\s*\(/.test(line) || /^[A-Za-z_][A-Za-z0-9_]*(?:\s*[+\-*/^%]\s*[A-Za-z_][A-Za-z0-9_]*)+$/.test(line)) {
       return true;
     }
-    return definitions.some((definition2) => {
-      const name = definition2.slice(0, definition2.indexOf("=")).trim();
+    return definitionNames.some((name) => {
       return new RegExp("(?<![\\p{L}\\p{N}_])" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}\\p{N}_])", "u").test(line);
     });
   };
   const defineUnit = (match) => {
     const [, name, amount, baseName] = match;
     try {
+      requireFeature(options, "customUnits", "\u81EA\u5B9A\u4E49\u5355\u4F4D\u529F\u80FD");
       const base = resolveUnit(baseName, unitRegistry) || registerBaseUnit(unitRegistry, baseName);
       registerScaledUnit(unitRegistry, name, amount, base);
       return {
@@ -8079,7 +8147,14 @@ var createEvaluator = (options) => {
       const expression2 = definition2[2].trim();
       const result2 = expression2 ? resultOf(expression2) : { ok: false, error: "\u7F3A\u5C11\u53D8\u91CF\u503C\u6216\u516C\u5F0F" };
       if (result2.ok) {
-        definitions.push(name + "=" + expression2);
+        definitionNames.push(name);
+        if (result2.rawValue) {
+          typedVariables.set(name, result2.rawValue);
+        }
+        if (result2.engineValue && result2.engineValue.re) {
+          legacyVariables.set(name, result2.engineValue);
+        }
+        hasExtendedDefinitions = hasExtendedDefinitions || isExtendedExpression(expression2, options);
         record(result2, false);
       }
       return { kind: "definition", source: line, name, expression: expression2, result: result2 };
@@ -8169,6 +8244,14 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
   let activeLine = Number.isInteger(state.activeLine) ? state.activeLine : null;
   let root;
   let status;
+  let previewLines = state.previewLines || null;
+  let previewTimer = null;
+  let previewDirty = Boolean(state.previewDirty);
+  let composing = false;
+  const autoCalculate = () => calcOptions.notebookAutoCalculate !== false;
+  if (autoCalculate() && previewDirty) {
+    previewLines = null;
+  }
   const updateStatus = (text) => {
     if (status) {
       status.textContent = text;
@@ -8240,7 +8323,9 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
     editor.setSelectionRange(position, position);
   };
   const scheduleSave = () => {
-    updateStatus("");
+    if (autoCalculate() || !previewDirty) {
+      updateStatus("");
+    }
     if (saveTimer) {
       clearTimeout(saveTimer);
     }
@@ -8273,19 +8358,115 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
     editor.style.height = "auto";
     editor.style.height = Math.max(120, editor.scrollHeight) + "px";
   };
+  const evaluatedLines = () => {
+    if (!previewLines) {
+      previewLines = evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions));
+      state.previewLines = previewLines;
+      previewDirty = false;
+      state.previewDirty = false;
+    }
+    if (previewDirty && !autoCalculate()) {
+      return source.split("\n").map((text, index) => Object.assign(
+        {},
+        previewLines[index] || { kind: "text" },
+        { source: text }
+      ));
+    }
+    return previewLines;
+  };
+  const updatePreviewElement = (preview) => {
+    const evaluated = evaluatedLines();
+    evaluated.forEach((line, index) => {
+      var _a3;
+      const row = document2.createElement("div");
+      renderLine(row, line);
+      const signature = line.source + "\n" + row.textContent;
+      const existing = preview.childNodes[index];
+      if (!existing) {
+        preview.append(row);
+      } else if (((_a3 = existing.dataset) == null ? void 0 : _a3.signature) !== signature) {
+        existing.replaceWith(row);
+      }
+      row.dataset.signature = signature;
+    });
+    while (preview.childNodes.length > evaluated.length) {
+      const last = preview.childNodes[preview.childNodes.length - 1];
+      if (typeof last.remove === "function") {
+        last.remove();
+      } else {
+        preview.childNodes.pop();
+      }
+    }
+    return preview;
+  };
   const createPreview = () => {
     const preview = document2.createElement("div");
     preview.className = "plugin-calc-notebook__preview";
-    evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions)).forEach((line) => {
-      const row = document2.createElement("div");
-      renderLine(row, line);
-      preview.append(row);
+    return updatePreviewElement(preview);
+  };
+  const refreshPreview = () => {
+    if (state.mode === "live") {
+      renderLive();
+    } else {
+      const preview = root.querySelector(".plugin-calc-notebook__preview");
+      if (preview) {
+        updatePreviewElement(preview);
+      }
+    }
+  };
+  const calculateNow = () => {
+    if (previewTimer) {
+      clearTimeout(previewTimer);
+      previewTimer = null;
+    }
+    previewLines = null;
+    previewDirty = false;
+    state.previewDirty = false;
+    updateStatus("");
+    refreshPreview();
+    maybeRefreshRates(true);
+  };
+  const schedulePreview = () => {
+    previewDirty = true;
+    state.previewDirty = true;
+    if (!autoCalculate()) {
+      updateStatus("\u7ED3\u679C\u672A\u66F4\u65B0\uFF08\u81EA\u52A8\u91CD\u7B97\u5DF2\u5173\u95ED\uFF0C\u53EF\u70B9\u51FB\u7ACB\u5373\u8BA1\u7B97\uFF09");
+      return;
+    }
+    if (previewTimer) {
+      clearTimeout(previewTimer);
+    }
+    previewTimer = setTimeout(() => {
+      previewTimer = null;
+      if (disposed || composing) {
+        return;
+      }
+      previewLines = null;
+      refreshPreview();
+      maybeRefreshRates(false);
+    }, 150);
+  };
+  const bindComposition = (editor) => {
+    editor.addEventListener("compositionstart", () => {
+      composing = true;
+      if (previewTimer) {
+        clearTimeout(previewTimer);
+        previewTimer = null;
+      }
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+      }
     });
-    return preview;
+    editor.addEventListener("compositionend", () => {
+      composing = false;
+      schedulePreview();
+      scheduleSave();
+    });
   };
   let refreshingRates = false;
-  const maybeRefreshRates = () => {
-    if (refreshingRates || calcOptions.rates || typeof calcOptions.refreshRates !== "function" || !/(?:\d\s*[A-Z]{3}\b|\bto\s+[A-Z]{3}\b)/.test(source)) {
+  const maybeRefreshRates = (force = false) => {
+    if (!force && !autoCalculate() || refreshingRates || calcOptions.rates || typeof calcOptions.refreshRates !== "function" || !/(?:\d\s*[A-Z]{3}\b|\bto\s+[A-Z]{3}\b)/.test(source)) {
       return;
     }
     refreshingRates = true;
@@ -8294,14 +8475,8 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
       if (disposed || !root.isConnected) {
         return;
       }
-      if (state.mode === "live") {
-        renderLive();
-      } else {
-        const preview = root.querySelector(".plugin-calc-notebook__preview");
-        if (preview) {
-          preview.replaceWith(createPreview());
-        }
-      }
+      previewLines = null;
+      refreshPreview();
       updateStatus(calcOptions.rates && calcOptions.rates.date ? `\u6C47\u7387\uFF1AFrankfurter \xB7 ${calcOptions.rates.date}` : "\u6C47\u7387\u5DF2\u66F4\u65B0");
     }).catch((error) => {
       updateStatus("\u5728\u7EBF\u6C47\u7387\u66F4\u65B0\u5931\u8D25\uFF0C\u53EF\u7528\u624B\u5DE5\u6C47\u7387\uFF1A" + error.message);
@@ -8338,12 +8513,17 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
     source = lines.join("\n");
     activeLine = index;
     state.activeLine = index;
+    previewDirty = true;
+    if (autoCalculate()) {
+      previewLines = null;
+    }
     renderLive();
     focusEditor(currentEditor(), caret);
+    schedulePreview();
     scheduleSave();
   };
   const bindLiveEditor = (editor, index) => {
-    editor.addEventListener("input", () => {
+    editor.addEventListener("input", (event) => {
       const chunks = editor.value.split("\n");
       if (chunks.length > 1) {
         const lines2 = source.split("\n");
@@ -8354,17 +8534,15 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
       const lines = source.split("\n");
       lines[index] = editor.value;
       source = lines.join("\n");
-      const evaluated = evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions));
-      [...root.querySelectorAll(".plugin-calc-notebook__live > .plugin-calc-notebook__line")].forEach((row, rowIndex) => {
-        if (rowIndex !== activeLine && evaluated[rowIndex]) {
-          row.replaceChildren();
-          renderLine(row, evaluated[rowIndex]);
-        }
-      });
       editor.style.height = "auto";
       editor.style.height = Math.max(30, editor.scrollHeight) + "px";
+      if (event.isComposing || composing) {
+        return;
+      }
+      schedulePreview();
       scheduleSave();
     });
+    bindComposition(editor);
     editor.addEventListener("keydown", (event) => {
       if (event.isComposing) {
         return;
@@ -8417,7 +8595,7 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
   };
   function renderLive() {
     const live = root.querySelector(".plugin-calc-notebook__live");
-    const evaluated = evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions));
+    const evaluated = evaluatedLines();
     if (activeLine !== null) {
       activeLine = Math.max(0, Math.min(activeLine, evaluated.length - 1));
       state.activeLine = activeLine;
@@ -8465,14 +8643,22 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
     }
     const separator = !source ? "" : source.endsWith("\n\n") ? "" : source.endsWith("\n") ? "\n" : "\n\n";
     source += separator + DEMO_SOURCE;
+    if (autoCalculate()) {
+      previewLines = null;
+    } else {
+      previewDirty = true;
+    }
     if (state.mode === "live") {
-      activeLine = source.split("\n").length - 1;
+      activeLine = autoCalculate() ? source.split("\n").length - 1 : null;
       state.activeLine = activeLine;
     }
     renderShell();
     const editor = currentEditor();
     if (editor) {
       focusEditor(editor, editor.value.length);
+    }
+    if (!autoCalculate()) {
+      schedulePreview();
     }
     scheduleSave();
   };
@@ -8503,14 +8689,24 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
       });
       controls.append(button);
     });
-    const demo = document2.createElement("button");
-    demo.type = "button";
-    demo.className = "b3-button b3-button--text";
-    demo.textContent = "\u793A\u4F8B";
-    demo.dataset.action = "demo";
-    demo.title = "\u5728\u672B\u5C3E\u8FFD\u52A0\u5B66\u4E60\u793A\u4F8B\uFF1B\u5DF2\u6709\u793A\u4F8B\u65F6\u5B9A\u4F4D\u5230\u793A\u4F8B";
-    demo.addEventListener("click", appendOrLocateDemo);
-    controls.append(demo);
+    const calculate2 = document2.createElement("button");
+    calculate2.type = "button";
+    calculate2.className = "b3-button b3-button--text";
+    calculate2.textContent = "\u7ACB\u5373\u8BA1\u7B97";
+    calculate2.dataset.action = "calculate";
+    calculate2.title = "\u4F7F\u7528\u5F53\u524D\u539F\u6587\u91CD\u65B0\u8BA1\u7B97\u9884\u89C8";
+    calculate2.addEventListener("click", calculateNow);
+    controls.append(calculate2);
+    if (calcOptions.showDemoButton !== false) {
+      const demo = document2.createElement("button");
+      demo.type = "button";
+      demo.className = "b3-button b3-button--text";
+      demo.textContent = "\u793A\u4F8B";
+      demo.dataset.action = "demo";
+      demo.title = "\u5728\u672B\u5C3E\u8FFD\u52A0\u5B66\u4E60\u793A\u4F8B\uFF1B\u5DF2\u6709\u793A\u4F8B\u65F6\u5B9A\u4F4D\u5230\u793A\u4F8B";
+      demo.addEventListener("click", appendOrLocateDemo);
+      controls.append(demo);
+    }
     const toggle = document2.createElement("button");
     toggle.type = "button";
     toggle.className = "b3-button b3-button--text";
@@ -8526,6 +8722,9 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
     status = document2.createElement("div");
     status.className = "plugin-calc-notebook__status";
     status.setAttribute("role", "status");
+    if (previewDirty && !autoCalculate()) {
+      updateStatus("\u7ED3\u679C\u672A\u66F4\u65B0\uFF08\u81EA\u52A8\u91CD\u7B97\u5DF2\u5173\u95ED\uFF0C\u53EF\u70B9\u51FB\u7ACB\u5373\u8BA1\u7B97\uFF09");
+    }
     if (state.mode === "live") {
       const live = document2.createElement("div");
       live.className = "plugin-calc-notebook__live";
@@ -8541,12 +8740,16 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
     editor.setAttribute("aria-label", "\u8BA1\u7B97\u7B14\u8BB0\u672C\u539F\u6587");
     editor.spellcheck = false;
     editor.value = source;
-    editor.addEventListener("input", () => {
+    editor.addEventListener("input", (event) => {
       source = editor.value;
-      body.querySelector(".plugin-calc-notebook__preview").replaceWith(createPreview());
       resize(editor);
+      if (event.isComposing || composing) {
+        return;
+      }
+      schedulePreview();
       scheduleSave();
     });
+    bindComposition(editor);
     body.append(editor, createPreview());
     root.append(body, status);
     resize(editor);
@@ -8555,12 +8758,23 @@ var renderCalcNotebook = (options, precisionOptions, calcOptions = {}) => {
   root = document2.createElement("section");
   options.element.replaceChildren(root);
   renderShell();
-  return () => {
+  const dispose = () => {
     disposed = true;
     if (saveTimer) {
       clearTimeout(saveTimer);
     }
+    if (previewTimer) {
+      clearTimeout(previewTimer);
+    }
   };
+  dispose.refresh = () => {
+    source = options.content;
+    previewLines = null;
+    previewDirty = false;
+    state.previewDirty = false;
+    renderShell();
+  };
+  return dispose;
 };
 
 // src/index.js
@@ -8577,6 +8791,15 @@ var DEFAULT_SETTINGS = {
   enabled: true,
   triggerOnSpace: false,
   triggerOnCtrlEnter: true,
+  notebookAutoCalculate: true,
+  featureTimeDate: true,
+  featureTimeZone: true,
+  featureUnits: true,
+  featureCustomUnits: true,
+  featureAggregation: true,
+  featureCurrency: true,
+  onlineRatesEnabled: true,
+  showDemoButton: true,
   /** 结果精度：exact（精确）/ places（小数位）/ digits（有效数字） */
   roundMode: "exact",
   /** places 模式是小数位数；digits 模式是有效数字位数 */
@@ -8591,6 +8814,7 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
     super(options);
     this.settings = Object.assign({}, DEFAULT_SETTINGS);
     this.onKeyDownBindThis = this.onKeyDown.bind(this);
+    this.calcNotebookRefreshes = /* @__PURE__ */ new Set();
   }
   async onload() {
     await this.loadSettings();
@@ -8601,7 +8825,16 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
           await this.refreshOnlineRates();
           calcOptions.rates = this.settings.onlineRates;
         };
-        return renderCalcNotebook(options, this.getPrecisionOptions(), calcOptions);
+        const dispose = renderCalcNotebook(options, this.getPrecisionOptions(), calcOptions);
+        const refresh = () => {
+          Object.assign(calcOptions, this.getCalculationOptions());
+          dispose.refresh();
+        };
+        this.calcNotebookRefreshes.add(refresh);
+        return () => {
+          this.calcNotebookRefreshes.delete(refresh);
+          dispose();
+        };
       }
     };
     this.protyleSlash.push({
@@ -8616,6 +8849,7 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
   }
   onunload() {
     document.removeEventListener("keydown", this.onKeyDownBindThis, true);
+    this.calcNotebookRefreshes.clear();
   }
   /* ---------------------------------------------------------------- *
    * 设置
@@ -8632,6 +8866,10 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
   }
   async saveSettings() {
     await this.saveData(STORAGE_NAME, this.settings);
+  }
+  async saveSettingsAndRefresh() {
+    await this.saveSettings();
+    this.calcNotebookRefreshes.forEach((refresh) => refresh());
   }
   /**
    * 构建设置面板。
@@ -8662,20 +8900,29 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
         { value: "false", label: this.i18n.off }
       ], this.settings[key] ? "true" : "false", (value) => {
         this.settings[key] = value === "true";
-        this.saveSettings();
+        this.saveSettingsAndRefresh();
       });
       this.setting.addItem({ title, description, actionElement: select });
     };
     addSwitch(this.i18n.enabledTitle, this.i18n.enabledTip, "enabled");
     addSwitch(this.i18n.spaceTitle, this.i18n.spaceTip, "triggerOnSpace");
     addSwitch(this.i18n.ctrlEnterTitle, this.i18n.ctrlEnterTip, "triggerOnCtrlEnter");
+    addSwitch("\u8BA1\u7B97\u7B14\u8BB0\u672C\u81EA\u52A8\u91CD\u7B97", "\u7C7B\u4F3C Excel \u81EA\u52A8\u8BA1\u7B97\uFF1B\u5173\u95ED\u540E\u53EA\u4FDD\u5B58\u539F\u6587\uFF0C\u70B9\u51FB\u201C\u7ACB\u5373\u8BA1\u7B97\u201D\u5237\u65B0\u7ED3\u679C", "notebookAutoCalculate");
+    addSwitch("\u65F6\u95F4\u4E0E\u65E5\u671F", "\u65F6\u523B\u3001\u65F6\u957F\u3001\u65E5\u671F\u51FD\u6570\u3001\u5DE5\u4F5C\u65E5\u53CA\u65E5\u671F\u683C\u5F0F\u5316", "featureTimeDate");
+    addSwitch("\u65F6\u533A", "zoned() \u4E0E inZone() \u65F6\u533A\u65E5\u671F\u65F6\u95F4", "featureTimeZone");
+    addSwitch("\u6807\u51C6\u53CA\u590D\u5408\u5355\u4F4D", "\u5355\u4F4D\u8BC6\u522B\u3001\u91CF\u7EB2\u8FD0\u7B97\u3001\u590D\u5408\u5355\u4F4D\u548C\u5355\u4F4D\u6362\u7B97", "featureUnits");
+    addSwitch("\u81EA\u5B9A\u4E49\u5355\u4F4D", "\u5141\u8BB8\u4F7F\u7528 unit \u58F0\u660E\u5757\u5185\u81EA\u5B9A\u4E49\u5355\u4F4D", "featureCustomUnits");
+    addSwitch("\u5206\u7EC4\u6C47\u603B", "prev\u3001total \u548C average", "featureAggregation");
+    addSwitch("\u8D27\u5E01\u6362\u7B97", "\u91D1\u989D\u7C7B\u578B\u53CA\u4E0D\u540C\u5E01\u79CD\u4E4B\u95F4\u7684\u8F6C\u6362", "featureCurrency");
+    addSwitch("\u5728\u7EBF\u6C47\u7387", "\u5141\u8BB8\u4ECE Frankfurter \u66F4\u65B0\u6C47\u7387\uFF1B\u624B\u5DE5\u548C\u7F13\u5B58\u6C47\u7387\u4E0D\u53D7\u6B64\u5F00\u5173\u5F71\u54CD", "onlineRatesEnabled");
+    addSwitch("\u793A\u4F8B\u6309\u94AE", "\u5728\u8BA1\u7B97\u7B14\u8BB0\u672C\u53F3\u4E0A\u89D2\u663E\u793A\u4E00\u952E\u5B66\u4E60\u793A\u4F8B", "showDemoButton");
     const modeSelect = this.buildSelect([
       { value: "exact", label: this.i18n.roundExact },
       { value: "places", label: this.i18n.roundPlaces },
       { value: "digits", label: this.i18n.roundDigits }
     ], this.settings.roundMode, (value) => {
       this.settings.roundMode = value;
-      this.saveSettings();
+      this.saveSettingsAndRefresh();
       digitsInput.disabled = value === "exact";
       digitsInput.classList.toggle("plugin-calc__disabled", value === "exact");
     });
@@ -8692,7 +8939,7 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
       const parsed = Number.parseInt(digitsInput.value, 10);
       this.settings.roundDigits = Number.isFinite(parsed) ? parsed : 6;
       digitsInput.value = String(this.settings.roundDigits);
-      this.saveSettings();
+      this.saveSettingsAndRefresh();
     });
     const precisionRow = document.createElement("div");
     precisionRow.className = "fn__flex plugin-calc__row";
@@ -8711,7 +8958,7 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
       try {
         JSON.parse(manualRates.value || "{}");
         this.settings.manualExchangeRates = manualRates.value || "{}";
-        this.saveSettings();
+        this.saveSettingsAndRefresh();
         manualRates.classList.remove("plugin-calc__invalid");
       } catch {
         manualRates.classList.add("plugin-calc__invalid");
@@ -8729,7 +8976,7 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
     holidays.placeholder = "2026-01-01, 2026-10-01";
     holidays.addEventListener("change", () => {
       this.settings.holidays = holidays.value;
-      this.saveSettings();
+      this.saveSettingsAndRefresh();
     });
     this.setting.addItem({
       title: "\u8282\u5047\u65E5",
@@ -8743,7 +8990,7 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
     extraWorkdays.placeholder = "2026-11-29";
     extraWorkdays.addEventListener("change", () => {
       this.settings.extraWorkdays = extraWorkdays.value;
-      this.saveSettings();
+      this.saveSettingsAndRefresh();
     });
     this.setting.addItem({
       title: "\u8C03\u4F11\u5DE5\u4F5C\u65E5",
@@ -8753,6 +9000,7 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
     const refreshButton = document.createElement("button");
     refreshButton.className = "b3-button";
     refreshButton.textContent = "\u66F4\u65B0\u5728\u7EBF\u6C47\u7387";
+    refreshButton.disabled = !this.settings.onlineRatesEnabled;
     const rateStatus = document.createElement("span");
     rateStatus.textContent = this.settings.onlineRates ? `${this.settings.onlineRates.source} \xB7 ${this.settings.onlineRates.date}` : "\u5C1A\u672A\u66F4\u65B0";
     refreshButton.addEventListener("click", async () => {
@@ -8812,10 +9060,23 @@ var EqualsCalcPlugin = class extends import_siyuan.Plugin {
       exchangeRates,
       rates: this.settings.onlineRates,
       holidays: this.settings.holidays.split(/[\s,，]+/).filter(Boolean),
-      extraWorkdays: this.settings.extraWorkdays.split(/[\s,，]+/).filter(Boolean)
+      extraWorkdays: this.settings.extraWorkdays.split(/[\s,，]+/).filter(Boolean),
+      notebookAutoCalculate: this.settings.notebookAutoCalculate,
+      showDemoButton: this.settings.showDemoButton,
+      features: {
+        timeDate: this.settings.featureTimeDate,
+        timeZone: this.settings.featureTimeZone,
+        units: this.settings.featureUnits,
+        customUnits: this.settings.featureCustomUnits,
+        aggregation: this.settings.featureAggregation,
+        currency: this.settings.featureCurrency
+      }
     };
   }
   async refreshOnlineRates() {
+    if (!this.settings.onlineRatesEnabled) {
+      throw new Error("\u5728\u7EBF\u6C47\u7387\u5DF2\u5728\u8BBE\u7F6E\u4E2D\u7981\u7528");
+    }
     if (this.ratePromise) {
       return this.ratePromise;
     }

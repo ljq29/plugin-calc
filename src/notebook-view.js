@@ -66,7 +66,15 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
     let activeLine = Number.isInteger(state.activeLine) ? state.activeLine : null;
     let root;
     let status;
+    let previewLines = state.previewLines || null;
+    let previewTimer = null;
+    let previewDirty = Boolean(state.previewDirty);
+    let composing = false;
 
+    const autoCalculate = () => calcOptions.notebookAutoCalculate !== false;
+    if (autoCalculate() && previewDirty) {
+        previewLines = null;
+    }
     const updateStatus = text => {
         if (status) {
             status.textContent = text;
@@ -138,7 +146,9 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
         editor.setSelectionRange(position, position);
     };
     const scheduleSave = () => {
-        updateStatus("");
+        if (autoCalculate() || !previewDirty) {
+            updateStatus("");
+        }
         if (saveTimer) {
             clearTimeout(saveTimer);
         }
@@ -171,19 +181,111 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
         editor.style.height = "auto";
         editor.style.height = Math.max(120, editor.scrollHeight) + "px";
     };
+    const evaluatedLines = () => {
+        if (!previewLines) {
+            previewLines = evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions));
+            state.previewLines = previewLines;
+            previewDirty = false;
+            state.previewDirty = false;
+        }
+        if (previewDirty && !autoCalculate()) {
+            return source.split("\n").map((text, index) => Object.assign({},
+                previewLines[index] || {kind: "text"}, {source: text}));
+        }
+        return previewLines;
+    };
+    const updatePreviewElement = preview => {
+        const evaluated = evaluatedLines();
+        evaluated.forEach((line, index) => {
+            const row = document.createElement("div");
+            renderLine(row, line);
+            const signature = line.source + "\n" + row.textContent;
+            const existing = preview.childNodes[index];
+            if (!existing) {
+                preview.append(row);
+            } else if (existing.dataset?.signature !== signature) {
+                existing.replaceWith(row);
+            }
+            row.dataset.signature = signature;
+        });
+        while (preview.childNodes.length > evaluated.length) {
+            const last = preview.childNodes[preview.childNodes.length - 1];
+            if (typeof last.remove === "function") {
+                last.remove();
+            } else {
+                preview.childNodes.pop();
+            }
+        }
+        return preview;
+    };
     const createPreview = () => {
         const preview = document.createElement("div");
         preview.className = "plugin-calc-notebook__preview";
-        evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions)).forEach(line => {
-            const row = document.createElement("div");
-            renderLine(row, line);
-            preview.append(row);
+        return updatePreviewElement(preview);
+    };
+    const refreshPreview = () => {
+        if (state.mode === "live") {
+            renderLive();
+        } else {
+            const preview = root.querySelector(".plugin-calc-notebook__preview");
+            if (preview) {
+                updatePreviewElement(preview);
+            }
+        }
+    };
+    const calculateNow = () => {
+        if (previewTimer) {
+            clearTimeout(previewTimer);
+            previewTimer = null;
+        }
+        previewLines = null;
+        previewDirty = false;
+        state.previewDirty = false;
+        updateStatus("");
+        refreshPreview();
+        maybeRefreshRates(true);
+    };
+    const schedulePreview = () => {
+        previewDirty = true;
+        state.previewDirty = true;
+        if (!autoCalculate()) {
+            updateStatus("结果未更新（自动重算已关闭，可点击立即计算）");
+            return;
+        }
+        if (previewTimer) {
+            clearTimeout(previewTimer);
+        }
+        previewTimer = setTimeout(() => {
+            previewTimer = null;
+            if (disposed || composing) {
+                return;
+            }
+            previewLines = null;
+            refreshPreview();
+            maybeRefreshRates(false);
+        }, 150);
+    };
+    const bindComposition = editor => {
+        editor.addEventListener("compositionstart", () => {
+            composing = true;
+            if (previewTimer) {
+                clearTimeout(previewTimer);
+                previewTimer = null;
+            }
+            if (saveTimer) {
+                clearTimeout(saveTimer);
+                saveTimer = null;
+            }
         });
-        return preview;
+        editor.addEventListener("compositionend", () => {
+            composing = false;
+            schedulePreview();
+            scheduleSave();
+        });
     };
     let refreshingRates = false;
-    const maybeRefreshRates = () => {
-        if (refreshingRates || calcOptions.rates || typeof calcOptions.refreshRates !== "function" ||
+    const maybeRefreshRates = (force = false) => {
+        if ((!force && !autoCalculate()) || refreshingRates || calcOptions.rates || typeof calcOptions.refreshRates !== "function" ||
             !/(?:\d\s*[A-Z]{3}\b|\bto\s+[A-Z]{3}\b)/.test(source)) {
             return;
         }
@@ -193,14 +295,8 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
             if (disposed || !root.isConnected) {
                 return;
             }
-            if (state.mode === "live") {
-                renderLive();
-            } else {
-                const preview = root.querySelector(".plugin-calc-notebook__preview");
-                if (preview) {
-                    preview.replaceWith(createPreview());
-                }
-            }
+            previewLines = null;
+            refreshPreview();
             updateStatus(calcOptions.rates && calcOptions.rates.date ?
                 `汇率：Frankfurter · ${calcOptions.rates.date}` : "汇率已更新");
         }).catch(error => {
@@ -238,12 +334,17 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
         source = lines.join("\n");
         activeLine = index;
         state.activeLine = index;
+        previewDirty = true;
+        if (autoCalculate()) {
+            previewLines = null;
+        }
         renderLive();
         focusEditor(currentEditor(), caret);
+        schedulePreview();
         scheduleSave();
     };
     const bindLiveEditor = (editor, index) => {
-        editor.addEventListener("input", () => {
+        editor.addEventListener("input", event => {
             const chunks = editor.value.split("\n");
             if (chunks.length > 1) {
                 const lines = source.split("\n");
@@ -254,17 +355,15 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
             const lines = source.split("\n");
             lines[index] = editor.value;
             source = lines.join("\n");
-            const evaluated = evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions));
-            [...root.querySelectorAll(".plugin-calc-notebook__live > .plugin-calc-notebook__line")].forEach((row, rowIndex) => {
-                if (rowIndex !== activeLine && evaluated[rowIndex]) {
-                    row.replaceChildren();
-                    renderLine(row, evaluated[rowIndex]);
-                }
-            });
             editor.style.height = "auto";
             editor.style.height = Math.max(30, editor.scrollHeight) + "px";
+            if (event.isComposing || composing) {
+                return;
+            }
+            schedulePreview();
             scheduleSave();
         });
+        bindComposition(editor);
         editor.addEventListener("keydown", event => {
             if (event.isComposing) {
                 return;
@@ -317,7 +416,7 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
     };
     function renderLive() {
         const live = root.querySelector(".plugin-calc-notebook__live");
-        const evaluated = evaluateNotebook(source, Object.assign({}, precisionOptions, calcOptions));
+        const evaluated = evaluatedLines();
         if (activeLine !== null) {
             activeLine = Math.max(0, Math.min(activeLine, evaluated.length - 1));
             state.activeLine = activeLine;
@@ -365,14 +464,22 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
         }
         const separator = !source ? "" : source.endsWith("\n\n") ? "" : source.endsWith("\n") ? "\n" : "\n\n";
         source += separator + DEMO_SOURCE;
+        if (autoCalculate()) {
+            previewLines = null;
+        } else {
+            previewDirty = true;
+        }
         if (state.mode === "live") {
-            activeLine = source.split("\n").length - 1;
+            activeLine = autoCalculate() ? source.split("\n").length - 1 : null;
             state.activeLine = activeLine;
         }
         renderShell();
         const editor = currentEditor();
         if (editor) {
             focusEditor(editor, editor.value.length);
+        }
+        if (!autoCalculate()) {
+            schedulePreview();
         }
         scheduleSave();
     };
@@ -403,14 +510,24 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
             });
             controls.append(button);
         });
-        const demo = document.createElement("button");
-        demo.type = "button";
-        demo.className = "b3-button b3-button--text";
-        demo.textContent = "示例";
-        demo.dataset.action = "demo";
-        demo.title = "在末尾追加学习示例；已有示例时定位到示例";
-        demo.addEventListener("click", appendOrLocateDemo);
-        controls.append(demo);
+        const calculate = document.createElement("button");
+        calculate.type = "button";
+        calculate.className = "b3-button b3-button--text";
+        calculate.textContent = "立即计算";
+        calculate.dataset.action = "calculate";
+        calculate.title = "使用当前原文重新计算预览";
+        calculate.addEventListener("click", calculateNow);
+        controls.append(calculate);
+        if (calcOptions.showDemoButton !== false) {
+            const demo = document.createElement("button");
+            demo.type = "button";
+            demo.className = "b3-button b3-button--text";
+            demo.textContent = "示例";
+            demo.dataset.action = "demo";
+            demo.title = "在末尾追加学习示例；已有示例时定位到示例";
+            demo.addEventListener("click", appendOrLocateDemo);
+            controls.append(demo);
+        }
         const toggle = document.createElement("button");
         toggle.type = "button";
         toggle.className = "b3-button b3-button--text";
@@ -426,6 +543,9 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
         status = document.createElement("div");
         status.className = "plugin-calc-notebook__status";
         status.setAttribute("role", "status");
+        if (previewDirty && !autoCalculate()) {
+            updateStatus("结果未更新（自动重算已关闭，可点击立即计算）");
+        }
         if (state.mode === "live") {
             const live = document.createElement("div");
             live.className = "plugin-calc-notebook__live";
@@ -441,12 +561,16 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
         editor.setAttribute("aria-label", "计算笔记本原文");
         editor.spellcheck = false;
         editor.value = source;
-        editor.addEventListener("input", () => {
+        editor.addEventListener("input", event => {
             source = editor.value;
-            body.querySelector(".plugin-calc-notebook__preview").replaceWith(createPreview());
             resize(editor);
+            if (event.isComposing || composing) {
+                return;
+            }
+            schedulePreview();
             scheduleSave();
         });
+        bindComposition(editor);
         body.append(editor, createPreview());
         root.append(body, status);
         resize(editor);
@@ -455,10 +579,21 @@ export const renderCalcNotebook = (options, precisionOptions, calcOptions = {}) 
     root = document.createElement("section");
     options.element.replaceChildren(root);
     renderShell();
-    return () => {
+    const dispose = () => {
         disposed = true;
         if (saveTimer) {
             clearTimeout(saveTimer);
         }
+        if (previewTimer) {
+            clearTimeout(previewTimer);
+        }
     };
+    dispose.refresh = () => {
+        source = options.content;
+        previewLines = null;
+        previewDirty = false;
+        state.previewDirty = false;
+        renderShell();
+    };
+    return dispose;
 };

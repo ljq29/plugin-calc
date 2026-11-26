@@ -189,7 +189,8 @@ editor.selectionStart = editor.value.length;
 editor.selectionEnd = editor.value.length;
 editor.dispatchEvent({type: "input"});
 eq(root.querySelector("textarea") === editor, true, "输入时不替换当前编辑器");
-eq(lines()[4].textContent, "商品金额：140(单价*数量)", "其他行实时重算商品金额");
+await new Promise(resolve => setTimeout(resolve, 180));
+eq(lines()[4].textContent, "商品金额：140(单价*数量)", "预览防抖后重算商品金额");
 eq(lines()[5].textContent, "含运费总价：150(单价*数量+运费)", "其他行实时重算总价");
 await new Promise(resolve => setTimeout(resolve, 360));
 eq(saved.at(-1).startsWith("单价=70\n"), true, "逐行编辑自动保存完整原文");
@@ -251,6 +252,61 @@ eq(liveContainer.querySelector("textarea").value, "【plugin-calc 学习示例�
 await new Promise(resolve => setTimeout(resolve, 360));
 eq(liveSaved.at(-1).split("【plugin-calc 学习示例】").length, 2, "逐行视图示例只保存一份");
 dispose();
+
+const manualContainer = document.createElement("div");
+const manualSaved = [];
+const disposeManual = renderCalcNotebook({
+    element: manualContainer,
+    content: "a=1",
+    setContent: content => {
+        manualSaved.push(content);
+        return true;
+    }
+}, {}, {notebookAutoCalculate: false, showDemoButton: false});
+const manualEditor = manualContainer.querySelector("textarea");
+eq(manualContainer.querySelector(".plugin-calc-notebook__preview").textContent.includes("1"), true, "手动模式初始仍计算一次");
+eq(all(manualContainer, "b3-button").some(item => item.dataset.action === "demo"), false, "示例按钮可单独关闭");
+manualEditor.value = "a=2";
+manualEditor.dispatchEvent({type: "input", isComposing: false});
+eq(manualContainer.querySelector(".plugin-calc-notebook__preview").textContent.includes("1"), true, "手动模式编辑不更新预览");
+await new Promise(resolve => setTimeout(resolve, 360));
+eq(manualSaved.at(-1), "a=2", "手动模式仍自动保存原文");
+eq(manualContainer.querySelector(".plugin-calc-notebook__status").textContent.includes("结果未更新"), true, "手动模式提示结果未更新");
+const disposeManualRender = renderCalcNotebook({
+    element: manualContainer,
+    content: "a=2",
+    setContent: () => true
+}, {}, {notebookAutoCalculate: false, showDemoButton: false});
+eq(manualContainer.querySelector(".plugin-calc-notebook__preview").textContent.includes("a = 1"), true, "自动保存重渲染仍保留旧预览");
+eq(manualContainer.querySelector(".plugin-calc-notebook__status").textContent.includes("结果未更新"), true, "自动保存重渲染保留未更新提示");
+click(all(manualContainer, "b3-button").find(item => item.dataset.action === "calculate"));
+eq(manualContainer.querySelector(".plugin-calc-notebook__preview").textContent.includes("2"), true, "立即计算刷新手动预览");
+disposeManualRender();
+disposeManual();
+
+const compositionContainer = document.createElement("div");
+const compositionSaved = [];
+const disposeComposition = renderCalcNotebook({
+    element: compositionContainer,
+    content: "a=1",
+    setContent: content => {
+        compositionSaved.push(content);
+        return true;
+    }
+}, {});
+const compositionEditor = compositionContainer.querySelector("textarea");
+compositionEditor.dispatchEvent({type: "compositionstart"});
+compositionEditor.value = "a=2";
+compositionEditor.dispatchEvent({type: "input", isComposing: true});
+await new Promise(resolve => setTimeout(resolve, 180));
+eq(compositionContainer.querySelector(".plugin-calc-notebook__preview").textContent.includes("1"), true, "组词期间不重算预览");
+eq(compositionSaved.length, 0, "组词期间不触发自动保存");
+compositionEditor.dispatchEvent({type: "compositionend"});
+await new Promise(resolve => setTimeout(resolve, 180));
+eq(compositionContainer.querySelector(".plugin-calc-notebook__preview").textContent.includes("2"), true, "组词结束后重算预览");
+await new Promise(resolve => setTimeout(resolve, 180));
+eq(compositionSaved.at(-1), "a=2", "组词结束后自动保存");
+disposeComposition();
 
 console.log(`\n视图交互: ${passed} passed, ${failed} failed`);
 process.exit(failed === 0 ? 0 : 1);

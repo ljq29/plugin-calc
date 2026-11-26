@@ -750,7 +750,7 @@ const ioPlugin = new PluginClass({
     displayName: "等号计算",
     i18n: {
         on: "开", off: "关",
-        enabledTitle: "自动计算", enabledTip: "提示",
+        enabledTitle: "等号自动结算", enabledTip: "提示",
         spaceTitle: "空格", spaceTip: "提示2",
         ctrlEnterTitle: "Ctrl回车", ctrlEnterTip: "提示3",
         precisionTitle: "结果精度", precisionTip: "精度提示",
@@ -789,16 +789,18 @@ eq(typeof ioPlugin.syncTopBarState, "undefined", "没有顶栏状态同步方法
 
 // 设置面板可以正常打开
 eq(!!ioPlugin.setting, true, "插件创建了 Setting 实例");
-eq(ioPlugin.setting.items.length, 9, "设置项数量（开关、精度、汇率、节假日与用法说明）");
+eq(ioPlugin.setting.items.length, 18, "设置项数量（开关、精度、汇率、节假日与用法说明）");
 const settingTitles = ioPlugin.setting.items.map((item) => item.title).join(",");
-eq(settingTitles.includes("自动计算"), true, "包含自动计算开关");
+eq(settingTitles.includes("等号自动结算"), true, "包含等号自动结算开关");
+eq(settingTitles.includes("计算笔记本自动重算"), true, "包含笔记本自动重算开关");
+eq(settingTitles.includes("标准及复合单位"), true, "包含单位功能开关");
 eq(settingTitles.includes("空格"), true, "包含空格开关");
 eq(settingTitles.includes("Ctrl回车"), true, "包含 Ctrl+回车开关");
 eq(settingTitles.includes("结果精度"), true, "包含结果精度设置");
 eq(settingTitles.includes("用法"), true, "包含用法说明");
 
 // 精度设置：下拉框 + 位数输入，且精确模式下输入框禁用
-const precisionItem = ioPlugin.setting.items[3];
+const precisionItem = ioPlugin.setting.items.find(item => item.title === "结果精度");
 eq(precisionItem.actionElement.children.length, 2, "精度设置包含模式与位数两个控件");
 const [modeControl, digitsControl] = precisionItem.actionElement.children;
 eq(modeControl.value, "exact", "精度模式默认精确");

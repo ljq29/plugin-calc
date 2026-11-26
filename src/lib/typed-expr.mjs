@@ -1,4 +1,5 @@
 import {fixFromString, fixToNumber, fixToRat, numberToFix, ratDiv, ratMul, ratToFix} from "./number.mjs";
+import {requireFeature} from "./features.mjs";
 import {
     addDurationValue,
     addWorkdaysValue,
@@ -174,7 +175,7 @@ const parse = tokens => {
         if (token.type !== T_NAME) {
             throw new Error("to 后需要目标单位");
         }
-        let node = {kind: "name", text: token.text, args: [], isCall: false};
+        let node = {kind: "name", text: token.text, args: [], isCall: false, unitContext: true};
         while (isOp(peek(), "^") || isOp(peek(), "/") || isOp(peek(), "*")) {
             const operator = next().text;
             if (operator === "^") {
@@ -188,7 +189,7 @@ const parse = tokens => {
                 if (name.type !== T_NAME) {
                     throw new Error("复合单位写法不正确");
                 }
-                node = {kind: "binary", op: operator, left: node, right: {kind: "name", text: name.text, args: [], isCall: false}};
+                node = {kind: "binary", op: operator, left: node, right: {kind: "name", text: name.text, args: [], isCall: false, unitContext: true}};
             }
         }
         return node;
@@ -213,7 +214,14 @@ const parse = tokens => {
         while (true) {
             if (isOp(peek(), "*") || isOp(peek(), "/") || isOp(peek(), "%")) {
                 const op = next().text;
-                node = {kind: "binary", op, left: node, right: parseUnary()};
+                const right = parseUnary();
+                if ((op === "/" || op === "*") && right.kind === "name" && !right.isCall) {
+                    right.unitContext = true;
+                } else if ((op === "/" || op === "*") && right.kind === "binary" && right.op === "^" &&
+                    right.left.kind === "name" && !right.left.isCall) {
+                    right.left.unitContext = true;
+                }
+                node = {kind: "binary", op, left: node, right};
                 continue;
             }
             if (node.kind === "quantity" && peek().type === T_NUM && peek(1).type === T_NAME) {
@@ -356,10 +364,17 @@ const evaluate = (program, options) => {
 
     const callFunction = (name, args) => {
         const lower = name.toLowerCase();
+        if (["zoned", "inzone"].includes(lower)) {
+            requireFeature(options, "timeZone", "时区功能");
+        } else if (["time", "date", "datetime", "today", "now", "dateadd", "datesubtract", "datebetween",
+            "formatdate", "workdays", "addworkdays", "year", "month", "day", "hour", "minute"].includes(lower)) {
+            requireFeature(options, "timeDate", "时间与日期功能");
+        }
         if (lower === "unit") {
             return literalValue(numericArgument(args[0], "unit"), stringArg(args, 1, "unit"), options);
         }
         if (lower === "money") {
+            requireFeature(options, "currency", "货币功能");
             return moneyValue(numericArgument(args[0], "money"), stringArg(args, 1, "money").toUpperCase());
         }
         if (lower === "time") return timeValue(stringArg(args, 0, "time"));
@@ -400,7 +415,9 @@ const evaluate = (program, options) => {
             }
             case "num": return numberValue(node.text);
             case "string": return {kind: "string", value: node.value};
-            case "time": return timeValue(node.value);
+            case "time":
+                requireFeature(options, "timeDate", "时间与日期功能");
+                return timeValue(node.value);
             case "quantity": return literalValue(evalNode(node.amount).value, node.unit, options);
             case "quantityPower": return multiplyValues(
                 evalNode(node.amount),
@@ -415,7 +432,8 @@ const evaluate = (program, options) => {
                 if (Object.prototype.hasOwnProperty.call(options.specials || {}, node.text)) return options.specials[node.text];
                 if (constants[node.text]) return constants[node.text];
                 if (isCurrency(node.text, options)) return moneyValue(fixFromString("1"), node.text);
-                return unitValue(node.text, options);
+                if (node.unitContext) return unitValue(node.text, options);
+                throw new Error("未定义变量: " + node.text);
             }
             case "negate": return negateValue(evalNode(node.value));
             case "percent": return multiplyValues(evalNode(node.value), numberValue("100"), true);
